@@ -1,0 +1,639 @@
+#!/usr/bin/env python
+
+infilesBySample = {
+	'bm55':{
+	    'bm55.11'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.11.r1.fastq.gz','~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.11.r2.fastq.gz' ],
+	    'bm55.16'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.16.r1.fastq.gz','~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.16.r2.fastq.gz' ],
+	    'bm55.17'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.17.r1.fastq.gz','~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.17.r2.fastq.gz' ],
+	    'bm55.19'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.19.r1.fastq.gz','~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.19.r2.fastq.gz' ],
+	    'bm55.24'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.24.r1.fastq.gz','~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.24.r2.fastq.gz' ],
+	    'bm55.26'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.26.r1.fastq.gz','~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.26.r2.fastq.gz' ],
+	    'bm55.32'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.32.r1.fastq.gz','~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.32.r2.fastq.gz' ],
+	    'bm55.33'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.33.r1.fastq.gz','~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.33.r2.fastq.gz' ],
+	    'bm55.34'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.34.r1.fastq.gz','~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.34.r2.fastq.gz' ],
+	    'bm55.36'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.36.r1.fastq.gz','~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.36.r2.fastq.gz' ],
+	    'bm55.37'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.37.r1.fastq.gz','~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.37.r2.fastq.gz' ],
+	    'bm55.38'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.28.r1.fastq.gz','~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.28.r2.fastq.gz' ],
+	    'bm55.39'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.39.r1.fastq.gz','~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.39.r2.fastq.gz' ],
+	    'bm55.40'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.40.r1.fastq.gz','~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.40.r2.fastq.gz' ],
+	    'bm55.45'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.45.r1.fastq.gz','~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.45.r2.fastq.gz' ],
+	    'bm55.47'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.47.r1.fastq.gz','~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.47.r2.fastq.gz' ],
+	    'bm55.49'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.49.r1.fastq.gz','~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.49.r2.fastq.gz' ],
+	    'bm55.50'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.50.r1.fastq.gz','~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.50.r2.fastq.gz' ],
+	    'bm55.55'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.55.r1.fastq.gz','~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.55.r2.fastq.gz' ],
+	    'bm55.57'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.57.r1.fastq.gz','~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.57.r2.fastq.gz' ],
+	    'bm55.59'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.59.r1.fastq.gz','~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.59.r2.fastq.gz' ],
+	    'bm55.60'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.60.r1.fastq.gz','~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.60.r2.fastq.gz' ],
+	    'bm55.61'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.61.r1.fastq.gz','~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.61.r2.fastq.gz' ],
+	    'bm55.62'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.62.r1.fastq.gz','~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.62.r2.fastq.gz' ],
+	    'bm55.63'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.63.r1.fastq.gz','~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.63.r2.fastq.gz' ],
+	    'bm55.64'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.64.r1.fastq.gz','~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.64.r2.fastq.gz' ],
+	    'bm55.66'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.66.r1.fastq.gz','~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.66.r2.fastq.gz' ],
+	    'bm55.68'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.68.r1.fastq.gz','~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.68.r2.fastq.gz' ],
+	    'bm55.71'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.71.r1.fastq.gz','~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.71.r2.fastq.gz' ],
+	    'bm55.neg'          : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.neg.r1.fastq.gz','~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.neg.r2.fastq.gz' ],
+	    'bm55.Donor'        : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm55.Concat/DON.r1.fastq.gz','~/singleFatCellExomeAnalysis/data/bm55.Concat/DON.r2.fastq.gz' ],
+	    'bm55.Patient'      : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm55.Concat/PAT.r1.fastq.gz','~/singleFatCellExomeAnalysis/data/bm55.Concat/PAT.r2.fastq.gz' ]
+	},
+	'bm1':{
+	    'bm1.1'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.1.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.1.r2.fq.gz' ],
+	    'bm1.2'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.2.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.2.r2.fq.gz' ],
+	    'bm1.3'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.3.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.3.r2.fq.gz' ],
+	    'bm1.4'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.4.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.4.r2.fq.gz' ],
+	    'bm1.5'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.5.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.5.r2.fq.gz' ],
+	    'bm1.6'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.6.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.6.r2.fq.gz' ],
+	    'bm1.7'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.7.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.7.r2.fq.gz' ],
+	    'bm1.8'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.8.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.8.r2.fq.gz' ],
+	    'bm1.10'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.10.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.10.r2.fq.gz' ],
+	    'bm1.11'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.11.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.11.r2.fq.gz' ],
+	    'bm1.12'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.12.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.12.r2.fq.gz' ],
+	    'bm1.13'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.13.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.13.r2.fq.gz' ],
+	    'bm1.Donor'        : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.Donor.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.Donor.r2.fq.gz' ],
+	    'bm1.Patient'      : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.Patient.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.Patient.r2.fq.gz' ]
+	},
+	'bm47':{
+	    'bm47.Donor'        : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm1.Donor.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm1.Donor.r2.fq.gz' ],
+	    'bm47.Patient'      : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm1.Patient.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm1.Patient.r2.fq.gz' ]	    
+	}
+    }
+
+def main():
+    
+    #
+    # Imports
+    #
+    import sys
+    import time
+    
+    #
+    # foreach patient donor pair
+    #
+    for boneMarowId, infilesDictionary in infilesBySample.iteritems():
+	
+	#
+	# foreach single cell or genomic DNA sample
+	#
+	samples = []
+	for sampleid in infilesDictionary.keys():
+	    
+	    # create a sample object
+	    sys.stderr.write('\n-------\nCreating sample object for sample '+sampleid+'.\n')
+	    sample = Sample(sampleid,'results/'+boneMarowId+'/mapping',infilesDictionary)
+	    
+	    # create directories and analysis scripts for mapping each sample
+	    sys.stderr.write('Creating scripts for sample '+sampleid+'.\n')
+	    sample.createDirs()
+	    sample.makeScriptMapping()
+	    sample.makeScriptReAlNreCal()
+	    sample.makeScriptQC()
+	    
+	    # submit scripts
+	    sys.stderr.write('Submitting scripts for sample '+sampleid+'.\n')
+	    sample.submitScripts()
+	    
+	    # append the sample object to samples list
+	    samples.append(sample)
+	
+	# create a sample collection from the samples list
+	sys.stderr.write('\n---------------------\nCreating sampleCollection object for paitent donor pair '+boneMarowId+'.\n')
+	patientDonorPair = SampleCollection(samples,'results/'+boneMarowId+'/variantCalling',boneMarowId)
+	
+	# create directories and analysis scripts for variant calling of the sample collection
+	sys.stderr.write('Creating scripts for paitent donor pair '+boneMarowId+'.\n')
+	patientDonorPair.createDirs()
+	patientDonorPair.makeScript_haplotypeCaller()
+	patientDonorPair.makeScript_vqsr_indels()
+	patientDonorPair.makeScript_vqsr_snps()
+	
+	# submit var calling scripts
+	sys.stderr.write('Submitting scripts for paitent donor pair '+boneMarowId+'.\n')
+	patientDonorPair.submitScripts()
+	sys.stderr.write('All done for paitent donor pair '+boneMarowId+'.\n\n')
+
+class Sample(object):
+
+	def __init__(self,sampleid,basepath,infilesDictionary):
+	    """ sets values for all paths and files etc """
+	    
+	    import os
+	    
+	    self.sampleid = sampleid
+	    self.index = [infilesDictionary[self.sampleid][0]]
+	    self.indexseq = [infilesDictionary[self.sampleid][1]]
+	    self.r1files = [infilesDictionary[self.sampleid][2]]
+	    self.r2files = [infilesDictionary[self.sampleid][3]]
+	    self.basepath = os.path.abspath(basepath)
+	    self.path = os.path.abspath(basepath)+'/'+sampleid
+	    self.project = 'b2011011'
+	    self.jobids = []
+	    
+	    self.reference = '~/singleFatCellExomeAnalysis/references/GATKbundle/human_g1k_v37.fasta'
+	    self.gatkreference = '~/singleFatCellExomeAnalysis/references/GATKbundle/human_g1k_v37.fasta'
+	    
+	    self.sam =		self.path+'/'+self.sampleid+'.sam'
+	    self.bam =		self.path+'/'+self.sampleid+'.bam'
+	    self.sortedbam =	self.path+'/'+self.sampleid+'.sorted.bam'
+	    self.mdmetrix =	self.path+'/'+self.sampleid+'.MarkDupsMetrix'
+	    self.markedbam =	self.path+'/'+self.sampleid+'.marked.bam'
+	    self.rginfobam =	self.path+'/'+self.sampleid+'.rgInfoFixed.bam'
+	    self.realtargets =	self.path+'/'+self.sampleid+'.reAlignemntTargetIntervals.bed'
+	    self.realignedbam = self.path+'/'+self.sampleid+'.realigned.bam'
+	    self.bqsr =		self.path+'/'+self.sampleid+'.BQSR.grp'
+	    self.recalbam =	self.path+'/'+self.sampleid+'.recalibrated.final.bam'
+
+	    self.scriptpath =	self.path+'/script'
+	    self.realncalscript= self.scriptpath +'/'+self.sampleid+'.realNrecal.sh'
+	    self.mappingscript = self.scriptpath +'/'+self.sampleid+'.mapping.sh'
+	    self.qcscript = self.scriptpath +'/'+self.sampleid+'.qc.sh'
+
+	def createDirs(self):
+	    import os
+	    try: os.makedirs(self.path)
+	    except OSError:pass
+	    try: os.makedirs(self.scriptpath)
+	    except OSError:pass
+	
+	def makeScriptQC(self):
+	    
+	    #
+	    # sbatch header
+	    #
+	    output = ''
+	    output += '#! /bin/bash -l'+'\n'
+	    output += '#SBATCH -A '+self.project+'\n'
+	    output += '#SBATCH -n 16 -p node'+'\n'
+	    output += '#SBATCH -t 72:00:00'+'\n'
+	    output += '#SBATCH -J '+self.sampleid+'.QC'+'\n'
+	    output += '#SBATCH -e '+self.path+'/stderr.QC.txt'+'\n'
+	    output += '#SBATCH -o '+self.path+'/stdout.QC.txt'+'\n'
+	    output += '#SBATCH --mail-type=All'+'\n'
+	    output += '#SBATCH --mail-user=erik.borgstrom@scilifelab.se'+'\n'
+	    
+	    #
+	    # define variebles and go to path
+	    #
+	    output += 'echo "$(date) Running on: $(hostname)"'+'\n'
+	    output += 'cd '+self.path+'\n'
+	    output += 'picard=/proj/b2011168/private/bin/picard-tools-1.63'+'\n'
+	    output += 'GATK=~/singleFatCellExomeAnalysis/bin/GenomeAnalysisTK-2.8-1-g932cd3a/GenomeAnalysisTK.jar'+'\n'
+	    output += 'GATKbundle=~/singleFatCellExomeAnalysis/references/GATKbundle/'+'\n'
+	    output += 'file='+self.recalbam+'\n'
+	    output += 'echo "-----"'+'\n'
+
+	    #
+	    # GATK callable Loci
+	    #
+	    output += 'echo "$(date) Running on: $(hostname)"'+'\n'
+	    output += 'echo -e "-> CallableLoci <-"'+'\n'
+	    output += 'java -Xmx60g -jar $GATK -T CallableLoci -I $file -summary $file.summary.txt -o $file.callableLoci.bed -R '+self.gatkreference+' &'+'\n'
+	    output += 'echo "Done. $(date) Running on: $(hostname)"'+'\n'
+	    output += 'echo'+'\n'
+	    output += 'echo "-----"'+'\n'
+
+	    #
+	    # Samtools flagstat
+	    #
+	    output += 'echo "$(date) Running on: $(hostname)"'+'\n'
+	    output += 'echo -e "-> flagstat <-"'+'\n'
+	    output += 'samtools flagstat $file > $file.flagstat.txt &'+'\n'
+	    output += 'echo "Done. $(date) Running on: $(hostname)"'+'\n'
+	    output += 'echo'+'\n'
+	    output += 'echo "-----"'+'\n'
+
+	    #
+	    # qacompute
+	    #
+	    output += 'echo "$(date) Running on: $(hostname)"'+'\n'
+	    output += 'echo -e "-> Pauls qacompute <-"'+'\n'
+	    output += '/proj/b2010052/scripts/qaCompute -d -q 10 -m $file $file.qacompute.out > $file.qacompute.stdout.txt 2> $file.qacompute.stderr.txt &'+'\n'
+	    output += 'echo "Done. $(date) Running on: $(hostname)"'+'\n'
+	    
+	    #
+	    # picard HS metrics
+	    #
+	    output += 'java -Xmx60g -jar $picard/CalculateHsMetrics.jar BAIT_INTERVALS=~/singleFatCellExomeAnalysis/references/truseq_exome_targeted_regions.hg19.bed.chr.columnReOrdered.withHeader.chrRem TARGET_INTERVALS=~/singleFatCellExomeAnalysis/references/truseq_exome_targeted_regions.hg19.bed.chr.columnReOrdered.withHeader.chrRem INPUT=$file OUTPUT=$file.hs_metrics.summary.txt PER_TARGET_COVERAGE=$file.hs_metrics.perTargetCoverage.txt REFERENCE_SEQUENCE='+self.reference+'\n'
+
+	    #
+	    # Final output and write script to file
+	    #
+	    output += 'echo'+'\n'
+	    output += 'wait'+'\n'
+	    output += 'echo "$(date) AllDone"'+'\n'
+	    output += 'echo "$(date) AllDone" >&2'+'\n'
+	    with open(self.qcscript,'w') as outfile: outfile.write(output)
+	
+	def makeScriptMapping(self):
+
+	    #
+	    # sbatch header
+	    #
+	    output = '#! /bin/bash -l'+'\n'
+	    output += '#SBATCH -A '+self.project+'\n'
+	    output += '#SBATCH -n 16 -p node'+'\n'
+	    output += '#SBATCH -t 5:00:00'+'\n'
+	    output += '#SBATCH -J '+self.sampleid+'.map.mark'+'\n'
+	    output += '#SBATCH -e '+self.path+'/stderr.mapNmark.txt'+'\n'
+	    output += '#SBATCH -o '+self.path+'/stdout.mapNmark.txt'+'\n'
+	    output += '#SBATCH --mail-type=All'+'\n'
+	    output += '#SBATCH --mail-user=erik.borgstrom@scilifelab.se'+'\n'
+
+	    #
+	    # define variebles and go to path
+	    #
+	    output += 'echo "$(date) Running on: $(hostname)"'+'\n'
+	    output += 'cd '+self.path+'\n'
+	    output += 'echo'+'\n'
+	    output += 'picard=/proj/b2011168/private/bin/picard-tools-1.63'+'\n'
+	    
+	    #
+	    # Bowtie2 mapping
+	    #
+	    output += 'bowtie2 -1 '+self.r1files[0]+' -2 '+self.r2files[0]+' --very-sensitive-local -p16 -x '+self.reference+' > '+self.sam+'\n'
+	    output += 'echo -e "mapping Done. $(date) Running on: $(hostname)" 1>&2'+'\n'
+	    
+	    #
+	    # convert to bam file
+	    #
+	    output += 'java -Xmx60g -jar $picard/SamFormatConverter.jar \\'+'\n'
+	    output += 'MAX_RECORDS_IN_RAM=2500000 INPUT='+self.sam+' OUTPUT='+self.bam+'\n'
+	    output += 'echo -e "sam2bam Done. $(date) Running on: $(hostname)" 1>&2'+'\n'
+	    output += 'rm -v '+self.sam+''+'\n'
+	    
+	    #
+	    # sort the bam file
+	    #
+	    output += 'java -Xmx60g -jar $picard/SortSam.jar \\'+'\n'
+	    output += 'MAX_RECORDS_IN_RAM=2500000 SORT_ORDER=coordinate INPUT='+self.bam+' '
+	    output+='OUTPUT='+self.sortedbam+' CREATE_INDEX=true'+'\n'
+	    output += 'echo -e "bam2sort Done. $(date) Running on: $(hostname)" 1>&2'+'\n'
+	    output += 'rm -v '+self.bam+''+'\n'
+	    
+	    #
+	    # mark duplicates
+	    #
+	    output += 'java -Xmx60g -jar $picard/MarkDuplicates.jar MAX_RECORDS_IN_RAM=2500000 VALIDATION_STRINGENCY=LENIENT INPUT='+self.sortedbam+' OUTPUT='+self.markedbam+' METRICS_FILE='+self.mdmetrix+'\n'
+	    output += 'echo -e "mark Done. $(date) Running on: $(hostname)" 1>&2'+'\n'
+	    output += 'rm -v '+self.sortedbam+''+'\n'
+	    
+	    #
+	    # samtools flagstat
+	    #
+	    output += 'samtools flagstat '+self.markedbam+' \n'
+	    output += 'echo "flagstat Done. $(date) Running on: $(hostname)" 1>&2'+'\n'
+	    
+	    #
+	    # fix missing information
+	    #
+	    output += 'java -Xmx60g -jar $picard/AddOrReplaceReadGroups.jar \\'+'\n'
+	    output += 'MAX_RECORDS_IN_RAM=2500000 \\'+'\n'
+	    output += 'INPUT='+self.markedbam+' \\'+'\n'
+	    output += 'OUTPUT='+self.rginfobam+' \\'+'\n'
+	    output += 'CREATE_INDEX=true RGID='+self.sampleid+' RGLB='+self.sampleid+' RGPL=illumina RGSM='+self.sampleid+' RGCN="SciLifeLab" RGPU="barcode"'+'\n'
+	    output += 'echo "addorreplace Done. $(date) Running on: $(hostname)" 1>&2'+'\n'
+	    output += 'rm -v '+self.markedbam+''+'\n'
+	    
+	    #
+	    # Final output and write script to file
+	    #
+	    output += 'wait'+'\n'
+	    output += 'echo "$(date) AllDone"'+'\n'
+	    output += 'echo "$(date) AllDone" >&2'+'\n'
+	    with open(self.mappingscript,'w') as outfile: outfile.write(output)
+	
+	def makeScriptReAlNreCal(self):
+
+	    #
+	    # sbatch header
+	    #
+	    output = '#! /bin/bash -l\n'
+	    output += '#SBATCH -A '+self.project+'\n'
+	    output += '#SBATCH -n 16 -p node\n'
+	    output += '#SBATCH -t 72:00:00\n'
+	    output += '#SBATCH -J '+self.sampleid+'.realNrecal\n'
+	    output += '#SBATCH -e '+self.path+'/stderr.realNrecal.txt\n'
+	    output += '#SBATCH -o '+self.path+'/stdout.realNrecal.txt\n'
+	    output += '#SBATCH --mail-type=All\n'
+	    output += '#SBATCH --mail-user=erik.borgstrom@scilifelab.se\n'
+	    output += 'echo "$(date) Running on: $(hostname)"\n'
+
+	    #
+	    # define variebles and go to path
+	    #
+	    output += 'cd $workpath\n'
+	    output += 'picard=/proj/b2011168/private/bin/picard-tools-1.63\n'
+	    output += 'GATK=~/singleFatCellExomeAnalysis/bin/GenomeAnalysisTK-2.8-1-g932cd3a/GenomeAnalysisTK.jar\n'
+	    output += 'GATKbundle=~/singleFatCellExomeAnalysis/references/GATKbundle/\n'
+	    output += 'echo "$(date) Running on: $(hostname)"\n'
+	    
+	    #
+	    # Find targets for indel realignment
+	    #
+	    output += 'echo -e "-> RealignerTargetCreator <-"\n'
+	    output += 'java -Xmx72g -jar $GATK -T RealignerTargetCreator -nt 16 -I '+self.rginfobam+' -R '+self.gatkreference+' -o '+self.realtargets
+	    output += ' -known $GATKbundle/Mills_and_1000G_gold_standard.indels.b37.vcf'
+	    output += ' -known $GATKbundle/1000G_phase1.indels.b37.vcf;'
+	    output += '\n'
+	    
+	    #
+	    # Realign reads around indels
+	    #
+	    output += 'echo -e "-> IndelRealigner <-"\n'
+	    output += 'java -Xmx72g -jar $GATK -T IndelRealigner -I '+self.rginfobam+' -R '+self.gatkreference+' -targetIntervals '+self.realtargets
+	    output += ' -o '+self.realignedbam
+	    output += ' -known $GATKbundle/Mills_and_1000G_gold_standard.indels.b37.vcf'
+	    output += ' -known $GATKbundle/1000G_phase1.indels.b37.vcf;'
+	    output += '\n'
+	    output += 'echo "Done. $(date) Running on: $(hostname)"\n'
+	    output += 'echo "$(date) Running on: $(hostname)"\n'
+	    output += 'rm -v '+self.rginfobam+''+'\n'
+
+	    #
+	    # Quality recalibration
+	    #
+	    output += 'echo -e "-> BaseRecalibrator <-"\n'
+	    output += 'java -Xmx72g -jar $GATK -T BaseRecalibrator -I '+self.realignedbam+' -R '+self.gatkreference+' -o '+self.bqsr
+	    output += ' -knownSites $GATKbundle/dbsnp_138.b37.vcf;'
+	    output += '\n'
+	    output += 'echo -e "-> PrintReads <-"\n'
+	    output += 'java -Xmx72g -jar $GATK -T PrintReads -I '+self.realignedbam+' -R '+self.gatkreference+' -BQSR '+self.bqsr+' -o '+self.recalbam+';\n'
+	    output += 'rm -v '+self.realignedbam+''+'\n'
+
+	    #
+	    # Final output and write script to file
+	    #
+	    output += 'echo "Done. $(date) Running on: $(hostname)"\n'
+	    output += 'wait\n'
+	    output += 'echo "$(date) AllDone"\n'
+	    with open(self.realncalscript,'w') as outfile: outfile.write(output)
+
+	def submitScripts(self):
+	    
+	    import subprocess
+	    import sys
+	    
+	    
+	    sys.stderr.write('Placing scripts in jobqueue.\n')
+	    
+	    command = ['sbatch',self.mappingscript]
+	    sbatch = subprocess.Popen( command, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
+	    sbatch_out, errdata = sbatch.communicate()
+	    if sbatch.returncode != 0:
+		    print 'sbatch view Error code', sbatch.returncode, errdata
+		    print sbatch_out
+		    sys.exit()
+	    mapping_jobid = sbatch_out.split('\n')[0].split(' ')[3]
+	    sys.stderr.write('Queued mapping of '+self.sampleid+' with JOBID '+mapping_jobid+'.\n')
+	    
+	    command = ['sbatch','--dependency=afterok:'+str(mapping_jobid),self.realncalscript]
+	    sbatch = subprocess.Popen( command, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
+	    sbatch_out, errdata = sbatch.communicate()
+	    if sbatch.returncode != 0:
+		    print 'sbatch view Error code', sbatch.returncode, errdata
+		    print sbatch_out
+		    sys.exit()
+	    recal_jobid = sbatch_out.split('\n')[0].split(' ')[3]
+	    sys.stderr.write('Queued realignment and recalibration of sample '+self.sampleid+' with JOBID '+str(recal_jobid)+'.\n')
+	    
+	    command = ['sbatch','--dependency=afterok:'+str(recal_jobid),self.qcscript]
+	    sbatch = subprocess.Popen( command, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
+	    sbatch_out, errdata = sbatch.communicate()
+	    if sbatch.returncode != 0:
+		    print 'sbatch view Error code', sbatch.returncode, errdata
+		    print sbatch_out
+		    sys.exit()
+	    sys.stderr.write('Queued qc analysis of '+self.sampleid+'.\n')
+	    
+	    self.jobids = [str(mapping_jobid),str(recal_jobid)]
+
+class SampleCollection(object):
+
+	def __init__(self,samples,basepath,collectionId):
+	    import os
+	    import time
+	    
+
+	    self.samples = samples
+	    self.collectionId = collectionId
+	    self.project = self.samples[0].project
+	    self.reference = self.samples[0].reference
+	    self.bamfiles = ' -I '.join([sample.recalbam for sample in self.samples])
+	    self.jobidDependency = ':'.join([':'.join(sample.jobids) for sample in self.samples])
+
+	    self.path = os.path.abspath(basepath)
+	    self.scriptpath = self.path+'/script'
+
+	    self.hc		= self.scriptpath +'/haplotypeCaller.sh'
+	    self.vqsrindels	= self.scriptpath +'/vqsr.indels.sh'
+	    self.vqsrsnps	= self.scriptpath +'/vqsr.snps.sh'
+
+	def createDirs(self):
+	    import os
+	    try: os.makedirs(self.path)
+	    except OSError:pass
+	    try: os.makedirs(self.scriptpath)
+	    except OSError:pass
+	
+	def makeScript_haplotypeCaller(self):
+	    self.hcParts = []
+	    for part in ['xaa','xab','xac','xad','xae','xaf','xag','xah','xai','xaj','xak','xal','xam','xan','xao','xap','xaq','xar','xas','xat','xau','xav','xaw','xax','xay','xaz','xba','xbb','xbc','xbd','xbe','xbf','xbg','xbh','xbi','xbj','xbk','xbl','xbm','xbn','xbo','xbp','xbq','xbr','xbs','xbt','xbu','xbv','xbw','xbx','xby','xbz','xca','xcb','xcc','xcd','xce','xcf','xcg','xch','xci','xcj','xck','xcl','xcm','xcn','xco','xcp','xcq','xcr','xcs','xct','xcu','xcv','xcw','xcx','xcy','xcz','xda','xdb','xdc','xdd','xde','xdf','xdg','xdh','xdi','xdj','xdk','xdl','xdm','xdn','xdo','xdp','xdq','xdr','xds','xdt','xdu','xdv','xdw','xdx','xdy','xdz','xea','xeb','xec','xed','xee','xef','xeg','xeh','xei','xej','xek','xel','xem','xen','xeo','xep','xeq','xer','xes','xet','xeu','xev','xew','xex','xey','xez','xfa','xfb','xfc','xfd','xfe','xff','xfg','xfh','xfi','xfj','xfk','xfl','xfm','xfn','xfo','xfp','xfq','xfr','xfs','xft','xfu','xfv','xfw','xfx','xfy','xfz','xga','xgb','xgc','xgd','xge','xgf','xgg','xgh','xgi','xgj','xgk','xgl','xgm','xgn','xgo','xgp','xgq','xgr','xgs','xgt','xgu','xgv','xgw','xgx','xgy','xgz','xha','xhb','xhc','xhd','xhe','xhf','xhg','xhh','xhi','xhj','xhk','xhl','xhm','xhn','xho','xhp','xhq','xhr','xhs','xht']:
+		output = '#!/bin/bash -l'+'\n'
+		output += '#SBATCH -A '+self.project+'\n'
+		output += '#SBATCH -n 16 -p node'+'\n'
+		output += '#SBATCH -t 10:00:00'+'\n'
+		output += '#SBATCH -J '+part+'.haplotypecaller'+'\n'
+		output += '#SBATCH -e '+self.path+'/stderr.haplotypecaller.'+part+'.txt'+'\n'
+		output += '#SBATCH -o '+self.path+'/stdout.haplotypecaller.'+part+'.txt'+'\n'
+		output += '#SBATCH --mail-type=All'+'\n'
+		output += '#SBATCH --mail-user=erik.borgstrom@scilifelab.se'+'\n'
+		output += 'echo "$(date) Running on: $(hostname)"'+'\n'
+		output += 'echo "$(date) Running on: $(hostname)" >&2'+'\n'
+		output += 'cd '+self.path+'\n'
+		output += 'picard=/proj/b2011168/private/bin/picard-tools-1.63'+'\n'
+		output += 'GATK=~/singleFatCellExomeAnalysis/bin/GenomeAnalysisTK-2.8-1-g932cd3a/GenomeAnalysisTK.jar'+'\n'
+		output += 'GATKbundle=~/singleFatCellExomeAnalysis/references/GATKbundle/'+'\n'
+		output += 'echo "$(date) Running on: $(hostname)"'+'\n'
+		
+		if part == 'xaa': output += 'python ~/singleFatCellExomeAnalysis/script/mappingStatsForExcel.py '+self.samples[0].basepath+'/ '+'\n'
+		output += 'echo "HC" '+'\n'
+		
+		output += 'java -Xmx120g -jar $GATK -nct 16 '
+		output += '-T HaplotypeCaller '
+		output += '-R '+self.reference+' '
+		output += '-I '+self.bamfiles+' '
+		output += '--genotyping_mode DISCOVERY '
+		output += '-stand_emit_conf 10 '
+		output += '-stand_call_conf 30 '
+		output += '-L ~/singleFatCellExomeAnalysis/references/truseq_exome_targeted_regions.part'+part+'.bed '
+		output += '--dbsnp $GATKbundle/dbsnp_138.b37.vcf '
+		output += '-o raw_variants.part.'+part+'.vcf &'+'\n'
+		output += 'wait'+'\n'
+		output += 'echo "Done. $(date) Running on: $(hostname)"'+'\n'
+		output += 'wait'+'\n'
+		output += 'echo "$(date) AllDone"'+'\n'
+		output += 'echo "$(date) AllDone" >&2'+'\n\n\n'
+		with open(self.hc+'.'+part,'w') as outfile: outfile.write(output)
+		self.hcParts.append(self.hc+'.'+part)
+
+	def makeScript_vqsr_indels(self):
+	    output = '#! /bin/bash -l'+'\n'
+	    output += '#SBATCH -A '+self.project+'\n'
+	    output += '#SBATCH -n 16 -p node'+'\n'
+	    output += '#SBATCH -t 72:00:00'+'\n'
+	    output += '#SBATCH -J VQSR.INDELs'+'\n'
+	    output += '#SBATCH -e '+self.path+'/stderr.vqsr.INDELs.txt'+'\n'
+	    output += '#SBATCH -o '+self.path+'/stdout.vqsr.INDELs.txt'+'\n'
+	    output += '#SBATCH --mail-type=All'+'\n'
+	    output += '#SBATCH --mail-user=erik.borgstrom@scilifelab.se'+'\n'
+	    output += 'echo "$(date) Running on: $(hostname)"'+'\n'
+	    output += 'echo "$(date) Running on: $(hostname)" >&2'+'\n'
+	    output += 'cd '+self.path+'\n'
+	    output += 'reference='+self.reference+'\n'
+	    output += 'picard=/proj/b2011168/private/bin/picard-tools-1.63'+'\n'
+	    output += 'GATK=~/singleFatCellExomeAnalysis/bin/GenomeAnalysisTK-2.8-1-g932cd3a/GenomeAnalysisTK.jar'+'\n'
+	    output += 'GATKbundle=~/singleFatCellExomeAnalysis/references/GATKbundle/'+'\n'
+	    output += 'echo "$(date) Running on: $(hostname)"'+'\n'
+	    output += 'echo "VQSR" '+'\n'
+	    output += 'java -Xmx24g -jar $GATK \\'+'\n'
+	    output += '   -T VariantRecalibrator \\'+'\n'
+	    output += '   -nt 16 \\'+'\n'
+	    output += '   -R $reference \\'+'\n'
+	    output += '   -input recalibrated_snps_raw_indels.vcf \\'+'\n'
+	    output += '   -recalFile indels.raw.recal \\'+'\n'
+	    output += '   -tranchesFile indels.raw.tranches \\'+'\n'
+	    output += '   -resource:mills,known=true,training=true,truth=true,prior=12.0 $GATKbundle/Mills_and_1000G_gold_standard.indels.b37.vcf \\'+'\n'
+	    output += '   -an DP -an FS -an MQRankSum -an ReadPosRankSum \\'+'\n'
+	    output += '   -tranche 100.0 -tranche 99.9 -tranche 99.0 -tranche 90.0 \\'+'\n'
+	    output += '   --maxGaussians 4 \\'+'\n'
+	    output += '   -rscriptFile recalibrate_INDEL_plots.R \\'+'\n'
+	    output += '   -mode INDEL'+'\n'
+	    output += 'echo "Done. $(date) Running on: $(hostname)"'+'\n'
+	    output += 'wait'+'\n'
+	    output += 'echo "$(date) Running on: $(hostname)"'+'\n'
+	    output += 'echo "---> apply recal <---"'+'\n'
+	    output += 'java -Xmx72g -jar $GATK \\'+'\n'
+	    output += '   -nt 16 \\'+'\n'
+	    output += '   -T ApplyRecalibration \\'+'\n'
+	    output += '   -R $reference \\'+'\n'
+	    output += '   -input recalibrated_snps_raw_indels.vcf \\'+'\n'
+	    output += '   -tranchesFile indels.raw.tranches \\'+'\n'
+	    output += '   -recalFile indels.raw.recal \\'+'\n'
+	    output += '   -o indels.recalibrated.vcf \\'+'\n'
+	    output += '   --ts_filter_level 99.0 \\'+'\n'
+	    output += '   -mode INDEL'+'\n'
+	    output += 'echo "Done. $(date) Running on: $(hostname)"'+'\n'
+	    output += 'wait'+'\n'
+	    output += 'echo $file; done'+'\n'
+	    output += 'echo "$(date) AllDone"'+'\n'
+	    output += 'echo "$(date) AllDone" >&2'+'\n'
+	    with open(self.vqsrindels,'w') as outfile: outfile.write(output)
+
+	def makeScript_vqsr_snps(self):
+	    output = '#! /bin/bash -l'+'\n'
+	    output += '#SBATCH -A '+self.project+'\n'
+	    output += '#SBATCH -n 16 -p node'+'\n'
+	    output += '#SBATCH -t 72:00:00'+'\n'
+	    output += '#SBATCH -J VQSR.SNPs'+'\n'
+	    output += '#SBATCH -e '+self.path+'/stderr.vqsr.SNPs.txt'+'\n'
+	    output += '#SBATCH -o '+self.path+'/stdout.vqsr.SNPs.txt'+'\n'
+	    output += '#SBATCH --mail-type=All'+'\n'
+	    output += '#SBATCH --mail-user=erik.borgstrom@scilifelab.se'+'\n'
+	    output += 'echo "$(date) Running on: $(hostname)"'+'\n'
+	    output += 'echo "$(date) Running on: $(hostname)" >&2'+'\n'
+	    output += 'cd '+self.path+'\n'
+	    output += 'reference='+self.reference+'\n'
+	    output += 'picard=/proj/b2011168/private/bin/picard-tools-1.63'+'\n'
+	    output += 'GATK=~/singleFatCellExomeAnalysis/bin/GenomeAnalysisTK-2.8-1-g932cd3a/GenomeAnalysisTK.jar'+'\n'
+	    output += 'GATKbundle=~/singleFatCellExomeAnalysis/references/GATKbundle/'+'\n'
+	    output += 'echo "$(date) Running on: $(hostname)"'+'\n'
+	    output += '\n'
+	    output += 'echo "MERGING VCF PARTS" '+'\n'
+	    output += 'grep -P "^#" raw_variants.part.xaa.vcf > raw_variants.vcf;'+'\n'
+	    output += 'for file in raw_variants.part.x*.vcf;'
+	    output += 'do grep -vP "^#" $file >> raw_variants.vcf;'
+	    output += 'echo $file;'
+	    output += 'done;\n'
+	    output += 'grep -P "#" raw_variants.vcf > raw_variants.SORTED.vcf;'+'\n'
+	    output += 'grep -vP "#" raw_variants.vcf | sort -Vk1,2 >> raw_variants.SORTED.vcf'+'\n'
+	    output += 'mv -v raw_variants.SORTED.vcf raw_variants.vcf'+'\n'
+	    output += '\n'
+	    output += 'echo "---> VQSR <---" '+'\n'
+	    output += 'echo "---> VQSR <---" 1>&2'+'\n'
+	    output += 'java -Xmx60g -jar $GATK -T VariantRecalibrator '
+	    output += '-R $reference -input raw_variants.vcf'
+	    output += ' -resource:hapmap,known=false,training=true,truth=true,prior=15.0'+' $GATKbundle/hapmap_3.3.b37.vcf'
+	    output += ' -resource:omni,known=false,training=true,truth=false,prior=12.0' +' $GATKbundle/1000G_omni2.5.b37.vcf'
+	    output += ' -resource:dbsnp,known=true,training=false,truth=false,prior=6.0' +' $GATKbundle/dbsnp_138.b37.vcf'
+	    output += ' -an QD -an MQRankSum -an ReadPosRankSum -an FS -an DP -mode SNP'
+	    output += ' -tranche 100.0 -tranche 99.9 -tranche 99.0 -tranche 90.0'
+	    output += ' -minNumBad 1000'
+	    output += ' -recalFile recalibrate_SNP.recal '
+	    output += ' -tranchesFile recalibrate_SNP.tranches '
+	    output += ' -rscriptFile recalibrate_SNP_plots.R '
+	    output += '\n'
+	    output += 'echo "Done. $(date) Running on: $(hostname)"'+'\n'
+	    output += 'wait'+'\n'
+	    output += 'echo "-----"'+'\n'
+	    output +='\n'
+	    output += 'echo "$(date) Running on: $(hostname)"'+'\n'
+	    output +='\n'
+	    output +='\n'
+	    output += 'echo "---> apply recal <---" '+'\n'
+	    output += 'echo "---> apply recal <---" 1>&2'+'\n'
+	    output +='\n'
+	    output += 'java -Xmx60g -jar $GATK '
+	    output += '-T ApplyRecalibration -R $reference '
+	    output += ' -input raw_variants.vcf '
+	    output += ' -recalFile recalibrate_SNP.recal '
+	    output += ' -tranchesFile recalibrate_SNP.tranches '
+	    output += ' -o recalibrated_snps_raw_indels.vcf '
+	    output += ' --ts_filter_level 99.0 -mode SNP'+'\n'
+	    output +='\n'
+	    output +='python ~/singleFatCellExomeAnalysis/script/filterVariants '+self.collectionId+'.Donor '+self.collectionId+'.Patient recalibrated_snps_raw_indels.vcf\n'
+	    output +='\n'
+	    output += 'echo "Done. $(date) Running on: $(hostname)"'+'\n'
+	    output += 'wait'+'\n'
+	    output += 'echo "$(date) AllDone"'+'\n'
+	    output += 'echo "$(date) AllDone" >&2'+'\n'
+	    with open(self.vqsrsnps,'w') as outfile: outfile.write(output)
+
+	def submitScripts(self):
+	    
+	    import subprocess
+	    import sys
+	    
+	    
+	    sys.stderr.write('Placing scripts in jobqueue for '+self.collectionId+'.\n')
+	    
+	    hc_jobids = []
+	    for part in self.hcParts:
+		command = ['sbatch','--dependency=afterok:'+self.jobidDependency,part]
+		sbatch = subprocess.Popen( command, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
+		sbatch_out, errdata = sbatch.communicate()
+		if sbatch.returncode != 0:
+			print 'sbatch view Error code', sbatch.returncode, errdata
+			print sbatch_out
+			sys.exit()
+		hc_jobids.append(sbatch_out.split('\n')[0].split(' ')[3])
+		sys.stderr.write('Queued a haplotypeCalling part for '+self.collectionId+' with JOBID '+str(hc_jobids[-1])+'.\n')
+	    
+	    command = ['sbatch','--dependency=afterok:'+':'.join([str(hc_jobid) for hc_jobid in hc_jobids[-100:]]),self.vqsrsnps]
+	    sbatch = subprocess.Popen( command, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
+	    sbatch_out, errdata = sbatch.communicate()
+	    if sbatch.returncode != 0:
+		    print 'sbatch view Error code', sbatch.returncode, errdata
+		    print sbatch_out
+		    sys.exit()
+	    vqsrSNP_jobid = sbatch_out.split('\n')[0].split(' ')[3]
+	    sys.stderr.write('Queued vqsr for SNPs for '+self.collectionId+' with JOBID '+str(vqsrSNP_jobid)+'.\n')
+	    
+	    command = ['sbatch','--dependency=afterok:'+str(vqsrSNP_jobid),self.vqsrindels]
+	    sbatch = subprocess.Popen( command, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
+	    sbatch_out, errdata = sbatch.communicate()
+	    if sbatch.returncode != 0:
+		    print 'sbatch view Error code', sbatch.returncode, errdata
+		    print sbatch_out
+		    sys.exit()
+	    sys.stderr.write('Queued vqsrindels script for '+self.collectionId+'.\n')
+
+if __name__ == "__main__":
+    main()
