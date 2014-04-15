@@ -27,8 +27,8 @@ def main():
     
     variations, samples = getVariations(infiles,printVcfLines)
     samples = sorted_nicely(samples)
-    piechart = parseVariations(variations,samples)
-    makeGraphics(samples,piechart)
+    piechart,csvVarCount = parseVariations(variations,samples)
+    makeGraphics(samples,piechart,csvVarCount)
 
 def sorted_nicely( l ): 
     """ Sort the given iterable in the way that humans expect.""" 
@@ -94,7 +94,9 @@ def getVariations(infiles,printVcfLines):
 
 def parseVariations(variations,samples):
 
-    outputMode = int(sys.argv[2])
+    donId = sys.argv[1]
+    patId = sys.argv[2]
+
     variationsTableTsv = open('variationsTable.tsv','w')
     variationsBySample = open('variationsBySample.tsv','w')
     topVariationsBySample = open('topVariationsBySample.tsv','w')
@@ -254,9 +256,12 @@ def parseVariations(variations,samples):
     variationsTableTsv.close()
     variationsBySample.close()
     
-    return piechart
+    return piechart,csvVarCount
 
-def makeGraphics(samples,piechart):
+def makeGraphics(samples,piechart,csvVarCount):
+
+    donId = sys.argv[1]
+    patId = sys.argv[2]
 
     patlable = 'Patient'
     donlable = 'Donor'
