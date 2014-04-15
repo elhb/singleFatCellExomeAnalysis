@@ -24,7 +24,7 @@ for sample in samples:
     # Read infiles
     #
     markDups = open(path+sample+'/'+sample+'.MarkDupsMetrix','r')
-    hsMetrix = open(path+sample+'/'+sample+'.recal.final.bam.hs_metrics.summary.txt','r')
+    hsMetrix = open(path+sample+'/'+sample+'.recalibrated.final.bam.hs_metrics.summary.txt','r')
     
     dupsLine = markDups.read().split('\n')[7].rstrip()
     hsLine = hsMetrix.read().split('\n')[7].rstrip()
