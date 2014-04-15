@@ -52,8 +52,8 @@ infilesBySample = {
 	    'bm1.Patient'      : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.Patient.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.Patient.r2.fq.gz' ]
 	},
 	'bm47':{
-	    'bm47.Donor'        : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm1.Donor.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm1.Donor.r2.fq.gz' ],
-	    'bm47.Patient'      : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm1.Patient.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm1.Patient.r2.fq.gz' ]	    
+	    'bm47.Donor'        : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.Donor.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.Donor.r2.fq.gz' ],
+	    'bm47.Patient'      : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.Patient.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.Patient.r2.fq.gz' ]	    
 	}
     }
 
@@ -453,7 +453,7 @@ class SampleCollection(object):
 		output += 'GATKbundle=~/singleFatCellExomeAnalysis/references/GATKbundle/'+'\n'
 		output += 'echo "$(date) Running on: $(hostname)"'+'\n'
 		
-		if part == 'xaa': output += 'python ~/singleFatCellExomeAnalysis/script/mappingStatsForExcel.py '+self.samples[0].basepath+'/ '+'\n'
+		if part == 'xaa': output += 'python ~/singleFatCellExomeAnalysis/analysisScripts/mappingStatsForExcel.py '+self.samples[0].basepath+'/ '+'\n'
 		output += 'echo "HC" '+'\n'
 		
 		output += 'java -Xmx120g -jar $GATK -nct 16 '
@@ -588,7 +588,7 @@ class SampleCollection(object):
 	    output += ' -o recalibrated_snps_raw_indels.vcf '
 	    output += ' --ts_filter_level 99.0 -mode SNP'+'\n'
 	    output +='\n'
-	    output +='python ~/singleFatCellExomeAnalysis/script/filterVariants '+self.collectionId+'.Donor '+self.collectionId+'.Patient recalibrated_snps_raw_indels.vcf\n'
+	    output +='python ~/singleFatCellExomeAnalysis/analysisScripts/filterVariants '+self.collectionId+'.Donor '+self.collectionId+'.Patient recalibrated_snps_raw_indels.vcf\n'
 	    output +='\n'
 	    output += 'echo "Done. $(date) Running on: $(hostname)"'+'\n'
 	    output += 'wait'+'\n'
