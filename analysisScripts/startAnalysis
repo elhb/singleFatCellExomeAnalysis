@@ -33,7 +33,9 @@ infilesBySample = {
 	    'bm55.71'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.71.r1.fastq.gz','~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.71.r2.fastq.gz' ],
 	    'bm55.neg'          : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.neg.r1.fastq.gz','~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.neg.r2.fastq.gz' ],
 	    'bm55.Donor'        : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm55.Concat/DON.r1.fastq.gz','~/singleFatCellExomeAnalysis/data/bm55.Concat/DON.r2.fastq.gz' ],
-	    'bm55.Patient'      : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm55.Concat/PAT.r1.fastq.gz','~/singleFatCellExomeAnalysis/data/bm55.Concat/PAT.r2.fastq.gz' ]
+	    'bm55.Patient'      : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm55.Concat/PAT.r1.fastq.gz','~/singleFatCellExomeAnalysis/data/bm55.Concat/PAT.r2.fastq.gz' ],
+	    'bm55.A1'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.A1.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.A1.r2.fq.gz'],
+	    'bm55.A2'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.A2.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.A2.r2.fq.gz']
 	},
 	'bm1':{
 	    'bm1.1'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.1.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.1.r2.fq.gz' ],
@@ -49,11 +51,61 @@ infilesBySample = {
 	    'bm1.12'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.12.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.12.r2.fq.gz' ],
 	    'bm1.13'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.13.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.13.r2.fq.gz' ],
 	    'bm1.Donor'        : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.Donor.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.Donor.r2.fq.gz' ],
-	    'bm1.Patient'      : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.Patient.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.Patient.r2.fq.gz' ]
+	    'bm1.Patient'      : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.Patient.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.Patient.r2.fq.gz' ],
+	    'bm1.14'		: [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.14.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.14.r2.fq.gz'],
+	    'bm1.15'		: [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.15.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.15.r2.fq.gz'],
+	    'bm1.16'		: [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.16.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.16.r2.fq.gz'],
+	    'bm1.17'		: [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.17.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.17.r2.fq.gz'],
+	    'bm1.18'		: [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.18.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.18.r2.fq.gz'],
+	    'bm1.19'		: [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.19.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.19.r2.fq.gz'],
+	    'bm1.20'		: [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.20.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.20.r2.fq.gz'],
+	    'bm1.21'		: [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.21.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.21.r2.fq.gz'],
+	    'bm1.24'		: [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.24.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.24.r2.fq.gz'],
+	    'bm1.25'		: [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.25.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.25.r2.fq.gz'],
+	    'bm1.26'		: [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.26.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.26.r2.fq.gz'],
+	    'bm1.28'		: [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.28.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.28.r2.fq.gz'],
+	    'bm1.29'		: [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.29.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.29.r2.fq.gz'],
+	    'bm1.30'		: [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.30.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.30.r2.fq.gz'],
+	    'bm1.32'		: [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.32.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.32.r2.fq.gz'],
+	    'bm1.33'		: [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.33.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.33.r2.fq.gz'],
+	    'bm1.35'		: [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.35.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.35.r2.fq.gz'],
+	    'bm1.37'		: [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.37.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.37.r2.fq.gz'],
+	    'bm1.A1'		: [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.A1.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.A1.r2.fq.gz'],
+	    'bm1.A2'		: [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.A2.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.A2.r2.fq.gz'],
+	    'bm1.WGAneg'	: [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.WGAneg.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.WGAneg.r2.fq.gz']
 	},
 	'bm47':{
 	    'bm47.Donor'        : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.Donor.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.Donor.r2.fq.gz' ],
-	    'bm47.Patient'      : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.Patient.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.Patient.r2.fq.gz' ]	    
+	    'bm47.Patient'      : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.Patient.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.Patient.r2.fq.gz' ],
+	    'bm47.13'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.13.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.13.r2.fq.gz'],
+	    'bm47.16'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.16.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.16.r2.fq.gz'],
+	    'bm47.18'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.18.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.18.r2.fq.gz'],
+	    'bm47.21'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.21.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.21.r2.fq.gz'],
+	    'bm47.25'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.25.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.25.r2.fq.gz'],
+	    'bm47.26'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.26.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.26.r2.fq.gz'],
+	    'bm47.27'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.27.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.27.r2.fq.gz'],
+	    'bm47.30'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.30.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.30.r2.fq.gz'],
+	    'bm47.35'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.35.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.35.r2.fq.gz'],
+	    'bm47.38'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.38.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.38.r2.fq.gz'],
+	    'bm47.42'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.42.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.42.r2.fq.gz'],
+	    'bm47.43'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.43.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.43.r2.fq.gz'],
+	    'bm47.46'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.46.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.46.r2.fq.gz'],
+	    'bm47.47'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.47.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.47.r2.fq.gz'],
+	    'bm47.50'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.50.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.50.r2.fq.gz'],
+	    'bm47.53'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.53.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.53.r2.fq.gz'],
+	    'bm47.54'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.54.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.54.r2.fq.gz'],
+	    'bm47.55'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.55.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.55.r2.fq.gz'],
+	    'bm47.57'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.57.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.57.r2.fq.gz'],
+	    'bm47.58'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.58.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.58.r2.fq.gz'],
+	    'bm47.59'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.59.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.59.r2.fq.gz'],
+	    'bm47.64'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.64.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.64.r2.fq.gz'],
+	    'bm47.65'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.65.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.65.r2.fq.gz'],
+	    'bm47.66'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.66.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.66.r2.fq.gz'],
+	    'bm47.68'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.68.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.68.r2.fq.gz'],
+	    'bm47.69'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.69.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.69.r2.fq.gz'],
+	    'bm47.6'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.6.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.6.r2.fq.gz'],
+	    'bm47.7'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.7.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.7.r2.fq.gz'],
+	    'bm47.8'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.8.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.8.r2.fq.gz']
 	}
     }
 
@@ -161,7 +213,7 @@ class Sample(object):
 	    output = ''
 	    output += '#! /bin/bash -l'+'\n'
 	    output += '#SBATCH -A '+self.project+'\n'
-	    output += '#SBATCH -n 16 -p node'+'\n'
+	    output += '#SBATCH -n 1 -p core'+'\n'
 	    output += '#SBATCH -t 72:00:00'+'\n'
 	    output += '#SBATCH -J '+self.sampleid+'.QC'+'\n'
 	    output += '#SBATCH -e '+self.path+'/stderr.QC.txt'+'\n'
@@ -185,7 +237,7 @@ class Sample(object):
 	    #
 	    output += 'echo "$(date) Running on: $(hostname)"'+'\n'
 	    output += 'echo -e "-> CallableLoci <-"'+'\n'
-	    output += 'java -Xmx60g -jar $GATK -T CallableLoci -I $file -summary $file.summary.txt -o $file.callableLoci.bed -R '+self.gatkreference+' &'+'\n'
+	    output += 'java -Xmx5g -jar $GATK -T CallableLoci -I $file -summary $file.summary.txt -o $file.callableLoci.bed -R '+self.gatkreference+' &'+'\n'
 	    output += 'echo "Done. $(date) Running on: $(hostname)"'+'\n'
 	    output += 'echo'+'\n'
 	    output += 'echo "-----"'+'\n'
@@ -211,7 +263,7 @@ class Sample(object):
 	    #
 	    # picard HS metrics
 	    #
-	    output += 'java -Xmx60g -jar $picard/CalculateHsMetrics.jar BAIT_INTERVALS=~/singleFatCellExomeAnalysis/references/truseq_exome_targeted_regions.hg19.bed.chr.columnReOrdered.withHeader.chrRem TARGET_INTERVALS=~/singleFatCellExomeAnalysis/references/truseq_exome_targeted_regions.hg19.bed.chr.columnReOrdered.withHeader.chrRem INPUT=$file OUTPUT=$file.hs_metrics.summary.txt PER_TARGET_COVERAGE=$file.hs_metrics.perTargetCoverage.txt REFERENCE_SEQUENCE='+self.reference+'\n'
+	    output += 'java -Xmx5g -jar $picard/CalculateHsMetrics.jar BAIT_INTERVALS=~/singleFatCellExomeAnalysis/references/truseq_exome_targeted_regions.hg19.bed.chr.columnReOrdered.withHeader.chrRem TARGET_INTERVALS=~/singleFatCellExomeAnalysis/references/truseq_exome_targeted_regions.hg19.bed.chr.columnReOrdered.withHeader.chrRem INPUT=$file OUTPUT=$file.hs_metrics.summary.txt PER_TARGET_COVERAGE=$file.hs_metrics.perTargetCoverage.txt REFERENCE_SEQUENCE='+self.reference+'\n'
 
 	    #
 	    # Final output and write script to file
@@ -438,9 +490,9 @@ class SampleCollection(object):
 	    for part in ['xaa','xab','xac','xad','xae','xaf','xag','xah','xai','xaj','xak','xal','xam','xan','xao','xap','xaq','xar','xas','xat','xau','xav','xaw','xax','xay','xaz','xba','xbb','xbc','xbd','xbe','xbf','xbg','xbh','xbi','xbj','xbk','xbl','xbm','xbn','xbo','xbp','xbq','xbr','xbs','xbt','xbu','xbv','xbw','xbx','xby','xbz','xca','xcb','xcc','xcd','xce','xcf','xcg','xch','xci','xcj','xck','xcl','xcm','xcn','xco','xcp','xcq','xcr','xcs','xct','xcu','xcv','xcw','xcx','xcy','xcz','xda','xdb','xdc','xdd','xde','xdf','xdg','xdh','xdi','xdj','xdk','xdl','xdm','xdn','xdo','xdp','xdq','xdr','xds','xdt','xdu','xdv','xdw','xdx','xdy','xdz','xea','xeb','xec','xed','xee','xef','xeg','xeh','xei','xej','xek','xel','xem','xen','xeo','xep','xeq','xer','xes','xet','xeu','xev','xew','xex','xey','xez','xfa','xfb','xfc','xfd','xfe','xff','xfg','xfh','xfi','xfj','xfk','xfl','xfm','xfn','xfo','xfp','xfq','xfr','xfs','xft','xfu','xfv','xfw','xfx','xfy','xfz','xga','xgb','xgc','xgd','xge','xgf','xgg','xgh','xgi','xgj','xgk','xgl','xgm','xgn','xgo','xgp','xgq','xgr','xgs','xgt','xgu','xgv','xgw','xgx','xgy','xgz','xha','xhb','xhc','xhd','xhe','xhf','xhg','xhh','xhi','xhj','xhk','xhl','xhm','xhn','xho','xhp','xhq','xhr','xhs','xht']:
 		output = '#!/bin/bash -l'+'\n'
 		output += '#SBATCH -A '+self.project+'\n'
-		output += '#SBATCH -n 16 -p node'+'\n'
+		output += '#SBATCH -n 1 -p core  --mem-per-cpu=6000'+'\n'
 		output += '#SBATCH -t 10:00:00'+'\n'
-		output += '#SBATCH -J '+part+'.haplotypecaller'+'\n'
+		output += '#SBATCH -J '+self.collectionId+'.'+part+'.haplotypecaller'+'\n'
 		output += '#SBATCH -e '+self.path+'/stderr.haplotypecaller.'+part+'.txt'+'\n'
 		output += '#SBATCH -o '+self.path+'/stdout.haplotypecaller.'+part+'.txt'+'\n'
 		output += '#SBATCH --mail-type=All'+'\n'
@@ -452,11 +504,12 @@ class SampleCollection(object):
 		output += 'GATK=~/singleFatCellExomeAnalysis/bin/GenomeAnalysisTK-2.8-1-g932cd3a/GenomeAnalysisTK.jar'+'\n'
 		output += 'GATKbundle=~/singleFatCellExomeAnalysis/references/GATKbundle/'+'\n'
 		output += 'echo "$(date) Running on: $(hostname)"'+'\n'
+		output += 'workon py2.7'+'\n'
 		
 		if part == 'xaa': output += 'python ~/singleFatCellExomeAnalysis/analysisScripts/mappingStatsForExcel.py '+self.samples[0].basepath+'/ '+'\n'
 		output += 'echo "HC" '+'\n'
 		
-		output += 'java -Xmx120g -jar $GATK -nct 16 '
+		output += 'java -Xmx5g -jar $GATK '#-nct 16 '
 		output += '-T HaplotypeCaller '
 		output += '-R '+self.reference+' '
 		output += '-I '+self.bamfiles+' '
@@ -479,7 +532,7 @@ class SampleCollection(object):
 	    output += '#SBATCH -A '+self.project+'\n'
 	    output += '#SBATCH -n 16 -p node'+'\n'
 	    output += '#SBATCH -t 72:00:00'+'\n'
-	    output += '#SBATCH -J VQSR.INDELs'+'\n'
+	    output += '#SBATCH -J '+self.collectionId+'.VQSR.INDELs'+'\n'
 	    output += '#SBATCH -e '+self.path+'/stderr.vqsr.INDELs.txt'+'\n'
 	    output += '#SBATCH -o '+self.path+'/stdout.vqsr.INDELs.txt'+'\n'
 	    output += '#SBATCH --mail-type=All'+'\n'
@@ -487,6 +540,7 @@ class SampleCollection(object):
 	    output += 'echo "$(date) Running on: $(hostname)"'+'\n'
 	    output += 'echo "$(date) Running on: $(hostname)" >&2'+'\n'
 	    output += 'cd '+self.path+'\n'
+	    output += 'workon py2.7'+'\n'
 	    output += 'reference='+self.reference+'\n'
 	    output += 'picard=/proj/b2011168/private/bin/picard-tools-1.63'+'\n'
 	    output += 'GATK=~/singleFatCellExomeAnalysis/bin/GenomeAnalysisTK-2.8-1-g932cd3a/GenomeAnalysisTK.jar'+'\n'
@@ -522,7 +576,7 @@ class SampleCollection(object):
 	    output += '   -mode INDEL'+'\n'
 	    output += 'echo "Done. $(date) Running on: $(hostname)"'+'\n'
 	    output += 'wait'+'\n'
-	    output += 'echo $file; done'+'\n'
+	    output += 'echo $file;'+'\n'
 	    output += 'echo "$(date) AllDone"'+'\n'
 	    output += 'echo "$(date) AllDone" >&2'+'\n'
 	    with open(self.vqsrindels,'w') as outfile: outfile.write(output)
@@ -532,7 +586,7 @@ class SampleCollection(object):
 	    output += '#SBATCH -A '+self.project+'\n'
 	    output += '#SBATCH -n 16 -p node'+'\n'
 	    output += '#SBATCH -t 72:00:00'+'\n'
-	    output += '#SBATCH -J VQSR.SNPs'+'\n'
+	    output += '#SBATCH -J '+self.collectionId+'.VQSR.SNPs'+'\n'
 	    output += '#SBATCH -e '+self.path+'/stderr.vqsr.SNPs.txt'+'\n'
 	    output += '#SBATCH -o '+self.path+'/stdout.vqsr.SNPs.txt'+'\n'
 	    output += '#SBATCH --mail-type=All'+'\n'
@@ -540,6 +594,7 @@ class SampleCollection(object):
 	    output += 'echo "$(date) Running on: $(hostname)"'+'\n'
 	    output += 'echo "$(date) Running on: $(hostname)" >&2'+'\n'
 	    output += 'cd '+self.path+'\n'
+	    output += 'workon py2.7'+'\n'
 	    output += 'reference='+self.reference+'\n'
 	    output += 'picard=/proj/b2011168/private/bin/picard-tools-1.63'+'\n'
 	    output += 'GATK=~/singleFatCellExomeAnalysis/bin/GenomeAnalysisTK-2.8-1-g932cd3a/GenomeAnalysisTK.jar'+'\n'
