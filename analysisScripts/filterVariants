@@ -97,9 +97,9 @@ def parseVariations(variations,samples):
     donId = sys.argv[1]
     patId = sys.argv[2]
 
-    variationsTableTsv = open('variationsTable.tsv','w')
-    variationsBySample = open('variationsBySample.tsv','w')
-    topVariationsBySample = open('topVariationsBySample.tsv','w')
+    variationsTableTsv = open(samples[0].split('.')[0]+'.variationsTable.tsv','w')
+    variationsBySample = open(samples[0].split('.')[0]+'.variationsBySample.tsv','w')
+    topVariationsBySample = open(samples[0].split('.')[0]+'.topVariationsBySample.tsv','w')
     varsByDP = {}
     samplesByDP = {}
     for sample in samples: varsByDP[sample] = {}; samplesByDP[sample] = []
@@ -124,18 +124,16 @@ def parseVariations(variations,samples):
     variationsBySample.write('\n')
     topVariationsBySample.write('\n')
         
+    patientDonorPossibleVariants = 0
     csvVarCount = 0
     for varID, variation in variations.iteritems():
         
         #
         # filtration
         #
-        
-        #skip if only two samples have data
-        if len(variation) <= 2: continue
-        
+                
         #skip if we don't have genotypes for both pat and don
-        elif patId not in variation or donId not in variation: continue
+        if patId not in variation or donId not in variation: continue
         
         #skip if there is no diff betwen pat and don
         elif variation[patId]['GT'] == variation[donId]['GT']: continue
@@ -159,6 +157,12 @@ def parseVariations(variations,samples):
         # if variant pass all filters
         #
         else:
+            
+            patientDonorPossibleVariants += 1
+            
+            #skip if only two samples have data
+            if len(variation) <= 2: continue
+
             
             # classify based on sample called genotype and patient and donor genotypes
             whoAmI = {variation[patId]['GT']:'PAT',variation[donId]['GT']:'DON'}
@@ -248,13 +252,15 @@ def parseVariations(variations,samples):
     else:
         for row in range(len(samplesByDP[samples[0]])): topVariationsBySample.write(''.join([samplesByDP[sample][row] for sample in samples])[1:]+'\n')
     
-    tempfile = open('variationsTable.csv','w')
+    tempfile = open(samples[0].split('.')[0]+'.variationsTable.csv','w')
     tempfile.write(csv)
     tempfile.close()
     
     topVariationsBySample.close()
     variationsTableTsv.close()
     variationsBySample.close()
+
+    print 'There are ',patientDonorPossibleVariants, ' variations where patient and donor are differing homozygous and over cutoff values.'
     
     return piechart,csvVarCount
 
@@ -276,7 +282,7 @@ def makeGraphics(samples,piechart,csvVarCount):
     print 'making heatmap'
     
     print 'reading csv data'
-    data = pd.read_csv('variationsTable.csv', index_col=0)
+    data = pd.read_csv(samples[0].split('.')[0]+'.variationsTable.csv', index_col=0)
     data = data.transpose()
     print 'done'
     
