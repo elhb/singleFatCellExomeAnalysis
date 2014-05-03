@@ -136,7 +136,9 @@ def main():
 	    sys.stderr.write('Creating scripts for sample '+sampleid+'.\n')
 	    sample.createDirs()
 	    sample.makeScriptMapping()
+	    sample.makeScriptPostMapping()
 	    sample.makeScriptReAlNreCal()
+	    sample.makeScriptpostReAlNreCal()
 	    sample.makeScriptQC()
 	    
 	    # submit scripts
@@ -193,10 +195,12 @@ class Sample(object):
 	    self.bqsr =		self.path+'/'+self.sampleid+'.BQSR.grp'
 	    self.recalbam =	self.path+'/'+self.sampleid+'.recalibrated.final.bam'
 
-	    self.scriptpath =	self.path+'/script'
-	    self.realncalscript= self.scriptpath +'/'+self.sampleid+'.realNrecal.sh'
-	    self.mappingscript = self.scriptpath +'/'+self.sampleid+'.mapping.sh'
-	    self.qcscript = self.scriptpath +'/'+self.sampleid+'.qc.sh'
+	    self.scriptpath            = self.path+'/script'
+	    self.realncalscript        = self.scriptpath +'/'+self.sampleid+'.realNrecal.sh'
+	    self.postrealncalfixscript = self.scriptpath +'/'+self.sampleid+'.postRealNrecalFix.sh'
+	    self.mappingscript         = self.scriptpath +'/'+self.sampleid+'.mapping.sh'
+	    self.postmappingfixscript  = self.scriptpath +'/'+self.sampleid+'.postMappingFix.sh'
+	    self.qcscript              = self.scriptpath +'/'+self.sampleid+'.qc.sh'
 
 	def createDirs(self):
 	    import os
@@ -213,7 +217,7 @@ class Sample(object):
 	    output = ''
 	    output += '#! /bin/bash -l'+'\n'
 	    output += '#SBATCH -A '+self.project+'\n'
-	    output += '#SBATCH -n 1 -p core'+'\n'
+	    output += '#SBATCH -n 4 -p core'+'\n'
 	    output += '#SBATCH -t 72:00:00'+'\n'
 	    output += '#SBATCH -J '+self.sampleid+'.QC'+'\n'
 	    output += '#SBATCH -e '+self.path+'/stderr.QC.txt'+'\n'
@@ -237,7 +241,7 @@ class Sample(object):
 	    #
 	    output += 'echo "$(date) Running on: $(hostname)"'+'\n'
 	    output += 'echo -e "-> CallableLoci <-"'+'\n'
-	    output += 'java -Xmx5g -jar $GATK -T CallableLoci -I $file -summary $file.summary.txt -o $file.callableLoci.bed -R '+self.gatkreference+' &'+'\n'
+	    output += 'java -Xmx5g -jar $GATK -T CallableLoci -I $file -summary $file.summary.txt -o $file.callableLoci.bed -R '+self.gatkreference+' '+'\n'
 	    output += 'echo "Done. $(date) Running on: $(hostname)"'+'\n'
 	    output += 'echo'+'\n'
 	    output += 'echo "-----"'+'\n'
@@ -247,7 +251,7 @@ class Sample(object):
 	    #
 	    output += 'echo "$(date) Running on: $(hostname)"'+'\n'
 	    output += 'echo -e "-> flagstat <-"'+'\n'
-	    output += 'samtools flagstat $file > $file.flagstat.txt &'+'\n'
+	    output += 'samtools flagstat $file > $file.flagstat.txt '+'\n'
 	    output += 'echo "Done. $(date) Running on: $(hostname)"'+'\n'
 	    output += 'echo'+'\n'
 	    output += 'echo "-----"'+'\n'
@@ -257,13 +261,33 @@ class Sample(object):
 	    #
 	    output += 'echo "$(date) Running on: $(hostname)"'+'\n'
 	    output += 'echo -e "-> Pauls qacompute <-"'+'\n'
-	    output += '/proj/b2010052/scripts/qaCompute -d -q 10 -m $file $file.qacompute.out > $file.qacompute.stdout.txt 2> $file.qacompute.stderr.txt &'+'\n'
+	    output += '/proj/b2010052/scripts/qaCompute -d -q 10 -m $file $file.qacompute.out > $file.qacompute.stdout.txt 2> $file.qacompute.stderr.txt '+'\n'
 	    output += 'echo "Done. $(date) Running on: $(hostname)"'+'\n'
 	    
 	    #
 	    # picard HS metrics
 	    #
 	    output += 'java -Xmx5g -jar $picard/CalculateHsMetrics.jar BAIT_INTERVALS=~/singleFatCellExomeAnalysis/references/truseq_exome_targeted_regions.hg19.bed.chr.columnReOrdered.withHeader.chrRem TARGET_INTERVALS=~/singleFatCellExomeAnalysis/references/truseq_exome_targeted_regions.hg19.bed.chr.columnReOrdered.withHeader.chrRem INPUT=$file OUTPUT=$file.hs_metrics.summary.txt PER_TARGET_COVERAGE=$file.hs_metrics.perTargetCoverage.txt REFERENCE_SEQUENCE='+self.reference+'\n'
+
+	    #
+	    # Remove all pcr duplicates (also non properpairs or reads with low quality or not primary alignment though this will have no effect as they are already gone)
+	    #
+	    output += 'samtools view -b -h -f 2 -F 1804 -q 20 $file > '+self.bam+'\n'
+	    
+	    #
+	    # sort the bam file
+	    #
+	    output += 'java -Xmx60g -jar $picard/SortSam.jar \\'+'\n'
+	    output += 'MAX_RECORDS_IN_RAM=2500000 SORT_ORDER=coordinate INPUT='+self.bam+' '
+	    output+='OUTPUT='+self.sortedbam+' CREATE_INDEX=true'+'\n'
+	    output += 'echo -e "bam2sort Done. $(date) Running on: $(hostname)" 1>&2'+'\n'
+	    output += 'rm -v '+self.bam+''+'\n'
+
+	    #
+	    # get back to where you once belonged
+	    #
+	    output += 'mv -v '+self.sortedbam+''+self.recalbam+'\n'
+	    output += 'rm -v '+self.sortedbam+''+'\n'
 
 	    #
 	    # Final output and write script to file
@@ -304,17 +328,54 @@ class Sample(object):
 	    output += 'echo -e "mapping Done. $(date) Running on: $(hostname)" 1>&2'+'\n'
 	    
 	    #
+	    # Final output and write script to file
+	    #
+	    output += 'wait'+'\n'
+	    output += 'echo "$(date) AllDone"'+'\n'
+	    output += 'echo "$(date) AllDone" >&2'+'\n'
+	    with open(self.mappingscript,'w') as outfile: outfile.write(output)
+
+	def makeScriptPostMapping(self):
+
+	    #
+	    # sbatch header
+	    #
+	    output = '#! /bin/bash -l'+'\n'
+	    output += '#SBATCH -A '+self.project+'\n'
+	    output += '#SBATCH -n 1 -p core'+'\n'
+	    output += '#SBATCH -t 5:00:00'+'\n'
+	    output += '#SBATCH -J '+self.sampleid+'.postMap.mark'+'\n'
+	    output += '#SBATCH -e '+self.path+'/stderr.postMapNmark.txt'+'\n'
+	    output += '#SBATCH -o '+self.path+'/stdout.postMapNmark.txt'+'\n'
+	    output += '#SBATCH --mail-type=All'+'\n'
+	    output += '#SBATCH --mail-user=erik.borgstrom@scilifelab.se'+'\n'
+
+	    #
+	    # define variebles and go to path
+	    #
+	    output += 'echo "$(date) Running on: $(hostname)"'+'\n'
+	    output += 'cd '+self.path+'\n'
+	    output += 'echo'+'\n'
+	    output += 'picard=/proj/b2011168/private/bin/picard-tools-1.63'+'\n'
+	    
+	    #
+	    # Remove all non properpairs or reads with low quality or not primary alignment (also filters pcd duplicate though this will have no effect as they are not marked yet)
+	    #
+	    output += 'samtools view -S -h -f 2 -F 1804 -q 20 '+self.sam+' > '+self.sam+'.filtered\n'
+	    output += 'rm -v '+self.sam+''+'\n'
+	    
+	    #
 	    # convert to bam file
 	    #
-	    output += 'java -Xmx60g -jar $picard/SamFormatConverter.jar \\'+'\n'
-	    output += 'MAX_RECORDS_IN_RAM=2500000 INPUT='+self.sam+' OUTPUT='+self.bam+'\n'
+	    output += 'java -Xmx5g -jar $picard/SamFormatConverter.jar \\'+'\n'
+	    output += 'MAX_RECORDS_IN_RAM=2500000 INPUT='+self.sam+'.filtered OUTPUT='+self.bam+'\n'
 	    output += 'echo -e "sam2bam Done. $(date) Running on: $(hostname)" 1>&2'+'\n'
-	    output += 'rm -v '+self.sam+''+'\n'
+	    output += 'rm -v '+self.sam+'.filtered'+'\n'
 	    
 	    #
 	    # sort the bam file
 	    #
-	    output += 'java -Xmx60g -jar $picard/SortSam.jar \\'+'\n'
+	    output += 'java -Xmx5g -jar $picard/SortSam.jar \\'+'\n'
 	    output += 'MAX_RECORDS_IN_RAM=2500000 SORT_ORDER=coordinate INPUT='+self.bam+' '
 	    output+='OUTPUT='+self.sortedbam+' CREATE_INDEX=true'+'\n'
 	    output += 'echo -e "bam2sort Done. $(date) Running on: $(hostname)" 1>&2'+'\n'
@@ -323,7 +384,7 @@ class Sample(object):
 	    #
 	    # mark duplicates
 	    #
-	    output += 'java -Xmx60g -jar $picard/MarkDuplicates.jar MAX_RECORDS_IN_RAM=2500000 VALIDATION_STRINGENCY=LENIENT INPUT='+self.sortedbam+' OUTPUT='+self.markedbam+' METRICS_FILE='+self.mdmetrix+'\n'
+	    output += 'java -Xmx5g -jar $picard/MarkDuplicates.jar MAX_RECORDS_IN_RAM=2500000 VALIDATION_STRINGENCY=LENIENT INPUT='+self.sortedbam+' OUTPUT='+self.markedbam+' METRICS_FILE='+self.mdmetrix+'\n'
 	    output += 'echo -e "mark Done. $(date) Running on: $(hostname)" 1>&2'+'\n'
 	    output += 'rm -v '+self.sortedbam+''+'\n'
 	    
@@ -336,7 +397,7 @@ class Sample(object):
 	    #
 	    # fix missing information
 	    #
-	    output += 'java -Xmx60g -jar $picard/AddOrReplaceReadGroups.jar \\'+'\n'
+	    output += 'java -Xmx5g -jar $picard/AddOrReplaceReadGroups.jar \\'+'\n'
 	    output += 'MAX_RECORDS_IN_RAM=2500000 \\'+'\n'
 	    output += 'INPUT='+self.markedbam+' \\'+'\n'
 	    output += 'OUTPUT='+self.rginfobam+' \\'+'\n'
@@ -350,7 +411,7 @@ class Sample(object):
 	    output += 'wait'+'\n'
 	    output += 'echo "$(date) AllDone"'+'\n'
 	    output += 'echo "$(date) AllDone" >&2'+'\n'
-	    with open(self.mappingscript,'w') as outfile: outfile.write(output)
+	    with open(self.postmappingfixscript,'w') as outfile: outfile.write(output)
 	
 	def makeScriptReAlNreCal(self):
 
@@ -386,11 +447,38 @@ class Sample(object):
 	    output += ' -known $GATKbundle/1000G_phase1.indels.b37.vcf;'
 	    output += '\n'
 	    
+	    with open(self.realncalscript,'w') as outfile: outfile.write(output)
+
+	def makeScriptpostReAlNreCal(self):
+
+	    #
+	    # sbatch header
+	    #
+	    output = '#! /bin/bash -l\n'
+	    output += '#SBATCH -A '+self.project+'\n'
+	    output += '#SBATCH -n 1 -p core\n'
+	    output += '#SBATCH -t 72:00:00\n'
+	    output += '#SBATCH -J '+self.sampleid+'.PostRealNrecal\n'
+	    output += '#SBATCH -e '+self.path+'/stderr.postRealNrecal.txt\n'
+	    output += '#SBATCH -o '+self.path+'/stdout.postRealNrecal.txt\n'
+	    output += '#SBATCH --mail-type=All\n'
+	    output += '#SBATCH --mail-user=erik.borgstrom@scilifelab.se\n'
+	    output += 'echo "$(date) Running on: $(hostname)"\n'
+
+	    #
+	    # define variebles and go to path
+	    #
+	    output += 'cd $workpath\n'
+	    output += 'picard=/proj/b2011168/private/bin/picard-tools-1.63\n'
+	    output += 'GATK=~/singleFatCellExomeAnalysis/bin/GenomeAnalysisTK-2.8-1-g932cd3a/GenomeAnalysisTK.jar\n'
+	    output += 'GATKbundle=~/singleFatCellExomeAnalysis/references/GATKbundle/\n'
+	    output += 'echo "$(date) Running on: $(hostname)"\n'
+	    
 	    #
 	    # Realign reads around indels
 	    #
 	    output += 'echo -e "-> IndelRealigner <-"\n'
-	    output += 'java -Xmx72g -jar $GATK -T IndelRealigner -I '+self.rginfobam+' -R '+self.gatkreference+' -targetIntervals '+self.realtargets
+	    output += 'java -Xmx5g -jar $GATK -T IndelRealigner -I '+self.rginfobam+' -R '+self.gatkreference+' -targetIntervals '+self.realtargets
 	    output += ' -o '+self.realignedbam
 	    output += ' -known $GATKbundle/Mills_and_1000G_gold_standard.indels.b37.vcf'
 	    output += ' -known $GATKbundle/1000G_phase1.indels.b37.vcf;'
@@ -403,11 +491,11 @@ class Sample(object):
 	    # Quality recalibration
 	    #
 	    output += 'echo -e "-> BaseRecalibrator <-"\n'
-	    output += 'java -Xmx72g -jar $GATK -T BaseRecalibrator -I '+self.realignedbam+' -R '+self.gatkreference+' -o '+self.bqsr
+	    output += 'java -Xmx5g -jar $GATK -T BaseRecalibrator -I '+self.realignedbam+' -R '+self.gatkreference+' -o '+self.bqsr
 	    output += ' -knownSites $GATKbundle/dbsnp_138.b37.vcf;'
 	    output += '\n'
 	    output += 'echo -e "-> PrintReads <-"\n'
-	    output += 'java -Xmx72g -jar $GATK -T PrintReads -I '+self.realignedbam+' -R '+self.gatkreference+' -BQSR '+self.bqsr+' -o '+self.recalbam+';\n'
+	    output += 'java -Xmx5g -jar $GATK -T PrintReads -I '+self.realignedbam+' -R '+self.gatkreference+' -BQSR '+self.bqsr+' -o '+self.recalbam+';\n'
 	    output += 'rm -v '+self.realignedbam+''+'\n'
 
 	    #
@@ -416,13 +504,12 @@ class Sample(object):
 	    output += 'echo "Done. $(date) Running on: $(hostname)"\n'
 	    output += 'wait\n'
 	    output += 'echo "$(date) AllDone"\n'
-	    with open(self.realncalscript,'w') as outfile: outfile.write(output)
+	    with open(self.postrealncalfixscript,'w') as outfile: outfile.write(output)
 
 	def submitScripts(self):
 	    
 	    import subprocess
 	    import sys
-	    
 	    
 	    sys.stderr.write('Placing scripts in jobqueue.\n')
 	    
@@ -436,7 +523,17 @@ class Sample(object):
 	    mapping_jobid = sbatch_out.split('\n')[0].split(' ')[3]
 	    sys.stderr.write('Queued mapping of '+self.sampleid+' with JOBID '+mapping_jobid+'.\n')
 	    
-	    command = ['sbatch','--dependency=afterok:'+str(mapping_jobid),self.realncalscript]
+	    command = ['sbatch','--dependency=afterok:'+str(mapping_jobid),self.postmappingfixscript]
+	    sbatch = subprocess.Popen( command, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
+	    sbatch_out, errdata = sbatch.communicate()
+	    if sbatch.returncode != 0:
+		    print 'sbatch view Error code', sbatch.returncode, errdata
+		    print sbatch_out
+		    sys.exit()
+	    postMap_jobid = sbatch_out.split('\n')[0].split(' ')[3]
+	    sys.stderr.write('Queued post mapping fix of sample '+self.sampleid+' with JOBID '+str(postMap_jobid)+'.\n')
+	    
+	    command = ['sbatch','--dependency=afterok:'+str(postMap_jobid),self.realncalscript]
 	    sbatch = subprocess.Popen( command, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
 	    sbatch_out, errdata = sbatch.communicate()
 	    if sbatch.returncode != 0:
@@ -446,16 +543,27 @@ class Sample(object):
 	    recal_jobid = sbatch_out.split('\n')[0].split(' ')[3]
 	    sys.stderr.write('Queued realignment and recalibration of sample '+self.sampleid+' with JOBID '+str(recal_jobid)+'.\n')
 	    
-	    command = ['sbatch','--dependency=afterok:'+str(recal_jobid),self.qcscript]
+	    command = ['sbatch','--dependency=afterok:'+str(recal_jobid),self.postrealncalfixscript]
 	    sbatch = subprocess.Popen( command, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
 	    sbatch_out, errdata = sbatch.communicate()
 	    if sbatch.returncode != 0:
 		    print 'sbatch view Error code', sbatch.returncode, errdata
 		    print sbatch_out
 		    sys.exit()
-	    sys.stderr.write('Queued qc analysis of '+self.sampleid+'.\n')
+	    postRecal_jobid = sbatch_out.split('\n')[0].split(' ')[3]
+	    sys.stderr.write('Queued realignment part 2 '+self.sampleid+' with JOBID '+str(postRecal_jobid)+'.\n')
 	    
-	    self.jobids = [str(mapping_jobid),str(recal_jobid)]
+	    command = ['sbatch','--dependency=afterok:'+str(postRecal_jobid),self.qcscript]
+	    sbatch = subprocess.Popen( command, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
+	    sbatch_out, errdata = sbatch.communicate()
+	    if sbatch.returncode != 0:
+		    print 'sbatch view Error code', sbatch.returncode, errdata
+		    print sbatch_out
+		    sys.exit()
+	    qc_jobid = sbatch_out.split('\n')[0].split(' ')[3]
+	    sys.stderr.write('Queued qc analysis of '+self.sampleid+' with JOBID '+str(qc_jobid)+'.\n')
+	    
+	    self.jobids = [str(qc_jobid)]#,str(mapping_jobid),str(recal_jobid),str(postMap_jobid),str(postRecal_jobid)]
 
 class SampleCollection(object):
 
@@ -655,7 +763,6 @@ class SampleCollection(object):
 	    
 	    import subprocess
 	    import sys
-	    
 	    
 	    sys.stderr.write('Placing scripts in jobqueue for '+self.collectionId+'.\n')
 	    
