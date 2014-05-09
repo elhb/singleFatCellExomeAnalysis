@@ -135,6 +135,7 @@ def main():
 	    # create directories and analysis scripts for mapping each sample
 	    sys.stderr.write('Creating scripts for sample '+sampleid+'.\n')
 	    sample.createDirs()
+	    sample.makeScriptTrimming()
 	    sample.makeScriptMapping()
 	    sample.makeScriptPostMapping()
 	    sample.makeScriptReAlNreCal()
@@ -201,6 +202,7 @@ class Sample(object):
 	    self.mappingscript         = self.scriptpath +'/'+self.sampleid+'.mapping.sh'
 	    self.postmappingfixscript  = self.scriptpath +'/'+self.sampleid+'.postMappingFix.sh'
 	    self.qcscript              = self.scriptpath +'/'+self.sampleid+'.qc.sh'
+	    self.trimmingscript        = self.scriptpath +'/'+self.sampleid+'.trimming.sh'
 
 	def createDirs(self):
 	    import os
@@ -209,6 +211,107 @@ class Sample(object):
 	    try: os.makedirs(self.scriptpath)
 	    except OSError:pass
 	
+	def makeScriptTrimming(self):
+	    
+	    #
+	    # sbatch header
+	    #
+	    output = ''
+	    output += '#! /bin/bash -l'+'\n'
+	    output += '#SBATCH -A '+self.project+'\n'
+	    output += '#SBATCH -n 2 -p core'+'\n'
+	    output += '#SBATCH -t 72:00:00'+'\n'
+	    output += '#SBATCH -J '+self.sampleid+'.trimming'+'\n'
+	    output += '#SBATCH -e '+self.path+'/stderr.trimming.txt'+'\n'
+	    output += '#SBATCH -o '+self.path+'/stdout.trimming.txt'+'\n'
+	    output += '#SBATCH --mail-type=All'+'\n'
+	    output += '#SBATCH --mail-user=erik.borgstrom@scilifelab.se'+'\n'
+	    
+	    #
+	    # define variebles and go to path
+	    #
+	    output += 'echo "$(date) Running on: $(hostname)"'+'\n'
+	    output += 'cd '+self.path+'\n'
+	    output += 'echo "-----"'+'\n'
+	    output += 'workon py2.7'+'\n'
+
+	    #
+	    # WGA adapter trimming
+	    #
+	    output += '~/singleFatCellExomeAnalysis/analysisScripts/wgaAdapterTrimmer.py -i '+self.r1files[0]+' > r1.wgaTrimmed.fq &\n'
+	    output += '~/singleFatCellExomeAnalysis/analysisScripts/wgaAdapterTrimmer.py -i '+self.r2files[0]+' > r2.wgaTrimmed.fq &\n'
+	    output += 'wait\n'
+
+	    #
+	    # illumina  adapter trimming
+	    #
+	    output += 'cutadapt -n 3  -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC  -a AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT r1.wgaTrimmed.fq > r1.wgaAndilluminaTrimmed.fq &\n'
+	    output += 'cutadapt -n 3  -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC  -a AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT r2.wgaTrimmed.fq > r2.wgaAndilluminaTrimmed.fq &\n'
+	    output += 'wait\n'
+
+	    #
+	    # remove temp files
+	    #
+	    output += 'rm -v r1.wgaTrimmed.fq\n'
+	    output += 'rm -v r2.wgaTrimmed.fq\n'
+	    output += 'wait\n'
+
+	    #
+	    # quality trimmming
+	    #
+	    output += '~/singleFatCellExomeAnalysis/analysisScripts/TrimBWAstyle.pl -q 20 r1.wgaAndilluminaTrimmed.fq > r1.wgaIlluminaAndQualityTrimmed.fq &\n'
+	    output += '~/singleFatCellExomeAnalysis/analysisScripts/TrimBWAstyle.pl -q 20 r2.wgaAndilluminaTrimmed.fq > r2.wgaIlluminaAndQualityTrimmed.fq &\n'
+	    output += 'wait\n'
+
+	    #
+	    # remove temp files
+	    #
+	    output += 'rm -v r1.wgaAndilluminaTrimmed.fq\n'
+	    output += 'rm -v r2.wgaAndilluminaTrimmed.fq\n'
+	    output += 'wait\n'
+
+	    #
+	    # remove empty or "N" only sequences
+	    #
+	    output += 'python ~/singleFatCellExomeAnalysis/analysisScripts/removeEmptyReads.py r1.wgaIlluminaAndQualityTrimmed.fq r2.wgaIlluminaAndQualityTrimmed.fq r1.allTrimmed.fq r2.allTrimmed.fq singletts.fq\n'
+
+	    #
+	    # remove temp files
+	    #
+	    output += 'rm -v r1.wgaIlluminaAndQualityTrimmed.fq\n'
+	    output += 'rm -v r2.wgaIlluminaAndQualityTrimmed.fq\n'
+	    output += 'wait\n'
+
+	    #
+	    # compress files
+	    #
+	    output += 'gzip -v9 r1.allTrimmed.fq &\n'
+	    output += 'gzip -v9 r2.allTrimmed.fq &\n'
+	    output += 'gzip -v9 singletts.fq &\n'
+	    output += 'wait\n'
+
+	    #
+	    # FASTQC
+	    #
+	    output += 'module load bioinfo-tools FastQC\n'
+	    output += 'fastqc r1.allTrimmed.fq.gz &\n'
+	    output += 'fastqc r2.allTrimmed.fq.gz &\n'
+	    output += 'fastqc singletts.fq.gz &\n'
+	    output += 'wait\n'
+	    output += 'mkdir fastqcResults\n'
+	    output += 'mv -v *.fq_fastqc* fastqcResults/\n'
+
+	    #
+	    # Final output and write script to file
+	    #
+	    output += 'echo'+'\n'
+	    output += 'wait'+'\n'
+	    output += 'echo "$(date) AllDone"'+'\n'
+	    output += 'echo "$(date) AllDone" >&2'+'\n'
+	    self.r1files[0] = self.path+'/r1.allTrimmed.fq.gz'
+	    self.r2files[0] = self.path+'/r2.allTrimmed.fq.gz'
+	    with open(self.trimmingscript,'w') as outfile: outfile.write(output)
+
 	def makeScriptQC(self):
 	    
 	    #
@@ -324,7 +427,8 @@ class Sample(object):
 	    #
 	    # Bowtie2 mapping
 	    #
-	    output += 'bowtie2 -1 '+self.r1files[0]+' -2 '+self.r2files[0]+' --very-sensitive-local -p16 -x '+self.reference+' > '+self.sam+'\n'
+	    #output += 'bowtie2 -1 '+self.r1files[0]+' -2 '+self.r2files[0]+' --very-sensitive-local -p16 -x '+self.reference+' > '+self.sam+'\n'
+	    output += 'bowtie2 -1 '+self.r1files[0]+' -2 '+self.r2files[0]+' -p16 -x '+self.reference+' > '+self.sam+'\n'
 	    output += 'echo -e "mapping Done. $(date) Running on: $(hostname)" 1>&2'+'\n'
 	    
 	    #
@@ -513,7 +617,17 @@ class Sample(object):
 	    
 	    sys.stderr.write('Placing scripts in jobqueue.\n')
 	    
-	    command = ['sbatch',self.mappingscript]
+	    command = ['sbatch',self.trimmingscript]
+	    sbatch = subprocess.Popen( command, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
+	    sbatch_out, errdata = sbatch.communicate()
+	    if sbatch.returncode != 0:
+		    print 'sbatch view Error code', sbatch.returncode, errdata
+		    print sbatch_out
+		    sys.exit()
+	    trimming_jobid = sbatch_out.split('\n')[0].split(' ')[3]
+	    sys.stderr.write('Queued trimming of '+self.sampleid+' with JOBID '+trimming_jobid+'.\n')
+	    
+	    command = ['sbatch','--dependency=afterok:'+str(trimming_jobid),self.mappingscript]
 	    sbatch = subprocess.Popen( command, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
 	    sbatch_out, errdata = sbatch.communicate()
 	    if sbatch.returncode != 0:
@@ -521,8 +635,8 @@ class Sample(object):
 		    print sbatch_out
 		    sys.exit()
 	    mapping_jobid = sbatch_out.split('\n')[0].split(' ')[3]
-	    sys.stderr.write('Queued mapping of '+self.sampleid+' with JOBID '+mapping_jobid+'.\n')
-	    
+	    sys.stderr.write('Queued mapping of sample '+self.sampleid+' with JOBID '+str(mapping_jobid)+'.\n')
+
 	    command = ['sbatch','--dependency=afterok:'+str(mapping_jobid),self.postmappingfixscript]
 	    sbatch = subprocess.Popen( command, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
 	    sbatch_out, errdata = sbatch.communicate()
