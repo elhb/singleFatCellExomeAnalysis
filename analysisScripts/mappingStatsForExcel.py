@@ -31,15 +31,17 @@ for sample in samples:
     for line in bowtieStats:
         if re.search('reads; of these:',line): totalReadsPreFilter = int(line.split(' ')[0]);break
     
-    dupsLine = markDups.read().split('\n')[7].rstrip()
-    hsLine = hsMetrix.read().split('\n')[7].rstrip()
+    try:
+        dupsLine = markDups.read().split('\n')[7].rstrip()
+        hsLine = hsMetrix.read().split('\n')[7].rstrip()
     
-    percentageDuplication   = float(dupsLine.split('\t')[7].replace(',','.'))
-    totalReads              = int(hsLine.split('\t')[5])
-    mappingRate             = totalReads/totalReadsPreFilter #float(hsLine.split('\t')[11].replace(',','.'))
-    onTargetPercentage      = float(hsLine.split('\t')[17].replace(',','.'))
-    meanTargetCoverage      = float(hsLine.split('\t')[21].replace(',','.'))
-    
+        percentageDuplication   = float(dupsLine.split('\t')[7].replace(',','.'))
+        totalReads              = int(hsLine.split('\t')[5])
+        mappingRate             = float(totalReads) / float(totalReadsPreFilter*2) #float(hsLine.split('\t')[11].replace(',','.'))
+        onTargetPercentage      = float(hsLine.split('\t')[17].replace(',','.'))
+        meanTargetCoverage      = float(hsLine.split('\t')[21].replace(',','.'))
+    except IndexError: print sample, 'SOMETHING IS WRONG'
+
     markDups.close()
     hsMetrix.close
     
