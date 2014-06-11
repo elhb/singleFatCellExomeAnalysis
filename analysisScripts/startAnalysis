@@ -333,7 +333,7 @@ class Sample(object):
 	    #
 	    output += 'echo "$(date) Running on: $(hostname)"'+'\n'
 	    output += 'cd '+self.path+'\n'
-	    output += 'picard=/proj/b2011168/private/bin/picard-tools-1.63'+'\n'
+	    output += 'picard=~/bin/picard-tools-1.114'+'\n'
 	    output += 'GATK=~/singleFatCellExomeAnalysis/bin/GenomeAnalysisTK-2.8-1-g932cd3a/GenomeAnalysisTK.jar'+'\n'
 	    output += 'GATKbundle=~/singleFatCellExomeAnalysis/references/GATKbundle/'+'\n'
 	    output += 'file='+self.recalbam+'\n'
@@ -422,7 +422,7 @@ class Sample(object):
 	    output += 'echo "$(date) Running on: $(hostname)"'+'\n'
 	    output += 'cd '+self.path+'\n'
 	    output += 'echo'+'\n'
-	    output += 'picard=/proj/b2011168/private/bin/picard-tools-1.63'+'\n'
+	    output += 'picard=~/bin/picard-tools-1.114'+'\n'
 	    
 	    #
 	    # Bowtie2 mapping
@@ -461,7 +461,7 @@ class Sample(object):
 	    output += 'echo "$(date) Running on: $(hostname)"'+'\n'
 	    output += 'cd '+self.path+'\n'
 	    output += 'echo'+'\n'
-	    output += 'picard=/proj/b2011168/private/bin/picard-tools-1.63'+'\n'
+	    output += 'picard=~/bin/picard-tools-1.114'+'\n'
 	    
 	    #
 	    # Remove all non properpairs or reads with low quality or not primary alignment (also filters pcd duplicate though this will have no effect as they are not marked yet)
@@ -538,7 +538,7 @@ class Sample(object):
 	    # define variebles and go to path
 	    #
 	    output += 'cd $workpath\n'
-	    output += 'picard=/proj/b2011168/private/bin/picard-tools-1.63\n'
+	    output += 'picard=~/bin/picard-tools-1.114\n'
 	    output += 'GATK=~/singleFatCellExomeAnalysis/bin/GenomeAnalysisTK-2.8-1-g932cd3a/GenomeAnalysisTK.jar\n'
 	    output += 'GATKbundle=~/singleFatCellExomeAnalysis/references/GATKbundle/\n'
 	    output += 'echo "$(date) Running on: $(hostname)"\n'
@@ -574,7 +574,7 @@ class Sample(object):
 	    # define variebles and go to path
 	    #
 	    output += 'cd $workpath\n'
-	    output += 'picard=/proj/b2011168/private/bin/picard-tools-1.63\n'
+	    output += 'picard=~/bin/picard-tools-1.114\n'
 	    output += 'GATK=~/singleFatCellExomeAnalysis/bin/GenomeAnalysisTK-2.8-1-g932cd3a/GenomeAnalysisTK.jar\n'
 	    output += 'GATKbundle=~/singleFatCellExomeAnalysis/references/GATKbundle/\n'
 	    output += 'echo "$(date) Running on: $(hostname)"\n'
@@ -723,7 +723,7 @@ class SampleCollection(object):
 		output += 'echo "$(date) Running on: $(hostname)"'+'\n'
 		output += 'echo "$(date) Running on: $(hostname)" >&2'+'\n'
 		output += 'cd '+self.path+'\n'
-		output += 'picard=/proj/b2011168/private/bin/picard-tools-1.63'+'\n'
+		output += 'picard=~/bin/picard-tools-1.114'+'\n'
 		output += 'GATK=~/singleFatCellExomeAnalysis/bin/GenomeAnalysisTK-2.8-1-g932cd3a/GenomeAnalysisTK.jar'+'\n'
 		output += 'GATKbundle=~/singleFatCellExomeAnalysis/references/GATKbundle/'+'\n'
 		output += 'echo "$(date) Running on: $(hostname)"'+'\n'
@@ -775,7 +775,7 @@ class SampleCollection(object):
 	    output += 'cd '+self.path+'\n'
 	    output += 'workon py2.7'+'\n'
 	    output += 'reference='+self.reference+'\n'
-	    output += 'picard=/proj/b2011168/private/bin/picard-tools-1.63'+'\n'
+	    output += 'picard=~/bin/picard-tools-1.114'+'\n'
 	    output += 'GATK=~/singleFatCellExomeAnalysis/bin/GenomeAnalysisTK-2.8-1-g932cd3a/GenomeAnalysisTK.jar'+'\n'
 	    output += 'GATKbundle=~/singleFatCellExomeAnalysis/references/GATKbundle/'+'\n'
 	    output += 'echo "$(date) Running on: $(hostname)"'+'\n'
@@ -829,7 +829,7 @@ class SampleCollection(object):
 	    output += 'cd '+self.path+'\n'
 	    output += 'workon py2.7'+'\n'
 	    output += 'reference='+self.reference+'\n'
-	    output += 'picard=/proj/b2011168/private/bin/picard-tools-1.63'+'\n'
+	    output += 'picard=~/bin/picard-tools-1.114'+'\n'
 	    output += 'GATK=~/singleFatCellExomeAnalysis/bin/GenomeAnalysisTK-2.8-1-g932cd3a/GenomeAnalysisTK.jar'+'\n'
 	    output += 'GATKbundle=~/singleFatCellExomeAnalysis/references/GATKbundle/'+'\n'
 	    output += 'echo "$(date) Running on: $(hostname)"'+'\n'
