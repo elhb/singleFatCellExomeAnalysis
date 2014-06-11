@@ -426,7 +426,8 @@ class Sample(object):
 	    
 	    #
 	    # Bowtie2 mapping
-	    #
+	    #output += 'module load bioinfo-tools bwa/0.7.8\n'
+	    #output += 'bwa mem -t 16 /sw/data/uppnex/reference/Homo_sapiens/GRCh37/program_files/bwa/concat.fa '+self.r1files[0]+' '+self.r2files[0]+' > '+self.sam+'\n'
 	    #output += 'bowtie2 -1 '+self.r1files[0]+' -2 '+self.r2files[0]+' --very-sensitive-local -p16 -x '+self.reference+' > '+self.sam+'\n'
 	    output += 'bowtie2 -1 '+self.r1files[0]+' -2 '+self.r2files[0]+' -p16 -x '+self.reference+' > '+self.sam+'\n'
 	    output += 'echo -e "mapping Done. $(date) Running on: $(hostname)" 1>&2'+'\n'
@@ -740,6 +741,16 @@ class SampleCollection(object):
 		output += '-stand_call_conf 30 '
 		output += '-L ~/singleFatCellExomeAnalysis/references/truseq_exome_targeted_regions.part'+part+'.bed '
 		output += '--dbsnp $GATKbundle/dbsnp_138.b37.vcf '
+		
+		output += '--annotation AlleleBalance --annotation AlleleBalanceBySample --annotation BaseCounts --annotation BaseQualityRankSumTest '
+		output += '--annotation ChromosomeCounts --annotation ClippingRankSumTest --annotation Coverage --annotation DepthPerAlleleBySample '
+		output += '--annotation DepthPerSampleHC --annotation FisherStrand --annotation GCContent --annotation HaplotypeScore --annotation HardyWeinberg '
+		output += '--annotation HomopolymerRun --annotation InbreedingCoeff --annotation LikelihoodRankSumTest --annotation LowMQ '
+		output += '--annotation MVLikelihoodRatio --annotation MappingQualityRankSumTest --annotation MappingQualityZero --annotation MappingQualityZeroBySample '
+		output += '--annotation NBaseCount --annotation QualByDepth --annotation RMSMappingQuality --annotation ReadPosRankSumTest --annotation SampleList '
+		output += '--annotation SnpEff --annotation SpanningDeletions --annotation StrandBiasBySample --annotation TandemRepeatAnnotator '
+		output += '--annotation TransmissionDisequilibriumTest --annotation VariantType '#--annotation StrandOddsRatio 
+		
 		output += '-o raw_variants.part.'+part+'.vcf &'+'\n'
 		output += 'wait'+'\n'
 		output += 'echo "Done. $(date) Running on: $(hostname)"'+'\n'
@@ -823,6 +834,10 @@ class SampleCollection(object):
 	    output += 'GATKbundle=~/singleFatCellExomeAnalysis/references/GATKbundle/'+'\n'
 	    output += 'echo "$(date) Running on: $(hostname)"'+'\n'
 	    output += '\n'
+	    
+	    #
+	    # Merge the vcf parts and sort them
+	    #
 	    output += 'echo "MERGING VCF PARTS" '+'\n'
 	    output += 'grep -P "^#" raw_variants.part.xaa.vcf > raw_variants.vcf;'+'\n'
 	    output += 'for file in raw_variants.part.x*.vcf;'
@@ -833,10 +848,32 @@ class SampleCollection(object):
 	    output += 'grep -vP "#" raw_variants.vcf | sort -Vk1,2 >> raw_variants.SORTED.vcf'+'\n'
 	    output += 'mv -v raw_variants.SORTED.vcf raw_variants.vcf'+'\n'
 	    output += '\n'
+	    
+	    #
+	    # variant filtration
+	    #
+	    output += 'echo "---> Variant filtration <---" '+'\n'
+	    output += 'echo "---> Variant filtration <---" 1>&2'+'\n'
+	    output += 'java -Xmx60g -jar $GATK -T VariantFiltration '
+	    output += '-R $reference '
+	    output += '--filterExpression  "QUAL < 50.0" --filterName "LowQual" '
+	    output += '--filterExpression "SB >=-1.0" --filterName "StrandBias" ' #deprecated annotation
+	    output += '--filterExpression "FS > 60" --filterName "FisherSB" '# for SNPs
+	    #output += '--filterExpression "FS > 200" --filterName "FIsherSB" '# for INDELs
+	    output += '--filterExpression "QD<1.0" --filterName "QualByDepth" '
+	    output += '--filterExpression "(MQ0 >= 4 && ((MQ0/(1.0 * DP)) > 0.1))" --filterName "FUBAR" '
+	    output += '--variant raw_variants.vcf '
+	    output += '--out filtered_variants.vcf '
+	    output += '\n'
+	    output += 'echo "Variant filtration done. $(date) Running on: $(hostname)"'+'\n'
+	    
+	    #
+	    # Variant quality score recalibration for SNPs
+	    #
 	    output += 'echo "---> VQSR <---" '+'\n'
 	    output += 'echo "---> VQSR <---" 1>&2'+'\n'
 	    output += 'java -Xmx60g -jar $GATK -T VariantRecalibrator '
-	    output += '-R $reference -input raw_variants.vcf'
+	    output += '-R $reference -input filtered_variants.vcf'
 	    output += ' -resource:hapmap,known=false,training=true,truth=true,prior=15.0'+' $GATKbundle/hapmap_3.3.b37.vcf'
 	    output += ' -resource:omni,known=false,training=true,truth=false,prior=12.0' +' $GATKbundle/1000G_omni2.5.b37.vcf'
 	    output += ' -resource:dbsnp,known=true,training=false,truth=false,prior=6.0' +' $GATKbundle/dbsnp_138.b37.vcf'
@@ -859,7 +896,7 @@ class SampleCollection(object):
 	    output +='\n'
 	    output += 'java -Xmx60g -jar $GATK '
 	    output += '-T ApplyRecalibration -R $reference '
-	    output += ' -input raw_variants.vcf '
+	    output += ' -input filtered_variants.vcf '
 	    output += ' -recalFile recalibrate_SNP.recal '
 	    output += ' -tranchesFile recalibrate_SNP.tranches '
 	    output += ' -o recalibrated_snps_raw_indels.vcf '

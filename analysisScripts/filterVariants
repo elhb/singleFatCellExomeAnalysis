@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 print 'all imported'
+INCLUDEHETRO = True
 
 def main():
     #
@@ -58,8 +59,12 @@ def getVariations(infiles,printVcfLines):
                 
                 line = line.rstrip().split('\t') # SPLIT THE LINE TO COLUMNS AND SAVE THE INFO DP GT GQ PL AD FOR EACH SAMPLE
                 for i in range(len(line)):
-                    if i == 0:   chromosome = line[i]
-                    elif i == 1: position = line[i]
+                    if i == 0:
+                        chromosome = line[i]
+                        variation['crom'] = chromosome
+                    elif i == 1:
+                        position = line[i]
+                        variation['pos'] = position
                     elif i == 2:
                         rsID = line[i]
                         if rsID == '.': novelVarCount+=1;rsID = 'novel#'+str(novelVarCount)
@@ -73,23 +78,23 @@ def getVariations(infiles,printVcfLines):
                         sampleInfo = line[i]
                         sampleId = samples[i-9]
                         if sampleInfo != "./.":
-                            try: GT,AD,DP,GQ,PL = sampleInfo.split(':')
+                            try: GT,AD,DP,GQ,PL,SB = sampleInfo.split(':') #GT:AD:DP:GQ:PL:SB
                             except:
                                 #sys.stderr.write( 'ERROR variant format is not GT:AD:DP:GQ:PL: ')
                                 #sys.stderr.write( '\t'.join(line) +'\n')
                                 continue #SKIP THIS VARIANT
                             if DP == '.': DP = 0
-                            variation[sampleId] = {'DP':DP,'GT':GT,'GQ':GQ,'PL':PL,'AD':AD} #SAVE SAMPLE INFO
+                            variation[sampleId] = {'DP':DP,'GT':GT,'GQ':GQ,'PL':PL,'AD':AD,'SB':SB} #SAVE SAMPLE INFO
                             #try:
                             #    if sampleId == patId and int(DP) >= 10: print '\t'.join(line)
                             #except:
                             #    print 'ERRORSCHMERROR: ',
                             #    print  '\t'.join(line)
-                            #    sys.exit()
-    
-                    if variation and passFilter and passFilter == 'PASS':# or variation: #SAVE VARIATION YO TABLE
-                        variations[rsID] = variation
-                        if printVcfLines: sys.stderr.write(  '\t'.join(line) +'\n')
+                            #    sys.exit()    
+                if len(refBase) != len(altBase): continue
+                if variation and passFilter and passFilter == 'PASS':# or variation: #SAVE VARIATION YO TABLE
+                    variations[rsID] = variation
+                    if printVcfLines: sys.stderr.write(  '\t'.join(line) +'\n')
     return variations, samples
 
 def parseVariations(variations,samples):
@@ -97,14 +102,14 @@ def parseVariations(variations,samples):
     donId = sys.argv[1]
     patId = sys.argv[2]
 
-    variationsTableTsv = open(samples[0].split('.')[0]+'.variationsTable.tsv','w')
-    variationsBySample = open(samples[0].split('.')[0]+'.variationsBySample.tsv','w')
-    topVariationsBySample = open(samples[0].split('.')[0]+'.topVariationsBySample.tsv','w')
+    variationsTableTsv = open(samples[0].split('.')[0]+'.hetero='+str(INCLUDEHETRO)+'.variationsTable.tsv','w')
+    variationsBySample = open(samples[0].split('.')[0]+'.hetero='+str(INCLUDEHETRO)+'.variationsBySample.tsv','w')
+    topVariationsBySample = open(samples[0].split('.')[0]+'.hetero='+str(INCLUDEHETRO)+'.topVariationsBySample.tsv','w')
     varsByDP = {}
     samplesByDP = {}
     for sample in samples: varsByDP[sample] = {}; samplesByDP[sample] = []
     csv = 'SNP_ID,'+','.join([sample for sample in samples])
-    piechart = {sample:{'PAT':0,'DON':0,'TOTAL':0,'MIX':0} for sample in samples}
+    piechart = {sample:{'PAT':0,'DON':0,'PAT_I':0,'DON_I':0,'TOTAL':0,'MIX':0,'SharedAllele':0} for sample in samples}
     patDonReadCutoff = 20
     patDonQualCutoff = 30
     readDepthCutoff = 10
@@ -113,7 +118,7 @@ def parseVariations(variations,samples):
     #
     # create headers
     #
-    variationsTableTsv.write('varID\t')
+    variationsTableTsv.write('varID\tchrom\tpos\t')
     for sample in samples:
         variationsTableTsv.write(sample+' is\tDP\tGQ\tAD\t')
         variationsBySample.write('_\tvarID\t')
@@ -128,6 +133,9 @@ def parseVariations(variations,samples):
     csvVarCount = 0
     for varID, variation in variations.iteritems():
         
+        patHetero = False
+        donHetero = False
+        
         #
         # filtration
         #
@@ -136,29 +144,31 @@ def parseVariations(variations,samples):
         if patId not in variation or donId not in variation: continue
         
         #skip if there is no diff betwen pat and don
-        elif variation[patId]['GT'] == variation[donId]['GT']: continue
+        if variation[patId]['GT'] == variation[donId]['GT']: continue
         
         #skip if any of them are ./.
-        elif './.' in [variation[donId]['GT'],variation[patId]['GT']]: continue
+        if './.' in [variation[donId]['GT'],variation[patId]['GT']]: continue
         
         # skip if don not homo
-        elif variation[donId]['GT'].split('/').count(variation[donId]['GT'].split('/')[0]) < 2: continue 
+        if variation[donId]['GT'].split('/').count(variation[donId]['GT'].split('/')[0]) < 2 and not INCLUDEHETRO: continue
+        elif variation[donId]['GT'].split('/').count(variation[donId]['GT'].split('/')[0]) < 2: varID += '_DH'; donHetero=True
         
         # skip if pat not homo
-        elif variation[patId]['GT'].split('/').count(variation[patId]['GT'].split('/')[0]) < 2: continue 
+        if variation[patId]['GT'].split('/').count(variation[patId]['GT'].split('/')[0]) < 2 and not INCLUDEHETRO: continue
+        elif variation[patId]['GT'].split('/').count(variation[patId]['GT'].split('/')[0]) < 2: varID += '_PH'; patHetero=True
         
         # skip if pat and don are not both DP >= patDonReadCutoff
-        elif int(variation[patId]['DP']) < patDonReadCutoff or int(variation[donId]['DP']) < patDonReadCutoff: continue 
+        if int(variation[patId]['DP']) < patDonReadCutoff or int(variation[donId]['DP']) < patDonReadCutoff: continue 
         
         # if pat and don are not both GQ >= genotypeQualCutoff 
-        elif int(variation[patId]['GQ']) < genotypeQualCutoff or int(variation[donId]['GQ']) < genotypeQualCutoff: continue 
+        if int(variation[patId]['GQ']) < genotypeQualCutoff or int(variation[donId]['GQ']) < genotypeQualCutoff: continue 
         
         #
         # if variant pass all filters
         #
         else:
             
-            patientDonorPossibleVariants += 1
+            if not patHetero and not donHetero:patientDonorPossibleVariants += 1
             
             #skip if only two samples have data
             if len(variation) <= 2: continue
@@ -166,14 +176,26 @@ def parseVariations(variations,samples):
             
             # classify based on sample called genotype and patient and donor genotypes
             whoAmI = {variation[patId]['GT']:'PAT',variation[donId]['GT']:'DON'}
-            
+            if (patHetero or donHetero) and INCLUDEHETRO:
+                if patHetero and not donHetero: 
+                    if   variation[donId]['GT'] == '0/0' and '1' in [variation[patId]['GT'][0],variation[patId]['GT'][-1]]: whoAmI['1/1']='PAT_I'
+                    elif variation[donId]['GT'] == '1/1' and '0' in [variation[patId]['GT'][0],variation[patId]['GT'][-1]]: whoAmI['0/0']='PAT_I'
+                    whoAmI[variation[donId]['GT']]='SharedAllele'
+                    whoAmI[variation[patId]['GT']]='PAT_I'
+                if donHetero and not patHetero:
+                    if   variation[patId]['GT'] == '0/0' and '1' in [variation[donId]['GT'][0],variation[donId]['GT'][-1]]: whoAmI['1/1']='DON_I'
+                    elif variation[patId]['GT'] == '1/1' and '0' in [variation[donId]['GT'][0],variation[donId]['GT'][-1]]: whoAmI['0/0']='DON_I'
+                    whoAmI[variation[patId]['GT']]='SharedAllele'
+                    whoAmI[variation[donId]['GT']]='DON_I'
+                if patHetero and donHetero: continue
+                
             #
             # initial values for each variant
             #
             csvLine = str(varID)+','
             piechartVar = {sample:{} for sample in samples}
             noneAboveCutoff = True
-            variationsTableTsv.write(str(varID)+'\t')
+            variationsTableTsv.write(str(varID)+'\t'+str(variation['crom'])+'\t'+str(variation['pos'])+'\t')
             
             # go through samples
             for sample in samples:
@@ -191,6 +213,9 @@ def parseVariations(variations,samples):
                         try:
                             if   whoAmI[variation[sample]['GT']] == 'PAT': value = 2; piechartVar[sample]['PAT'] = True
                             elif whoAmI[variation[sample]['GT']] == 'DON': value = 3; piechartVar[sample]['DON'] = True
+                            elif whoAmI[variation[sample]['GT']] == 'PAT_I': value = 4; piechartVar[sample]['PAT_I'] = True
+                            elif whoAmI[variation[sample]['GT']] == 'DON_I': value = 5; piechartVar[sample]['DON_I'] = True
+                            elif whoAmI[variation[sample]['GT']] == 'SharedAllele': value = 6; piechartVar[sample]['SharedAllele'] = True
                         except KeyError: value = 1; piechartVar[sample]['MIX'] = True #'Mix\t'
                         csvLine += str(value)+','
                     else: csvLine += '0,'
@@ -252,7 +277,7 @@ def parseVariations(variations,samples):
     else:
         for row in range(len(samplesByDP[samples[0]])): topVariationsBySample.write(''.join([samplesByDP[sample][row] for sample in samples])[1:]+'\n')
     
-    tempfile = open(samples[0].split('.')[0]+'.variationsTable.csv','w')
+    tempfile = open(samples[0].split('.')[0]+'.hetero='+str(INCLUDEHETRO)+'.variationsTable.csv','w')
     tempfile.write(csv)
     tempfile.close()
     
@@ -273,8 +298,11 @@ def makeGraphics(samples,piechart,csvVarCount):
     donlable = 'Donor'
     mixlable = 'Mixed'
     patcolor = '#1975FF'
+    paticolor = '#8CBAFF'
     doncolor = '#FF3399'
+    donicolor = '#FF99CC'
     mixcolor = '#CC9900'
+    SharedAllelecolor = '#8B8B8B'
     tmpdict = {patId:patId.split('.')[0]+patlable,donId:donId.split('.')[0]+donlable}
     labels = [sample if (sample != donId and sample != patId) else tmpdict[sample] for sample in samples]
 
@@ -282,13 +310,14 @@ def makeGraphics(samples,piechart,csvVarCount):
     print 'making heatmap'
     
     print 'reading csv data'
-    data = pd.read_csv(samples[0].split('.')[0]+'.variationsTable.csv', index_col=0)
+    data = pd.read_csv(samples[0].split('.')[0]+'.hetero='+str(INCLUDEHETRO)+'.variationsTable.csv', index_col=0)
     data = data.transpose()
     print 'done'
     
     print 'plotting'
     # define individual colors as hex values
     cpool2 = ['#D0D0D0',mixcolor,patcolor,doncolor]
+    if INCLUDEHETRO: cpool2 = ['#D0D0D0',mixcolor,patcolor,doncolor,paticolor,donicolor,SharedAllelecolor]
     cmap3 = col.ListedColormap(cpool2, 'indexed')
     cm.register_cmap(cmap=cmap3)
     
@@ -335,7 +364,7 @@ def makeGraphics(samples,piechart,csvVarCount):
         t.tick2On = False
     
     print 'saving'
-    plt.savefig(samples[0].split('.')[0]+".heatmap.pdf",dpi=100,bbox_inches='tight')
+    plt.savefig(samples[0].split('.')[0]+'.hetero='+str(INCLUDEHETRO)+".heatmap.pdf",dpi=100,bbox_inches='tight')
     plt.close()
     
     print 'making pie charts'
@@ -352,11 +381,17 @@ def makeGraphics(samples,piechart,csvVarCount):
         if piechart[sample]['TOTAL']:
             patfrac = round(100*float(piechart[sample]['PAT'])/float(piechart[sample]['TOTAL']),2)
             donfrac = round(100*float(piechart[sample]['DON'])/float(piechart[sample]['TOTAL']),2)
+            patifrac = round(100*float(piechart[sample]['PAT_I'])/float(piechart[sample]['TOTAL']),2)
+            donifrac = round(100*float(piechart[sample]['DON_I'])/float(piechart[sample]['TOTAL']),2)
             mixfrac = round(100*float(piechart[sample]['MIX'])/float(piechart[sample]['TOTAL']),2)
+            SharedAllelefrac = round(100*float(piechart[sample]['SharedAllele'])/float(piechart[sample]['TOTAL']),2)
         else:
             patfrac = 0
             donfrac = 0
+            patifrac = 0
+            donifrac = 0
             mixfrac = 0
+            SharedAllelefrac = 0
         if piechart[sample]['PAT'] != 0:
             labels.append(patlable)
             colors.append(patcolor)
@@ -365,15 +400,27 @@ def makeGraphics(samples,piechart,csvVarCount):
             labels.append(donlable)
             colors.append(doncolor)
             sizes.append(donfrac)
+        if piechart[sample]['PAT_I'] != 0:
+            labels.append(patlable)
+            colors.append(paticolor)
+            sizes.append(patifrac)
+        if piechart[sample]['DON_I'] != 0:
+            labels.append(donlable)
+            colors.append(donicolor)
+            sizes.append(donifrac)
         if piechart[sample]['MIX'] != 0:
             labels.append(mixlable)
             colors.append(mixcolor)
-            sizes.append(mixfrac)    
+            sizes.append(mixfrac)
+        if piechart[sample]['SharedAllele'] != 0:
+            labels.append('SharedAllele')
+            colors.append(SharedAllelecolor)
+            sizes.append(SharedAllelefrac)
         plt.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', shadow=True, startangle=45)
         sampleNumber += 1
     
     plt.axis('equal')
-    plt.savefig(samples[0].split('.')[0]+".piechart.pdf",dpi=300,bbox_inches='tight')
+    plt.savefig(samples[0].split('.')[0]+'.hetero='+str(INCLUDEHETRO)+".piechart.pdf",dpi=300,bbox_inches='tight')
     plt.close()
     #plt.show()
     
