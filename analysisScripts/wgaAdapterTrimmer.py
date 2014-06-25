@@ -1,28 +1,47 @@
 #!/usr/bin/env python
 
+import sys
+
+sys.stderr.write('Running wgaAdapterTrimmer.py\n')
+
 ADAPTERSEQUENCE = 'TGTGTTGGGTGTGTTTGG'
 
 def main():
     indata = getComandLineOptions()
+
+    TOTALBASES = 0
+    TRIMMEDBASES = 0
+    READSPROCESSED = 0
     
     for read in readGenerator(indata.infile):
-        read = trimRead(read, indata.maxDist)
+        TOTALBASES,TRIMMEDBASES,read = trimRead(read, indata.maxDist,TOTALBASES,TRIMMEDBASES)
         printRead(read)
+        READSPROCESSED += 1
+    
+    sys.stderr.write('Processed a total of\t'+str(READSPROCESSED)+'\treads. ('+indata.infile+')\n')
+    sys.stderr.write('Processed a total of\t'+str(TOTALBASES)+'\tbases ('+indata.infile+').\n')
+    sys.stderr.write('trimmed a total of\t'+str(TRIMMEDBASES)+'\tbases in the start of reads ('+indata.infile+').\n')
+    sys.stderr.write('wgaAdapterTrimmer.py done exiting ...\n')
 
-def trimRead(read,maxDist):
+def trimRead(read,maxDist,TOTALBASES,TRIMMEDBASES):
     import sys
     header, sequence, qual = read
+    assert len(sequence) == len(qual), '\n\nError: sequence and qual has different lengths.\n\n'
     dist = levenshtein(sequence[:len(ADAPTERSEQUENCE)], ADAPTERSEQUENCE)
+    TOTALBASES += len(sequence)
     if float(dist) <= maxDist:
         #sys.stderr.write('Trimming '+header+' edit distance '+str(dist)+' <= '+str(float(len(ADAPTERSEQUENCE))*0.2)+'.\n')
         sequence = sequence[30:]
         qual = qual[30:]
+        TRIMMEDBASES += 30
     
-    return header, sequence, qual
+    assert len(sequence) == len(qual), '\n\nError: sequence and qual has different lengths.\n\n'
+    return TOTALBASES,TRIMMEDBASES,[header, sequence, qual]
 
 def printRead(read):
     import sys
     header, sequence, qual = read
+    assert len(sequence) == len(qual), '\n\nError: sequence and qual has different lengths.\n\n'
     sys.stdout.write(header+'\n'+sequence+'\n+\n'+qual+'\n')
 
 def readGenerator(fastq1):

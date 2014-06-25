@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import sys
-
+sys.stderr.write('Running removeEmptyReads.py:\n')
 # open files
 
 fq1 = open(sys.argv[1])
@@ -30,7 +30,8 @@ while True:
         qual2   = fq2.readline().rstrip()
 
         if header1 == '': sys.stderr.write('Header one is empty exiting.\n');break
-        
+        assert len(seq1) == len(qual1), '\n\nError: seq1 and qual1 has different lengths.\n\n'
+        assert len(seq2) == len(qual2), '\n\nError: seq2 and qual2 has different lengths.\n\n'
         readcount += 1
         
         # check if read-sequence is zero
@@ -65,3 +66,4 @@ fq2.close()
 fq1out.close()
 fq2out.close()
 singleReads.close()
+sys.stderr.write('removeEmptyReads Exiting.\n')
