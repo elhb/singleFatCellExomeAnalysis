@@ -14,6 +14,8 @@ infilesBySample = {
 	    'dummie.10'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/1000Gdummies/HG00110.r1.fq.gz','~/singleFatCellExomeAnalysis/data/1000Gdummies/HG00110.r2.fq.gz']
 	},
 	'bm55':{
+#	    'bm55.23NextTest'    : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.23NextTest.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.23NextTest.r2.fq.gz' ],
+#	    'bm55.fatTissue'    : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.fatTissue.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.fatTissue.r2.fq.gz' ],
 	    'bm55.20'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.20.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.20.r2.fq.gz' ],
 	    'bm55.29'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.29.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.29.r2.fq.gz' ],
 	    'bm55.41'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.41.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.41.r2.fq.gz' ],
@@ -55,23 +57,24 @@ infilesBySample = {
 	    'bm55.A2'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.A2.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.A2.r2.fq.gz']
 	},
 	'bm1':{
-	    'bm1.27'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.27.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.27.r2.fq.gz' ],
-	    'bm1.34'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.34.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.34.r2.fq.gz' ],
+#	    'bm1.27'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.27.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.27.r2.fq.gz' ],
+#	    'bm1.fatTissue'    : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.fatTissue.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.fatTissue.r2.fq.gz' ],
+#	    'bm1.34'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.34.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.34.r2.fq.gz' ],
 	    'bm1.1'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.1.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.1.r2.fq.gz' ],
-	    'bm1.2'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.2.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.2.r2.fq.gz' ],
-	    'bm1.3'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.3.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.3.r2.fq.gz' ],
+#	    'bm1.2'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.2.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.2.r2.fq.gz' ],
+#	    'bm1.3'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.3.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.3.r2.fq.gz' ],
 	    'bm1.4'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.4.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.4.r2.fq.gz' ],
-	    'bm1.5'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.5.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.5.r2.fq.gz' ],
-	    'bm1.6'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.6.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.6.r2.fq.gz' ],
+#	    'bm1.5'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.5.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.5.r2.fq.gz' ],
+#	    'bm1.6'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.6.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.6.r2.fq.gz' ],
 	    'bm1.7'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.7.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.7.r2.fq.gz' ],
 	    'bm1.8'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.8.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.8.r2.fq.gz' ],
 	    'bm1.10'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.10.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.10.r2.fq.gz' ],
-	    'bm1.11'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.11.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.11.r2.fq.gz' ],
+#	    'bm1.11'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.11.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.11.r2.fq.gz' ],
 	    'bm1.12'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.12.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.12.r2.fq.gz' ],
 	    'bm1.13'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.13.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.13.r2.fq.gz' ],
 	    'bm1.Donor'        : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.Donor.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.Donor.r2.fq.gz' ],
 	    'bm1.Patient'      : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.Patient.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.Patient.r2.fq.gz' ],
-	    'bm1.14'		: [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.14.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.14.r2.fq.gz'],
+#	    'bm1.14'		: [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.14.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.14.r2.fq.gz'],
 	    'bm1.15'		: [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.15.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.15.r2.fq.gz'],
 	    'bm1.16'		: [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.16.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.16.r2.fq.gz'],
 	    'bm1.17'		: [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.17.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.17.r2.fq.gz'],
@@ -94,10 +97,13 @@ infilesBySample = {
 	    'bm1.WGAneg'	: [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.WGAneg.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.WGAneg.r2.fq.gz']
 	},
 	'bm47':{
+#	    'bm47.24NextTest'    : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.24NextTest.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.24NextTest.r2.fq.gz' ],
+#	    'bm47.41NextTest'    : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.41NextTest.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.41NextTest.r2.fq.gz' ],
+#	    'bm47.fatTissue'    : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.fatTissue.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.fatTissue.r2.fq.gz' ],
 	    'bm47.1'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.1.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.1.r2.fq.gz' ],
-	    'bm47.11'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.11.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.11.r2.fq.gz' ],
+#	    'bm47.11'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.11.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.11.r2.fq.gz' ],
 	    'bm47.37'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.37.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.37.r2.fq.gz' ],
-	    'bm47.48'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.48.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.48.r2.fq.gz' ],
+#	    'bm47.48'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.48.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.48.r2.fq.gz' ],
 	    'bm47.56'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.56.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.56.r2.fq.gz' ],
 	    'bm47.Donor'        : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.Donor.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.Donor.r2.fq.gz' ],
 	    'bm47.Patient'      : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.Patient.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.Patient.r2.fq.gz' ],
@@ -106,27 +112,27 @@ infilesBySample = {
 	    'bm47.18'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.18.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.18.r2.fq.gz'],
 	    'bm47.21'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.21.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.21.r2.fq.gz'],
 	    'bm47.25'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.25.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.25.r2.fq.gz'],
-	    'bm47.26'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.26.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.26.r2.fq.gz'],
+#	    'bm47.26'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.26.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.26.r2.fq.gz'],
 	    'bm47.27'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.27.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.27.r2.fq.gz'],
 	    'bm47.30'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.30.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.30.r2.fq.gz'],
 	    'bm47.35'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.35.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.35.r2.fq.gz'],
-	    'bm47.38'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.38.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.38.r2.fq.gz'],
-	    'bm47.42'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.42.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.42.r2.fq.gz'],
-	    'bm47.43'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.43.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.43.r2.fq.gz'],
+#	    'bm47.38'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.38.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.38.r2.fq.gz'],
+#	    'bm47.42'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.42.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.42.r2.fq.gz'],
+#	    'bm47.43'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.43.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.43.r2.fq.gz'],
 	    'bm47.46'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.46.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.46.r2.fq.gz'],
-	    'bm47.47'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.47.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.47.r2.fq.gz'],
+#Bi	    'bm47.47'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.47.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.47.r2.fq.gz'],
 	    'bm47.50'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.50.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.50.r2.fq.gz'],
 	    'bm47.53'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.53.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.53.r2.fq.gz'],
 	    'bm47.54'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.54.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.54.r2.fq.gz'],
-	    'bm47.55'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.55.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.55.r2.fq.gz'],
-	    'bm47.57'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.57.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.57.r2.fq.gz'],
-	    'bm47.58'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.58.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.58.r2.fq.gz'],
+#	    'bm47.55'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.55.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.55.r2.fq.gz'],
+#	    'bm47.57'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.57.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.57.r2.fq.gz'],
+#	    'bm47.58'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.58.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.58.r2.fq.gz'],
 	    'bm47.59'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.59.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.59.r2.fq.gz'],
-	    'bm47.64'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.64.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.64.r2.fq.gz'],
-	    'bm47.65'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.65.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.65.r2.fq.gz'],
-	    'bm47.66'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.66.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.66.r2.fq.gz'],
-	    'bm47.68'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.68.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.68.r2.fq.gz'],
-	    'bm47.69'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.69.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.69.r2.fq.gz'],
+#	    'bm47.64'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.64.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.64.r2.fq.gz'],
+#Bi	    'bm47.65'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.65.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.65.r2.fq.gz'],
+#	    'bm47.66'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.66.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.66.r2.fq.gz'],
+#Bi	    'bm47.68'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.68.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.68.r2.fq.gz'],
+#Bi	    'bm47.69'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.69.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.69.r2.fq.gz'],
 	    'bm47.6'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.6.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.6.r2.fq.gz'],
 	    'bm47.7'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.7.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.7.r2.fq.gz'],
 	    'bm47.8'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.8.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.8.r2.fq.gz']
@@ -134,16 +140,16 @@ infilesBySample = {
     }
 
 dummieGvcfs = [
-    'results/GATK3.1/dummies/mapping/dummie.1/dummie.1.gvcf',
-    'results/GATK3.1/dummies/mapping/dummie.2/dummie.2.gvcf',
-    'results/GATK3.1/dummies/mapping/dummie.3/dummie.3.gvcf',
-    'results/GATK3.1/dummies/mapping/dummie.4/dummie.4.gvcf',
-    'results/GATK3.1/dummies/mapping/dummie.5/dummie.5.gvcf',
-    'results/GATK3.1/dummies/mapping/dummie.6/dummie.6.gvcf',
-    'results/GATK3.1/dummies/mapping/dummie.7/dummie.7.gvcf',
-    'results/GATK3.1/dummies/mapping/dummie.8/dummie.8.gvcf',
-    'results/GATK3.1/dummies/mapping/dummie.9/dummie.9.gvcf',
-    'results/GATK3.1/dummies/mapping/dummie.10/dummie.10.gvcf'
+    '~/singleFatCellExomeAnalysis/results/GATK3.1/dummies/mapping/dummie.1/dummie.1.gvcf',
+    '~/singleFatCellExomeAnalysis/results/GATK3.1/dummies/mapping/dummie.2/dummie.2.gvcf',
+    '~/singleFatCellExomeAnalysis/results/GATK3.1/dummies/mapping/dummie.3/dummie.3.gvcf',
+    '~/singleFatCellExomeAnalysis/results/GATK3.1/dummies/mapping/dummie.4/dummie.4.gvcf',
+    '~/singleFatCellExomeAnalysis/results/GATK3.1/dummies/mapping/dummie.5/dummie.5.gvcf',
+    '~/singleFatCellExomeAnalysis/results/GATK3.1/dummies/mapping/dummie.6/dummie.6.gvcf',
+    '~/singleFatCellExomeAnalysis/results/GATK3.1/dummies/mapping/dummie.7/dummie.7.gvcf',
+    '~/singleFatCellExomeAnalysis/results/GATK3.1/dummies/mapping/dummie.8/dummie.8.gvcf',
+    '~/singleFatCellExomeAnalysis/results/GATK3.1/dummies/mapping/dummie.9/dummie.9.gvcf',
+    '~/singleFatCellExomeAnalysis/results/GATK3.1/dummies/mapping/dummie.10/dummie.10.gvcf'
     ]
 
 def main():
@@ -198,7 +204,7 @@ def main():
 	sys.stderr.write('Creating scripts for paitent donor pair '+boneMarowId+'.\n')
 	patientDonorPair.createDirs()
 	#patientDonorPair.makeScript_haplotypeCaller()
-	patientDonorPair.makeScript_vqsr_indels()
+	#patientDonorPair.makeScript_vqsr_indels()
 	patientDonorPair.makeScript_vqsr_snps()
 	patientDonorPair.makeScript_GenotypeGVCFs()
 	
@@ -293,6 +299,10 @@ class Sample(object):
 	    #
 	    # illumina  adapter trimming
 	    #
+	    # Nextera version
+	    output += 'cutadapt -n 3  -a CTGTCTCTTATACACATCTGACGCTGCCGACGA -a CTGTCTCTTATACACATCTCCGAGCCCACGAGAC r1.wgaTrimmed.fq > r1.wgaAndilluminaTrimmed.fq &\n'
+	    output += 'cutadapt -n 3  -a CTGTCTCTTATACACATCTGACGCTGCCGACGA -a CTGTCTCTTATACACATCTCCGAGCCCACGAGAC r2.wgaTrimmed.fq > r2.wgaAndilluminaTrimmed.fq &\n'
+	    # original version
 	    output += 'cutadapt -n 3  -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC  -a AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT r1.wgaTrimmed.fq > r1.wgaAndilluminaTrimmed.fq &\n'
 	    output += 'cutadapt -n 3  -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC  -a AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT r2.wgaTrimmed.fq > r2.wgaAndilluminaTrimmed.fq &\n'
 	    output += 'wait\n'
@@ -368,7 +378,7 @@ class Sample(object):
 	    output = ''
 	    output += '#! /bin/bash -l'+'\n'
 	    output += '#SBATCH -A '+self.project+'\n'
-	    output += '#SBATCH -n 4 -p core'+'\n'
+	    output += '#SBATCH -n  -p core'+'\n'
 	    output += '#SBATCH -t 72:00:00'+'\n'
 	    output += '#SBATCH -J '+self.sampleid+'.QC'+'\n'
 	    output += '#SBATCH -e '+self.path+'/stderr.QC.txt'+'\n'
@@ -418,27 +428,35 @@ class Sample(object):
 	    #
 	    # picard HS metrics
 	    #
-	    output += 'java -Xmx5g -jar $picard/CalculateHsMetrics.jar BAIT_INTERVALS=~/singleFatCellExomeAnalysis/references/truseq_exome_targeted_regions.hg19.bed.chr.columnReOrdered.withHeader.chrRem TARGET_INTERVALS=~/singleFatCellExomeAnalysis/references/truseq_exome_targeted_regions.hg19.bed.chr.columnReOrdered.withHeader.chrRem INPUT=$file OUTPUT=$file.hs_metrics.summary.txt PER_TARGET_COVERAGE=$file.hs_metrics.perTargetCoverage.txt REFERENCE_SEQUENCE='+self.reference+'\n'
+	    output += 'java -Xmx3g -jar $picard/CalculateHsMetrics.jar BAIT_INTERVALS=~/singleFatCellExomeAnalysis/references/truseq_exome_targeted_regions.hg19.bed.chr.columnReOrdered.withHeader.chrRem TARGET_INTERVALS=~/singleFatCellExomeAnalysis/references/truseq_exome_targeted_regions.hg19.bed.chr.columnReOrdered.withHeader.chrRem INPUT=$file OUTPUT=$file.hs_metrics.summary.txt PER_TARGET_COVERAGE=$file.hs_metrics.perTargetCoverage.txt REFERENCE_SEQUENCE='+self.reference+'  1>&2 2> '+self.path+'/stderr.caluclateHsmetrics.txt \n'
 
 	    #
 	    # Remove all pcr duplicates (also non properpairs or reads with low quality or not primary alignment though this will have no effect as they are already gone)
 	    #
-	    output += 'samtools view -b -h -f 2 -F 1804 -q 20 $file > '+self.bam+'\n'
+	    #output += 'samtools view -h -f 2 -F 1804 -q 20 $file > '+self.sam+' 2> '+self.path+'/stderr.samtools.2.txt \n'
+	    
+	    #
+	    # convert to bam file
+	    #
+	    #output += 'java -Xmx5g -jar $picard/SamFormatConverter.jar \\'+'\n'
+	    #output += 'MAX_RECORDS_IN_RAM=2500000 INPUT='+self.sam+' OUTPUT='+self.bam+' 1>&2  2> '+self.path+'/stderr.sam2bam.2.txt \n'
+	    #output += 'echo -e "sam2bam Done. $(date) Running on: $(hostname)" 1>&2'+'\n'
+	    #output += 'rm -v '+self.sam+''+'\n'
 	    
 	    #
 	    # sort the bam file
 	    #
-	    output += 'java -Xmx60g -jar $picard/SortSam.jar \\'+'\n'
-	    output += 'MAX_RECORDS_IN_RAM=2500000 SORT_ORDER=coordinate INPUT='+self.bam+' '
-	    output+='OUTPUT='+self.sortedbam+' CREATE_INDEX=true'+'\n'
-	    output += 'echo -e "bam2sort Done. $(date) Running on: $(hostname)" 1>&2'+'\n'
-	    output += 'rm -v '+self.bam+''+'\n'
+	    #output += 'java -Xmx3g -jar $picard/SortSam.jar \\'+'\n'
+	    #output += 'MAX_RECORDS_IN_RAM=500000 SORT_ORDER=coordinate INPUT='+self.bam+' '
+	    #output+='OUTPUT='+self.sortedbam+' CREATE_INDEX=true'+'  1>&2 2> '+self.path+'/stderr.sortsam.2.txt \n'
+	    #output += 'echo -e "bam2sort Done. $(date) Running on: $(hostname)" 1>&2'+'\n'
+	    #output += 'rm -v '+self.bam+''+'\n'
 
 	    #
 	    # get back to where you once belonged
 	    #
-	    output += 'mv -v '+self.sortedbam+''+self.recalbam+'\n'
-	    output += 'rm -v '+self.sortedbam+''+'\n'
+	    #output += 'mv -v '+self.sortedbam+' '+self.recalbam+'\n'
+	    #output += 'rm -v '+self.sortedbam+''+'\n'
 
 	    #
 	    # Final output and write script to file
@@ -477,7 +495,7 @@ class Sample(object):
 	    #output += 'module load bioinfo-tools bwa/0.7.8\n'
 	    #output += 'bwa mem -t 16 /sw/data/uppnex/reference/Homo_sapiens/GRCh37/program_files/bwa/concat.fa '+self.r1files[0]+' '+self.r2files[0]+' > '+self.sam+'\n'
 	    #output += 'bowtie2 -1 '+self.r1files[0]+' -2 '+self.r2files[0]+' --very-sensitive-local -p16 -x '+self.reference+' > '+self.sam+'\n'
-	    output += 'bowtie2 -1 '+self.r1files[0]+' -2 '+self.r2files[0]+' -p16 -x '+self.reference+' > '+self.sam+'\n'
+	    output += 'bowtie2 -1 '+self.r1files[0]+' -2 '+self.r2files[0]+' -p16 -x '+self.reference+' > '+self.sam+' 2> '+self.path+'/stderr.bowtie2.txt \n'
 	    output += 'echo -e "mapping Done. $(date) Running on: $(hostname)" 1>&2'+'\n'
 	    
 	    #
@@ -514,14 +532,14 @@ class Sample(object):
 	    #
 	    # Remove all non properpairs or reads with low quality or not primary alignment (also filters pcd duplicate though this will have no effect as they are not marked yet)
 	    #
-	    output += 'samtools view -S -h -f 2 -F 1804 -q 20 '+self.sam+' > '+self.sam+'.filtered\n'
+	    output += 'samtools view -S -h -f 2 -F 1804 -q 20 '+self.sam+' > '+self.sam+'.filtered  2> '+self.path+'/stderr.samtools.1.txt \n'
 	    output += 'rm -v '+self.sam+''+'\n'
 	    
 	    #
 	    # convert to bam file
 	    #
 	    output += 'java -Xmx5g -jar $picard/SamFormatConverter.jar \\'+'\n'
-	    output += 'MAX_RECORDS_IN_RAM=2500000 INPUT='+self.sam+'.filtered OUTPUT='+self.bam+'\n'
+	    output += 'MAX_RECORDS_IN_RAM=2500000 INPUT='+self.sam+'.filtered OUTPUT='+self.bam+' 1>&2  2> '+self.path+'/stderr.sam2bam.txt \n'
 	    output += 'echo -e "sam2bam Done. $(date) Running on: $(hostname)" 1>&2'+'\n'
 	    output += 'rm -v '+self.sam+'.filtered'+'\n'
 	    
@@ -530,21 +548,21 @@ class Sample(object):
 	    #
 	    output += 'java -Xmx5g -jar $picard/SortSam.jar \\'+'\n'
 	    output += 'MAX_RECORDS_IN_RAM=2500000 SORT_ORDER=coordinate INPUT='+self.bam+' '
-	    output+='OUTPUT='+self.sortedbam+' CREATE_INDEX=true'+'\n'
+	    output+='OUTPUT='+self.sortedbam+' CREATE_INDEX=true 1>&2  2> '+self.path+'/stderr.sortsam.txt '+'\n'
 	    output += 'echo -e "bam2sort Done. $(date) Running on: $(hostname)" 1>&2'+'\n'
 	    output += 'rm -v '+self.bam+''+'\n'
 	    
 	    #
 	    # mark duplicates
 	    #
-	    output += 'java -Xmx5g -jar $picard/MarkDuplicates.jar MAX_RECORDS_IN_RAM=2500000 VALIDATION_STRINGENCY=LENIENT INPUT='+self.sortedbam+' OUTPUT='+self.markedbam+' METRICS_FILE='+self.mdmetrix+'\n'
+	    output += 'java -Xmx5g -jar $picard/MarkDuplicates.jar MAX_RECORDS_IN_RAM=2500000 VALIDATION_STRINGENCY=LENIENT INPUT='+self.sortedbam+' OUTPUT='+self.markedbam+' METRICS_FILE='+self.mdmetrix+' 1>&2  2> '+self.path+'/stderr.markdups.txt \n'
 	    output += 'echo -e "mark Done. $(date) Running on: $(hostname)" 1>&2'+'\n'
 	    output += 'rm -v '+self.sortedbam+''+'\n'
 	    
 	    #
 	    # samtools flagstat
 	    #
-	    output += 'samtools flagstat '+self.markedbam+' \n'
+	    output += 'samtools flagstat '+self.markedbam+'  1>&2  2> '+self.path+'/stderr.flagstat.txt \n'
 	    output += 'echo "flagstat Done. $(date) Running on: $(hostname)" 1>&2'+'\n'
 	    
 	    #
@@ -554,7 +572,7 @@ class Sample(object):
 	    output += 'MAX_RECORDS_IN_RAM=2500000 \\'+'\n'
 	    output += 'INPUT='+self.markedbam+' \\'+'\n'
 	    output += 'OUTPUT='+self.rginfobam+' \\'+'\n'
-	    output += 'CREATE_INDEX=true RGID='+self.sampleid+' RGLB='+self.sampleid+' RGPL=illumina RGSM='+self.sampleid+' RGCN="SciLifeLab" RGPU="barcode"'+'\n'
+	    output += 'CREATE_INDEX=true RGID='+self.sampleid+' RGLB='+self.sampleid+' RGPL=illumina RGSM='+self.sampleid+' RGCN="SciLifeLab" RGPU="barcode"'+'  1>&2  2> '+self.path+'/stderr.addAndReplace.txt \n'
 	    output += 'echo "addorreplace Done. $(date) Running on: $(hostname)" 1>&2'+'\n'
 	    output += 'rm -v '+self.markedbam+''+'\n'
 	    
@@ -597,7 +615,7 @@ class Sample(object):
 	    output += 'echo -e "-> RealignerTargetCreator <-"\n'
 	    output += 'java -Xmx72g -jar $GATK -T RealignerTargetCreator -nt 16 -I '+self.rginfobam+' -R '+self.gatkreference+' -o '+self.realtargets
 	    output += ' -known $GATKbundle/Mills_and_1000G_gold_standard.indels.b37.vcf'
-	    output += ' -known $GATKbundle/1000G_phase1.indels.b37.vcf;'
+	    output += ' -known $GATKbundle/1000G_phase1.indels.b37.vcf  1>&2 2> '+self.path+'/stderr.RealignerTargetCreator.txt ;'
 	    output += '\n'
 	    
 	    with open(self.realncalscript,'w') as outfile: outfile.write(output)
@@ -634,7 +652,7 @@ class Sample(object):
 	    output += 'java -Xmx5g -jar $GATK -T IndelRealigner -I '+self.rginfobam+' -R '+self.gatkreference+' -targetIntervals '+self.realtargets
 	    output += ' -o '+self.realignedbam
 	    output += ' -known $GATKbundle/Mills_and_1000G_gold_standard.indels.b37.vcf'
-	    output += ' -known $GATKbundle/1000G_phase1.indels.b37.vcf;'
+	    output += ' -known $GATKbundle/1000G_phase1.indels.b37.vcf  1>&2 2> '+self.path+'/stderr.indelRealigner.txt ;'
 	    output += '\n'
 	    output += 'echo "Done. $(date) Running on: $(hostname)"\n'
 	    output += 'echo "$(date) Running on: $(hostname)"\n'
@@ -645,10 +663,10 @@ class Sample(object):
 	    #
 	    output += 'echo -e "-> BaseRecalibrator <-"\n'
 	    output += 'java -Xmx5g -jar $GATK -T BaseRecalibrator -I '+self.realignedbam+' -R '+self.gatkreference+' -o '+self.bqsr
-	    output += ' -knownSites $GATKbundle/dbsnp_138.b37.vcf;'
+	    output += ' -knownSites $GATKbundle/dbsnp_138.b37.vcf  1>&2 2> '+self.path+'/stderr.baseRecalibrator.txt ;'
 	    output += '\n'
 	    output += 'echo -e "-> PrintReads <-"\n'
-	    output += 'java -Xmx5g -jar $GATK -T PrintReads -I '+self.realignedbam+' -R '+self.gatkreference+' -BQSR '+self.bqsr+' -o '+self.recalbam+';\n'
+	    output += 'java -Xmx5g -jar $GATK -T PrintReads -I '+self.realignedbam+' -R '+self.gatkreference+' -BQSR '+self.bqsr+' -o '+self.recalbam+' 1>&2 2> '+self.path+'/stderr.printreads.txt ;\n'
 	    output += 'rm -v '+self.realignedbam+''+'\n'
 
 	    #
@@ -707,7 +725,7 @@ class Sample(object):
 	    
 	    output += '--emitRefConfidence GVCF --variant_index_type LINEAR --variant_index_parameter 128000 '
 	    
-	    output += '-o '+self.gvcf+' &'+'\n'
+	    output += '-o '+self.gvcf+'  1>&2 2> '+self.path+'/stderr.haplotypeCaller.txt &'+'\n'
 	    output += 'wait'+'\n'
 
 	    #
@@ -809,7 +827,7 @@ class SampleCollection(object):
 	    self.project = self.samples[0].project
 	    self.reference = self.samples[0].reference
 	    self.bamfiles = ' -I '.join([sample.recalbam for sample in self.samples])
-	    self.gvcffiles = ' --variant '.join([sample.gvcf for sample in self.samples]) + ' --variant '.join([gvcf for gvcf in dummieGvcfs])
+	    self.gvcffiles = ' --variant '.join([sample.gvcf for sample in self.samples]) +' --variant '+ ' --variant '.join([gvcf for gvcf in dummieGvcfs])
 	    self.jobidDependency = ':'.join([':'.join(sample.jobids) for sample in self.samples])
 
 	    self.path = os.path.abspath(basepath)
@@ -923,7 +941,7 @@ class SampleCollection(object):
 	    output += '-A StrandBiasBySample -A FisherStrand -A MappingQualityZero -A MappingQualityZeroBySample -A QualByDepth '
 	    output += ' '
 	    
-	    output += '-o raw_variants.vcf &'+'\n'
+	    output += '-o raw_variants.vcf  1>&2 2> '+self.path+'/stderr.GenotypeGVCFs_GATKrun.txt &'+'\n'
 	    
 	    output += 'wait'+'\n'
 	    output += 'echo "Done. $(date) Running on: $(hostname)"'+'\n'
@@ -1074,7 +1092,7 @@ class SampleCollection(object):
 	    output += ' -o recalibrated_snps_raw_indels.vcf '
 	    output += ' --ts_filter_level 99.0 -mode SNP'+'\n'
 	    output +='\n'
-	    output +='python ~/singleFatCellExomeAnalysis/analysisScripts/filterVariants '+self.collectionId+'.Donor '+self.collectionId+'.Patient recalibrated_snps_raw_indels.vcf\n'
+	    output +='python ~/singleFatCellExomeAnalysis/analysisScripts/filterVariants '+self.collectionId+'.Donor '+self.collectionId+'.Patient recalibrated_snps_raw_indels.vcf  1>&2 2> '+self.path+'/stderr.filterVariantsMakeSummariesAndGraphs.txt \n'
 	    output +='\n'
 	    output += 'echo "Done. $(date) Running on: $(hostname)"'+'\n'
 	    output += 'wait'+'\n'
@@ -1089,19 +1107,17 @@ class SampleCollection(object):
 	    
 	    sys.stderr.write('Placing scripts in jobqueue for '+self.collectionId+'.\n')
 	    
-	    hc_jobids = []
-	    for part in self.hcParts:
-		command = ['sbatch','--dependency=afterok:'+self.jobidDependency,part]
-		sbatch = subprocess.Popen( command, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
-		sbatch_out, errdata = sbatch.communicate()
-		if sbatch.returncode != 0:
-			print 'sbatch view Error code', sbatch.returncode, errdata
-			print sbatch_out
-			sys.exit()
-		hc_jobids.append(sbatch_out.split('\n')[0].split(' ')[3])
-		sys.stderr.write('Queued a haplotypeCalling part for '+self.collectionId+' with JOBID '+str(hc_jobids[-1])+'.\n')
+	    command = ['sbatch','--dependency=afterok:'+self.jobidDependency,self.gvcf]
+	    sbatch = subprocess.Popen( command, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
+	    sbatch_out, errdata = sbatch.communicate()
+	    if sbatch.returncode != 0:
+		print 'sbatch view Error code', sbatch.returncode, errdata
+		print sbatch_out
+		sys.exit()
+	    gvcf_jobid = sbatch_out.split('\n')[0].split(' ')[3]
+	    sys.stderr.write('Queued a gvcfgenotyping script for '+self.collectionId+' with JOBID '+str(gvcf_jobid)+'.\n')
 	    
-	    command = ['sbatch','--dependency=afterok:'+':'.join([str(hc_jobid) for hc_jobid in hc_jobids[-100:]]),self.vqsrsnps]
+	    command = ['sbatch','--dependency=afterok:'+str(gvcf_jobid),self.vqsrsnps]
 	    sbatch = subprocess.Popen( command, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
 	    sbatch_out, errdata = sbatch.communicate()
 	    if sbatch.returncode != 0:
@@ -1111,14 +1127,14 @@ class SampleCollection(object):
 	    vqsrSNP_jobid = sbatch_out.split('\n')[0].split(' ')[3]
 	    sys.stderr.write('Queued vqsr for SNPs for '+self.collectionId+' with JOBID '+str(vqsrSNP_jobid)+'.\n')
 	    
-	    command = ['sbatch','--dependency=afterok:'+str(vqsrSNP_jobid),self.vqsrindels]
-	    sbatch = subprocess.Popen( command, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
-	    sbatch_out, errdata = sbatch.communicate()
-	    if sbatch.returncode != 0:
-		    print 'sbatch view Error code', sbatch.returncode, errdata
-		    print sbatch_out
-		    sys.exit()
-	    sys.stderr.write('Queued vqsrindels script for '+self.collectionId+'.\n')
+	#    command = ['sbatch','--dependency=afterok:'+str(vqsrSNP_jobid),self.vqsrindels]
+	#    sbatch = subprocess.Popen( command, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
+	#    sbatch_out, errdata = sbatch.communicate()
+	#    if sbatch.returncode != 0:
+	#	    print 'sbatch view Error code', sbatch.returncode, errdata
+	#	    print sbatch_out
+	#	    sys.exit()
+	#    sys.stderr.write('Queued vqsrindels script for '+self.collectionId+'.\n')
 
 if __name__ == "__main__":
     main()
