@@ -300,11 +300,12 @@ class Sample(object):
 	    # illumina  adapter trimming
 	    #
 	    # Nextera version
-	    output += 'cutadapt -n 3  -a CTGTCTCTTATACACATCTGACGCTGCCGACGA -a CTGTCTCTTATACACATCTCCGAGCCCACGAGAC r1.wgaTrimmed.fq > r1.wgaAndilluminaTrimmed.fq &\n'
-	    output += 'cutadapt -n 3  -a CTGTCTCTTATACACATCTGACGCTGCCGACGA -a CTGTCTCTTATACACATCTCCGAGCCCACGAGAC r2.wgaTrimmed.fq > r2.wgaAndilluminaTrimmed.fq &\n'
+	    output += 'cutadapt -n 3  -a CTGTCTCTTATACACATCTGACGCTGCCGACGA -a CTGTCTCTTATACACATCTCCGAGCCCACGAGAC r1.wgaTrimmed.fq > r1.wgaAndilluminaTrimmed.1.fq &\n'
+	    output += 'cutadapt -n 3  -a CTGTCTCTTATACACATCTGACGCTGCCGACGA -a CTGTCTCTTATACACATCTCCGAGCCCACGAGAC r2.wgaTrimmed.fq > r2.wgaAndilluminaTrimmed.1.fq &\n'
+	    output += 'wait\n'
 	    # original version
-	    output += 'cutadapt -n 3  -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC  -a AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT r1.wgaTrimmed.fq > r1.wgaAndilluminaTrimmed.fq &\n'
-	    output += 'cutadapt -n 3  -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC  -a AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT r2.wgaTrimmed.fq > r2.wgaAndilluminaTrimmed.fq &\n'
+	    output += 'cutadapt -n 3  -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC  -a AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT r1.wgaAndilluminaTrimmed.1.fq > r1.wgaAndilluminaTrimmed.fq &\n'
+	    output += 'cutadapt -n 3  -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC  -a AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT r2.wgaAndilluminaTrimmed.1.fq > r2.wgaAndilluminaTrimmed.fq &\n'
 	    output += 'wait\n'
 
 	    #
