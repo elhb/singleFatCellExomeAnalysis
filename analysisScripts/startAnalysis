@@ -57,24 +57,24 @@ infilesBySample = {
 	    'bm55.A2'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.A2.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm55.Concat/bm55.A2.r2.fq.gz']
 	},
 	'bm1':{
-#	    'bm1.27'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.27.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.27.r2.fq.gz' ],
+	    'bm1.27'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.27.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.27.r2.fq.gz' ],
 #	    'bm1.fatTissue'    : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.fatTissue.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.fatTissue.r2.fq.gz' ],
-#	    'bm1.34'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.34.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.34.r2.fq.gz' ],
+	    'bm1.34'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.34.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.34.r2.fq.gz' ],
 	    'bm1.1'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.1.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.1.r2.fq.gz' ],
-#	    'bm1.2'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.2.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.2.r2.fq.gz' ],
-#	    'bm1.3'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.3.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.3.r2.fq.gz' ],
+	    'bm1.2'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.2.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.2.r2.fq.gz' ],
+	    'bm1.3'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.3.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.3.r2.fq.gz' ],
 	    'bm1.4'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.4.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.4.r2.fq.gz' ],
-#	    'bm1.5'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.5.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.5.r2.fq.gz' ],
-#	    'bm1.6'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.6.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.6.r2.fq.gz' ],
+	    'bm1.5'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.5.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.5.r2.fq.gz' ],
+	    'bm1.6'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.6.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.6.r2.fq.gz' ],
 	    'bm1.7'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.7.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.7.r2.fq.gz' ],
 	    'bm1.8'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.8.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.8.r2.fq.gz' ],
 	    'bm1.10'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.10.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.10.r2.fq.gz' ],
-#	    'bm1.11'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.11.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.11.r2.fq.gz' ],
+	    'bm1.11'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.11.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.11.r2.fq.gz' ],
 	    'bm1.12'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.12.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.12.r2.fq.gz' ],
 	    'bm1.13'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.13.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.13.r2.fq.gz' ],
 	    'bm1.Donor'        : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.Donor.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.Donor.r2.fq.gz' ],
 	    'bm1.Patient'      : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.Patient.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.Patient.r2.fq.gz' ],
-#	    'bm1.14'		: [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.14.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.14.r2.fq.gz'],
+	    'bm1.14'		: [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.14.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.14.r2.fq.gz'],
 	    'bm1.15'		: [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.15.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.15.r2.fq.gz'],
 	    'bm1.16'		: [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.16.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.16.r2.fq.gz'],
 	    'bm1.17'		: [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.17.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm1.Concat/bm1.17.r2.fq.gz'],
@@ -101,9 +101,9 @@ infilesBySample = {
 #	    'bm47.41NextTest'    : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.41NextTest.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.41NextTest.r2.fq.gz' ],
 #	    'bm47.fatTissue'    : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.fatTissue.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.fatTissue.r2.fq.gz' ],
 	    'bm47.1'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.1.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.1.r2.fq.gz' ],
-#	    'bm47.11'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.11.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.11.r2.fq.gz' ],
+	    'bm47.11'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.11.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.11.r2.fq.gz' ],
 	    'bm47.37'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.37.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.37.r2.fq.gz' ],
-#	    'bm47.48'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.48.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.48.r2.fq.gz' ],
+	    'bm47.48'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.48.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.48.r2.fq.gz' ],
 	    'bm47.56'           : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.56.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.56.r2.fq.gz' ],
 	    'bm47.Donor'        : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.Donor.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.Donor.r2.fq.gz' ],
 	    'bm47.Patient'      : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.Patient.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.Patient.r2.fq.gz' ],
@@ -112,27 +112,27 @@ infilesBySample = {
 	    'bm47.18'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.18.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.18.r2.fq.gz'],
 	    'bm47.21'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.21.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.21.r2.fq.gz'],
 	    'bm47.25'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.25.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.25.r2.fq.gz'],
-#	    'bm47.26'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.26.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.26.r2.fq.gz'],
+	    'bm47.26'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.26.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.26.r2.fq.gz'],
 	    'bm47.27'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.27.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.27.r2.fq.gz'],
 	    'bm47.30'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.30.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.30.r2.fq.gz'],
 	    'bm47.35'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.35.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.35.r2.fq.gz'],
-#	    'bm47.38'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.38.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.38.r2.fq.gz'],
-#	    'bm47.42'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.42.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.42.r2.fq.gz'],
-#	    'bm47.43'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.43.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.43.r2.fq.gz'],
+	    'bm47.38'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.38.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.38.r2.fq.gz'],
+	    'bm47.42'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.42.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.42.r2.fq.gz'],
+	    'bm47.43'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.43.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.43.r2.fq.gz'],
 	    'bm47.46'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.46.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.46.r2.fq.gz'],
-#Bi	    'bm47.47'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.47.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.47.r2.fq.gz'],
+#Bi	    'bm47.47.biNuclear'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.47.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.47.r2.fq.gz'],
 	    'bm47.50'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.50.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.50.r2.fq.gz'],
 	    'bm47.53'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.53.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.53.r2.fq.gz'],
 	    'bm47.54'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.54.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.54.r2.fq.gz'],
-#	    'bm47.55'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.55.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.55.r2.fq.gz'],
-#	    'bm47.57'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.57.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.57.r2.fq.gz'],
-#	    'bm47.58'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.58.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.58.r2.fq.gz'],
+	    'bm47.55'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.55.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.55.r2.fq.gz'],
+	    'bm47.57'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.57.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.57.r2.fq.gz'],
+	    'bm47.58'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.58.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.58.r2.fq.gz'],
 	    'bm47.59'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.59.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.59.r2.fq.gz'],
-#	    'bm47.64'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.64.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.64.r2.fq.gz'],
-#Bi	    'bm47.65'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.65.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.65.r2.fq.gz'],
-#	    'bm47.66'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.66.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.66.r2.fq.gz'],
-#Bi	    'bm47.68'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.68.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.68.r2.fq.gz'],
-#Bi	    'bm47.69'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.69.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.69.r2.fq.gz'],
+	    'bm47.64'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.64.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.64.r2.fq.gz'],
+#Bi	    'bm47.65.biNuclear'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.65.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.65.r2.fq.gz'],
+	    'bm47.66'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.66.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.66.r2.fq.gz'],
+#Bi	    'bm47.68.biNuclear'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.68.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.68.r2.fq.gz'],
+#Bi	    'bm47.69.biNuclear'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.69.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.69.r2.fq.gz'],
 	    'bm47.6'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.6.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.6.r2.fq.gz'],
 	    'bm47.7'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.7.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.7.r2.fq.gz'],
 	    'bm47.8'		 : [ 'index', 'XXXXXX', '~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.8.r1.fq.gz','~/singleFatCellExomeAnalysis/data/bm47.Concat/bm47.8.r2.fq.gz']
@@ -299,13 +299,8 @@ class Sample(object):
 	    #
 	    # illumina  adapter trimming
 	    #
-	    # Nextera version
-	    output += 'cutadapt -n 3  -a CTGTCTCTTATACACATCTGACGCTGCCGACGA -a CTGTCTCTTATACACATCTCCGAGCCCACGAGAC r1.wgaTrimmed.fq > r1.wgaAndilluminaTrimmed.1.fq &\n'
-	    output += 'cutadapt -n 3  -a CTGTCTCTTATACACATCTGACGCTGCCGACGA -a CTGTCTCTTATACACATCTCCGAGCCCACGAGAC r2.wgaTrimmed.fq > r2.wgaAndilluminaTrimmed.1.fq &\n'
-	    output += 'wait\n'
-	    # original version
-	    output += 'cutadapt -n 3  -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC  -a AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT r1.wgaAndilluminaTrimmed.1.fq > r1.wgaAndilluminaTrimmed.fq &\n'
-	    output += 'cutadapt -n 3  -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC  -a AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT r2.wgaAndilluminaTrimmed.1.fq > r2.wgaAndilluminaTrimmed.fq &\n'
+	    output += 'cutadapt -n 3  -a CTGTCTCTTATACACATCTGACGCTGCCGACGA -a CTGTCTCTTATACACATCTCCGAGCCCACGAGAC -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC -a AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT r1.wgaTrimmed.fq > r1.wgaAndilluminaTrimmed.fq &\n'
+	    output += 'cutadapt -n 3  -a CTGTCTCTTATACACATCTGACGCTGCCGACGA -a CTGTCTCTTATACACATCTCCGAGCCCACGAGAC -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC -a AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT r2.wgaTrimmed.fq > r2.wgaAndilluminaTrimmed.fq &\n'
 	    output += 'wait\n'
 
 	    #
@@ -1026,19 +1021,19 @@ class SampleCollection(object):
 	    output += 'echo "$(date) Running on: $(hostname)"'+'\n'
 	    output += '\n'
 	    
-	    #
-	    # Merge the vcf parts and sort them
-	    #
-	    output += 'echo "MERGING VCF PARTS" '+'\n'
-	    output += 'grep -P "^#" raw_variants.part.xaa.vcf > raw_variants.vcf;'+'\n'
-	    output += 'for file in raw_variants.part.x*.vcf;'
-	    output += 'do grep -vP "^#" $file >> raw_variants.vcf;'
-	    output += 'echo $file;'
-	    output += 'done;\n'
-	    output += 'grep -P "#" raw_variants.vcf > raw_variants.SORTED.vcf;'+'\n'
-	    output += 'grep -vP "#" raw_variants.vcf | sort -Vk1,2 >> raw_variants.SORTED.vcf'+'\n'
-	    output += 'mv -v raw_variants.SORTED.vcf raw_variants.vcf'+'\n'
-	    output += '\n'
+	    ##
+	    ## Merge the vcf parts and sort them
+	    ##
+	    #output += 'echo "MERGING VCF PARTS" '+'\n'
+	    #output += 'grep -P "^#" raw_variants.part.xaa.vcf > raw_variants.vcf;'+'\n'
+	    #output += 'for file in raw_variants.part.x*.vcf;'
+	    #output += 'do grep -vP "^#" $file >> raw_variants.vcf;'
+	    #output += 'echo $file;'
+	    #output += 'done;\n'
+	    #output += 'grep -P "#" raw_variants.vcf > raw_variants.SORTED.vcf;'+'\n'
+	    #output += 'grep -vP "#" raw_variants.vcf | sort -Vk1,2 >> raw_variants.SORTED.vcf'+'\n'
+	    #output += 'mv -v raw_variants.SORTED.vcf raw_variants.vcf'+'\n'
+	    #output += '\n'
 	    
 	    #
 	    # variant filtration
