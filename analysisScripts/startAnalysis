@@ -1047,7 +1047,6 @@ class SampleCollection(object):
         sys.stderr.write('Placing scripts in jobqueue for '+self.collectionId+'.\n')
         
         command = ['sbatch','--dependency=afterok'+self.jobidDependency,self.gvcf]
-        print command
         sbatch = subprocess.Popen( command, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
         sbatch_out, errdata = sbatch.communicate()
         if sbatch.returncode != 0:
