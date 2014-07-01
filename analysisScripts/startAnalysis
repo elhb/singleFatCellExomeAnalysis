@@ -162,6 +162,15 @@ def getComandlineInput():
         )
 
     argparser.add_argument(
+        '--fatCell',
+        dest='fatcell',
+        action='store_true',
+        required=False,
+        default=False,
+        help='set this flag to tell the pipe you are running a fatcell analysis.'
+        )
+
+    argparser.add_argument(
         '--submitCollection',
         dest='submitCollection',
         action='store_true',
@@ -882,15 +891,6 @@ class SampleCollection(object):
         output += '--variant '+self.gvcffiles+' '
         output += '-L ~/singleFatCellExomeAnalysis/references/truseq_exome_targeted_regions.hg19.bed.chr.columnReOrdered.withHeader.chrRem.bed '
         output += '--dbsnp $GATKbundle/dbsnp_138.b37.vcf '
-        
-        #output += '--annotation AlleleBalance --annotation AlleleBalanceBySample --annotation BaseCounts --annotation BaseQualityRankSumTest '
-        #output += '--annotation ChromosomeCounts --annotation ClippingRankSumTest --annotation Coverage --annotation DepthPerAlleleBySample '
-        #output += '--annotation DepthPerSampleHC --annotation FisherStrand --annotation GCContent --annotation HaplotypeScore --annotation HardyWeinberg '
-        #output += '--annotation HomopolymerRun --annotation InbreedingCoeff --annotation LikelihoodRankSumTest --annotation LowMQ '
-        #output += '--annotation MVLikelihoodRatio --annotation MappingQualityRankSumTest --annotation MappingQualityZero --annotation MappingQualityZeroBySample '
-        #output += '--annotation NBaseCount --annotation QualByDepth --annotation RMSMappingQuality --annotation ReadPosRankSumTest --annotation SampleList '
-        #output += '--annotation SnpEff --annotation SpanningDeletions --annotation StrandBiasBySample --annotation TandemRepeatAnnotator '
-        #output += '--annotation TransmissionDisequilibriumTest --annotation VariantType '#--annotation StrandOddsRatio
         output += '-A StrandBiasBySample -A FisherStrand -A MappingQualityZero -A MappingQualityZeroBySample -A QualByDepth '
         output += ' '
         
@@ -913,8 +913,10 @@ class SampleCollection(object):
         output += '#SBATCH -o '+self.path+'/stdout.vqsr.INDELs.txt'+'\n'
         output += '#SBATCH --mail-type=All'+'\n'
         output += '#SBATCH --mail-user=erik.borgstrom@scilifelab.se'+'\n'
+
         output += 'echo "$(date) Running on: $(hostname)"'+'\n'
         output += 'echo "$(date) Running on: $(hostname)" >&2'+'\n'
+
         output += 'cd '+self.path+'\n'
         output += 'workon py2.7'+'\n'
         output += 'reference='+self.reference+'\n'
@@ -922,6 +924,7 @@ class SampleCollection(object):
         output += 'GATK='+self.gatk_location+'\n'
         output += 'GATKbundle='+self.bundle_location+'\n'
         output += 'echo "$(date) Running on: $(hostname)"'+'\n'
+
         output += 'echo "VQSR" '+'\n'
         output += 'java -Xmx24g -jar $GATK \\'+'\n'
         output += '   -T VariantRecalibrator \\'+'\n'
@@ -938,6 +941,8 @@ class SampleCollection(object):
         output += '   -mode INDEL'+'\n'
         output += 'echo "Done. $(date) Running on: $(hostname)"'+'\n'
         output += 'wait'+'\n'
+
+
         output += 'echo "$(date) Running on: $(hostname)"'+'\n'
         output += 'echo "---> apply recal <---"'+'\n'
         output += 'java -Xmx72g -jar $GATK \\'+'\n'
@@ -952,12 +957,15 @@ class SampleCollection(object):
         output += '   -mode INDEL'+'\n'
         output += 'echo "Done. $(date) Running on: $(hostname)"'+'\n'
         output += 'wait'+'\n'
+
         output += 'echo $file;'+'\n'
         output += 'echo "$(date) AllDone"'+'\n'
         output += 'echo "$(date) AllDone" >&2'+'\n'
+
         with open(self.vqsrindels,'w') as outfile: outfile.write(output)
 
     def makeScript_vqsr_snps(self):
+        inputData = getComandlineInput()
         output = '#! /bin/bash -l'+'\n'
         output += '#SBATCH -A '+self.project+'\n'
         output += '#SBATCH -n 16 -p node'+'\n'
@@ -1017,6 +1025,8 @@ class SampleCollection(object):
         output += 'wait'+'\n'
         output += 'echo "-----"'+'\n'
         output +='\n'
+
+
         output += 'echo "$(date) Running on: $(hostname)"'+'\n'
         output +='\n'
         output +='\n'
@@ -1031,7 +1041,12 @@ class SampleCollection(object):
         output += ' -o recalibrated_snps_raw_indels.vcf '
         output += ' --ts_filter_level 99.0 -mode SNP'+'\n'
         output +='\n'
-        output +='python ~/singleFatCellExomeAnalysis/analysisScripts/filterVariants '+self.collectionId+'.Donor '+self.collectionId+'.Patient recalibrated_snps_raw_indels.vcf  1>&2 2> '+self.path+'/stderr.filterVariantsMakeSummariesAndGraphs.txt \n'
+        
+
+        if inputData.fatcell:
+            output +='python ~/singleFatCellExomeAnalysis/analysisScripts/filterVariants '+self.collectionId+'.Donor '+self.collectionId+'.Patient recalibrated_snps_raw_indels.vcf  >&2 2> '+self.path+'/stderr.filterVariantsMakeSummariesAndGraphs.log.txt \n'
+        
+
         output +='\n'
         output += 'echo "Done. $(date) Running on: $(hostname)"'+'\n'
         output += 'wait'+'\n'
