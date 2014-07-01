@@ -1,0 +1,12 @@
+#id		path to bamfile
+dummie01	/home/erikb/singleFatCellExomeAnalysis/data/1000Gdummies/HG00100.mapped.ILLUMINA.bwa.GBR.exome.20121211.bam
+dummie02	/home/erikb/singleFatCellExomeAnalysis/data/1000Gdummies/HG00101.mapped.ILLUMINA.bwa.GBR.exome.20121211.bam
+dummie03	/home/erikb/singleFatCellExomeAnalysis/data/1000Gdummies/HG00102.mapped.ILLUMINA.bwa.GBR.exome.20121211.bam
+dummie04	/home/erikb/singleFatCellExomeAnalysis/data/1000Gdummies/HG00103.mapped.ILLUMINA.bwa.GBR.exome.20120522.bam
+dummie05	/home/erikb/singleFatCellExomeAnalysis/data/1000Gdummies/HG00105.mapped.ILLUMINA.bwa.GBR.exome.20130415.bam
+dummie06	/home/erikb/singleFatCellExomeAnalysis/data/1000Gdummies/HG00106.mapped.ILLUMINA.bwa.GBR.exome.20130415.bam
+dummie07	/home/erikb/singleFatCellExomeAnalysis/data/1000Gdummies/HG00107.mapped.ILLUMINA.bwa.GBR.exome.20121211.bam
+dummie08	/home/erikb/singleFatCellExomeAnalysis/data/1000Gdummies/HG00108.mapped.ILLUMINA.bwa.GBR.exome.20120522.bam
+dummie09	/home/erikb/singleFatCellExomeAnalysis/data/1000Gdummies/HG00109.mapped.ILLUMINA.bwa.GBR.exome.20121211.bam
+dummie10	/home/erikb/singleFatCellExomeAnalysis/data/1000Gdummies/HG00110.mapped.ILLUMINA.bwa.GBR.exome.20121211.bam
+dummie11	/home/erikb/singleFatCellExomeAnalysis/data/1000Gdummies/HG00111.mapped.ILLUMINA.bwa.GBR.exome.20120522.bam

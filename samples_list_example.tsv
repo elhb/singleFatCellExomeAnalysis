@@ -1,0 +1,6 @@
+#id	r1file	r2file	submitscriptflag
+testSample1	R1FILE.fq.gz	R2FILE.fq.gz	0
+testSample2	R1FILE2.fq.gz	R2FILE2.fq.gz	0
+testSample3	R1FILE3.fq.gz	R2FILE3.fq.gz	1
+testSample4	R1FILE4.fq.gz	R2FILE4.fq.gz	1
+testSampleN	R1FILEN.fq.gz	R2FILEN.fq.gz	1
