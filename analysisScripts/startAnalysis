@@ -229,10 +229,42 @@ def getComandlineInput():
         help='GATKbundle location (default ~/singleFatCellExomeAnalysis/references/GATKbundle/ ).'
         )
 
+    argparser.add_argument(
+        '--email',
+        dest='email',
+        metavar='<path>',
+        type=str,
+        required=True,
+        default='NA@NA.NA',
+        help='email adress for notifications.'
+        )
+
+
+    argparser.add_argument(
+        '--TrimGalore',
+        dest='trimgalore',
+        action='store_true',
+        required=False,
+        default=False,
+        help='Flag for using trimgalore for trimming, remember to also set --GaloreLocation CURRENTLY NOT WORKING.'
+        )
+
+    argparser.add_argument(
+        '--GaloreLocation',
+        dest='galoreLocation',
+        metavar='<path>',
+        type=str,
+        required=False,
+        default='/proj/b2011006/private/benjamin/programs/',
+        help='TrimGalore location (default /proj/b2011006/private/benjamin/programs/ ).'
+        )
+
+
     inputData = argparser.parse_args(sys.argv[1:])
     
     if inputData.resultsPath[-1] != '/': inputData.resultsPath += '/'
     if inputData.bundle[-1] != '/': inputData.bundle += '/'
+    if inputData.galoreLocation and inputData.galoreLocation[-1] != '/': inputData.galoreLocation += '/'
     if inputData.picard[-1] == '/': inputData.picard = inputData.picard[:-1]
     
     return inputData
@@ -245,6 +277,7 @@ class Sample(object):
         import os
         inputData = getComandlineInput()
         
+        self.email = inputData.email
         self.sampleid = sampleid
         self.index = [infilesDictionary[self.sampleid][0]]
         self.indexseq = [infilesDictionary[self.sampleid][1]]
@@ -292,6 +325,7 @@ class Sample(object):
 
     def makeScriptTrimming(self):
         
+        inputData = getComandlineInput()
         #
         # sbatch header
         #
@@ -304,7 +338,7 @@ class Sample(object):
         output += '#SBATCH -e '+self.path+'/stderr.trimming.txt'+'\n'
         output += '#SBATCH -o '+self.path+'/stdout.trimming.txt'+'\n'
         output += '#SBATCH --mail-type=All'+'\n'
-        output += '#SBATCH --mail-user=erik.borgstrom@scilifelab.se'+'\n'
+        output += '#SBATCH --mail-user='+self.email+'\n'
         
         #
         # define variebles and go to path
@@ -314,60 +348,72 @@ class Sample(object):
         output += 'echo "-----"'+'\n'
         output += 'workon py2.7'+'\n'
         
-        #
-        # WGA adapter trimming
-        #
-        output += '~/singleFatCellExomeAnalysis/analysisScripts/wgaAdapterTrimmer.py -i '+self.r1files[0]+' > r1.wgaTrimmed.fq 2> r1wgaTrimming.log.txt &\n'
-        output += '~/singleFatCellExomeAnalysis/analysisScripts/wgaAdapterTrimmer.py -i '+self.r2files[0]+' > r2.wgaTrimmed.fq 2> r2wgaTrimming.log.txt &\n'
-        output += 'wait\n'
+        if inputData.trimgalore:
+            output += 'module add bioinfo-tools python/2.7\n'
+            output += 'nextera=CTGTCTCTTATACACATCT\n'
+            output += inputData.galoreLocation+'trim_galore -a $nextera -a2 $nextera -q 25 --stringency 5 --paired --length 25 -o '+self.path+' '+self.r1files[0]+' '+self.r2files[0]+' &\n'
+            output += 'wait\n'
+        else:
+            if inputData.fatcell:
+                #
+                # WGA adapter trimming
+                #
+                output += '~/singleFatCellExomeAnalysis/analysisScripts/wgaAdapterTrimmer.py -i '+self.r1files[0]+' > r1.wgaTrimmed.fq 2> r1wgaTrimming.log.txt &\n'
+                output += '~/singleFatCellExomeAnalysis/analysisScripts/wgaAdapterTrimmer.py -i '+self.r2files[0]+' > r2.wgaTrimmed.fq 2> r2wgaTrimming.log.txt &\n'
+                output += 'wait\n'
+            
+                #
+                # illumina  adapter trimming
+                #
+                output += 'cutadapt -n 3  -a CTGTCTCTTATACACATCTGACGCTGCCGACGA -a CTGTCTCTTATACACATCTCCGAGCCCACGAGAC -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC -a AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT r1.wgaTrimmed.fq > r1.wgaAndilluminaTrimmed.fq  2> r1adapterTrimming.log.txt  &\n'
+                output += 'cutadapt -n 3  -a CTGTCTCTTATACACATCTGACGCTGCCGACGA -a CTGTCTCTTATACACATCTCCGAGCCCACGAGAC -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC -a AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT r2.wgaTrimmed.fq > r2.wgaAndilluminaTrimmed.fq  2> r2adapterTrimming.log.txt &\n'
+                output += 'wait\n'
+            else:
+                output += 'cutadapt -n 3  -a CTGTCTCTTATACACATCTGACGCTGCCGACGA -a CTGTCTCTTATACACATCTCCGAGCCCACGAGAC -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC -a AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT '+self.r1files[0]+' > r1.wgaAndilluminaTrimmed.fq  2> r1adapterTrimming.log.txt  &\n'
+                output += 'cutadapt -n 3  -a CTGTCTCTTATACACATCTGACGCTGCCGACGA -a CTGTCTCTTATACACATCTCCGAGCCCACGAGAC -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC -a AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT '+self.r2files[0]+' > r2.wgaAndilluminaTrimmed.fq  2> r2adapterTrimming.log.txt &\n'
+                output += 'wait\n'
+            
+            if inputData.fatcell:
+                #
+                # remove temp files
+                #
+                output += 'rm -v r1.wgaTrimmed.fq\n'
+                output += 'rm -v r2.wgaTrimmed.fq\n'
+                output += 'wait\n'
+            
+            #
+            # quality trimmming
+            #
+            output += '~/singleFatCellExomeAnalysis/analysisScripts/TrimBWAstyle.pl -q 20 r1.wgaAndilluminaTrimmed.fq > r1.wgaIlluminaAndQualityTrimmed.fq 2> r1qualityTrimming.log.txt &\n'
+            output += '~/singleFatCellExomeAnalysis/analysisScripts/TrimBWAstyle.pl -q 20 r2.wgaAndilluminaTrimmed.fq > r2.wgaIlluminaAndQualityTrimmed.fq 2> r2qualityTrimming.log.txt &\n'
+            output += 'wait\n'
+            
+            #
+            # remove temp files
+            #
+            output += 'rm -v r1.wgaAndilluminaTrimmed.fq\n'
+            output += 'rm -v r2.wgaAndilluminaTrimmed.fq\n'
+            output += 'wait\n'
+            
+            #
+            # remove empty or "N" only sequences
+            #
+            output += 'python ~/singleFatCellExomeAnalysis/analysisScripts/removeEmptyReads.py r1.wgaIlluminaAndQualityTrimmed.fq r2.wgaIlluminaAndQualityTrimmed.fq r1.allTrimmed.fq r2.allTrimmed.fq singletts.fq >&2 2> removeEmptyReads.log.txt\n'
+            
+            #
+            # remove temp files
+            #
+            output += 'rm -v r1.wgaIlluminaAndQualityTrimmed.fq\n'
+            output += 'rm -v r2.wgaIlluminaAndQualityTrimmed.fq\n'
+            output += 'wait\n'
         
-        #
-        # illumina  adapter trimming
-        #
-        output += 'cutadapt -n 3  -a CTGTCTCTTATACACATCTGACGCTGCCGACGA -a CTGTCTCTTATACACATCTCCGAGCCCACGAGAC -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC -a AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT r1.wgaTrimmed.fq > r1.wgaAndilluminaTrimmed.fq  2> r1adapterTrimming.log.txt  &\n'
-        output += 'cutadapt -n 3  -a CTGTCTCTTATACACATCTGACGCTGCCGACGA -a CTGTCTCTTATACACATCTCCGAGCCCACGAGAC -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC -a AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT r2.wgaTrimmed.fq > r2.wgaAndilluminaTrimmed.fq  2> r2adapterTrimming.log.txt &\n'
-        output += 'wait\n'
-        
-        #
-        # remove temp files
-        #
-        output += 'rm -v r1.wgaTrimmed.fq\n'
-        output += 'rm -v r2.wgaTrimmed.fq\n'
-        output += 'wait\n'
-        
-        #
-        # quality trimmming
-        #
-        output += '~/singleFatCellExomeAnalysis/analysisScripts/TrimBWAstyle.pl -q 20 r1.wgaAndilluminaTrimmed.fq > r1.wgaIlluminaAndQualityTrimmed.fq 2> r1qualityTrimming.log.txt &\n'
-        output += '~/singleFatCellExomeAnalysis/analysisScripts/TrimBWAstyle.pl -q 20 r2.wgaAndilluminaTrimmed.fq > r2.wgaIlluminaAndQualityTrimmed.fq 2> r2qualityTrimming.log.txt &\n'
-        output += 'wait\n'
-        
-        #
-        # remove temp files
-        #
-        output += 'rm -v r1.wgaAndilluminaTrimmed.fq\n'
-        output += 'rm -v r2.wgaAndilluminaTrimmed.fq\n'
-        output += 'wait\n'
-        
-        #
-        # remove empty or "N" only sequences
-        #
-        output += 'python ~/singleFatCellExomeAnalysis/analysisScripts/removeEmptyReads.py r1.wgaIlluminaAndQualityTrimmed.fq r2.wgaIlluminaAndQualityTrimmed.fq r1.allTrimmed.fq r2.allTrimmed.fq singletts.fq >&2 2> removeEmptyReads.log.txt\n'
-        
-        #
-        # remove temp files
-        #
-        output += 'rm -v r1.wgaIlluminaAndQualityTrimmed.fq\n'
-        output += 'rm -v r2.wgaIlluminaAndQualityTrimmed.fq\n'
-        output += 'wait\n'
-        
-        #
-        # compress files
-        #
-        output += 'gzip -v9 r1.allTrimmed.fq &\n'
-        output += 'gzip -v9 r2.allTrimmed.fq &\n'
-        output += 'gzip -v9 singletts.fq &\n'
-        output += 'wait\n'
+            #
+            # compress files
+            #
+            output += 'gzip -v9 r1.allTrimmed.fq &\n'
+            output += 'gzip -v9 r2.allTrimmed.fq &\n'
+            output += 'gzip -v9 singletts.fq &\n'
+            output += 'wait\n'
         
         #
         # FASTQC
@@ -404,7 +450,7 @@ class Sample(object):
         output += '#SBATCH -e '+self.path+'/stderr.mapNmark.txt'+'\n'
         output += '#SBATCH -o '+self.path+'/stdout.mapNmark.txt'+'\n'
         output += '#SBATCH --mail-type=All'+'\n'
-        output += '#SBATCH --mail-user=erik.borgstrom@scilifelab.se'+'\n'
+        output += '#SBATCH --mail-user='+self.email+'\n'
         
         #
         # define variebles and go to path
@@ -443,7 +489,7 @@ class Sample(object):
         output += '#SBATCH -e '+self.path+'/stderr.postMapNmark.txt'+'\n'
         output += '#SBATCH -o '+self.path+'/stdout.postMapNmark.txt'+'\n'
         output += '#SBATCH --mail-type=All'+'\n'
-        output += '#SBATCH --mail-user=erik.borgstrom@scilifelab.se'+'\n'
+        output += '#SBATCH --mail-user='+self.email+'\n'
         
         #
         # define variebles and go to path
@@ -613,7 +659,7 @@ class Sample(object):
         output += '#SBATCH -e '+self.path+'/stderr.QC.txt'+'\n'
         output += '#SBATCH -o '+self.path+'/stdout.QC.txt'+'\n'
         output += '#SBATCH --mail-type=All'+'\n'
-        output += '#SBATCH --mail-user=erik.borgstrom@scilifelab.se'+'\n'
+        output += '#SBATCH --mail-user='+self.email+'\n'
         
         #
         # define variebles and go to path
@@ -830,8 +876,9 @@ class SampleCollection(object):
     def __init__(self,samples,basepath,collectionId):
         import os
         import time
-        
-        
+    
+        inputData = getComandlineInput()
+        self.email = inputData.email
         self.samples = samples
         self.collectionId = collectionId
         self.project = self.samples[0].project
@@ -872,7 +919,7 @@ class SampleCollection(object):
         output += '#SBATCH -e '+self.path+'/stderr.genotypeGVCFs.txt'+'\n'
         output += '#SBATCH -o '+self.path+'/stdout.genotypeGVCFs.txt'+'\n'
         output += '#SBATCH --mail-type=All'+'\n'
-        output += '#SBATCH --mail-user=erik.borgstrom@scilifelab.se'+'\n'
+        output += '#SBATCH --mail-user='+self.email+'\n'
         output += 'echo "$(date) Running on: $(hostname)"'+'\n'
         output += 'echo "$(date) Running on: $(hostname)" >&2'+'\n'
         output += 'cd '+self.path+'\n'
@@ -912,7 +959,7 @@ class SampleCollection(object):
         output += '#SBATCH -e '+self.path+'/stderr.vqsr.INDELs.txt'+'\n'
         output += '#SBATCH -o '+self.path+'/stdout.vqsr.INDELs.txt'+'\n'
         output += '#SBATCH --mail-type=All'+'\n'
-        output += '#SBATCH --mail-user=erik.borgstrom@scilifelab.se'+'\n'
+        output += '#SBATCH --mail-user='+self.email+'\n'
 
         output += 'echo "$(date) Running on: $(hostname)"'+'\n'
         output += 'echo "$(date) Running on: $(hostname)" >&2'+'\n'
@@ -974,7 +1021,7 @@ class SampleCollection(object):
         output += '#SBATCH -e '+self.path+'/stderr.vqsr.SNPs.txt'+'\n'
         output += '#SBATCH -o '+self.path+'/stdout.vqsr.SNPs.txt'+'\n'
         output += '#SBATCH --mail-type=All'+'\n'
-        output += '#SBATCH --mail-user=erik.borgstrom@scilifelab.se'+'\n'
+        output += '#SBATCH --mail-user='+self.email+'\n'
         output += 'echo "$(date) Running on: $(hostname)"'+'\n'
         output += 'echo "$(date) Running on: $(hostname)" >&2'+'\n'
         output += 'cd '+self.path+'\n'
