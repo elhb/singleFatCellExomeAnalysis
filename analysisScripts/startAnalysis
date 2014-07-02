@@ -355,8 +355,17 @@ class Sample(object):
             output += 'nextera=CTGTCTCTTATACACATCT\n'
             output += inputData.galoreLocation+'trim_galore -a $nextera -a2 $nextera -q 25 --stringency 5 --paired --length 25 -o '+self.path+' '+self.r1files[0]+' '+self.r2files[0]+' &\n'
             output += 'wait\n'
-            output += 'mv -v'+self.r1files[0].split('/')[-1]+'_val_1.fq r1.allTrimmed.fq\n'
-            output += 'mv -v'+self.r2files[0].split('/')[-1]+'_val_2.fq r2.allTrimmed.fq\n'
+            
+            r1name = self.r1files[0].split('/')[-1]
+            r2name = self.r2files[0].split('/')[-1]
+            import re
+            if re.search('.fastq',r1name): r1name = r1name.split('.fastq')[0]
+            elif re.search('.fq',r1name): r1name = r1name.split('.fq')[0]
+            if re.search('.fastq',r2name): r2name = r2name.split('.fastq')[0]
+            elif re.search('.fq',r2name): r2name = r2name.split('.fq')[0]
+            
+            output += 'mv -v '+r1name+'_val_1.fq r1.allTrimmed.fq\n'
+            output += 'mv -v '+r2name+'_val_2.fq r2.allTrimmed.fq\n'
         else:
             output += 'workon py2.7'+'\n'
             if inputData.fatcell:
