@@ -274,9 +274,12 @@ class Sample(object):
     def __init__(self,sampleid,basepath,infilesDictionary):
         """ sets values for all paths and files etc """
         
+        import sys
         import os
         inputData = getComandlineInput()
         
+        self.analysisScripts = os.path.abspath(sys.argv[0]).split('startAnalysis')[0][:-1]
+        self.refpath = os.path.abspath(sys.argv[0]).split('analysisScripts')[0]+'references'
         self.email = inputData.email
         self.sampleid = sampleid
         self.index = [infilesDictionary[self.sampleid][0]]
@@ -346,20 +349,22 @@ class Sample(object):
         output += 'echo "$(date) Running on: $(hostname)"'+'\n'
         output += 'cd '+self.path+'\n'
         output += 'echo "-----"'+'\n'
-        output += 'workon py2.7'+'\n'
         
         if inputData.trimgalore:
             output += 'module add bioinfo-tools python/2.7\n'
             output += 'nextera=CTGTCTCTTATACACATCT\n'
             output += inputData.galoreLocation+'trim_galore -a $nextera -a2 $nextera -q 25 --stringency 5 --paired --length 25 -o '+self.path+' '+self.r1files[0]+' '+self.r2files[0]+' &\n'
             output += 'wait\n'
+            output += 'mv -v'+self.r1files[0].split('/')[-1]+'_val_1.fq r1.allTrimmed.fq\n'
+            output += 'mv -v'+self.r2files[0].split('/')[-1]+'_val_2.fq r2.allTrimmed.fq\n'
         else:
+            output += 'workon py2.7'+'\n'
             if inputData.fatcell:
                 #
                 # WGA adapter trimming
                 #
-                output += '~/singleFatCellExomeAnalysis/analysisScripts/wgaAdapterTrimmer.py -i '+self.r1files[0]+' > r1.wgaTrimmed.fq 2> r1wgaTrimming.log.txt &\n'
-                output += '~/singleFatCellExomeAnalysis/analysisScripts/wgaAdapterTrimmer.py -i '+self.r2files[0]+' > r2.wgaTrimmed.fq 2> r2wgaTrimming.log.txt &\n'
+                output += ''+self.analysisScripts+'/wgaAdapterTrimmer.py -i '+self.r1files[0]+' > r1.wgaTrimmed.fq 2> r1wgaTrimming.log.txt &\n'
+                output += ''+self.analysisScripts+'/wgaAdapterTrimmer.py -i '+self.r2files[0]+' > r2.wgaTrimmed.fq 2> r2wgaTrimming.log.txt &\n'
                 output += 'wait\n'
             
                 #
@@ -384,8 +389,8 @@ class Sample(object):
             #
             # quality trimmming
             #
-            output += '~/singleFatCellExomeAnalysis/analysisScripts/TrimBWAstyle.pl -q 20 r1.wgaAndilluminaTrimmed.fq > r1.wgaIlluminaAndQualityTrimmed.fq 2> r1qualityTrimming.log.txt &\n'
-            output += '~/singleFatCellExomeAnalysis/analysisScripts/TrimBWAstyle.pl -q 20 r2.wgaAndilluminaTrimmed.fq > r2.wgaIlluminaAndQualityTrimmed.fq 2> r2qualityTrimming.log.txt &\n'
+            output += ''+self.analysisScripts+'/TrimBWAstyle.pl -q 20 r1.wgaAndilluminaTrimmed.fq > r1.wgaIlluminaAndQualityTrimmed.fq 2> r1qualityTrimming.log.txt &\n'
+            output += ''+self.analysisScripts+'/TrimBWAstyle.pl -q 20 r2.wgaAndilluminaTrimmed.fq > r2.wgaIlluminaAndQualityTrimmed.fq 2> r2qualityTrimming.log.txt &\n'
             output += 'wait\n'
             
             #
@@ -398,7 +403,7 @@ class Sample(object):
             #
             # remove empty or "N" only sequences
             #
-            output += 'python ~/singleFatCellExomeAnalysis/analysisScripts/removeEmptyReads.py r1.wgaIlluminaAndQualityTrimmed.fq r2.wgaIlluminaAndQualityTrimmed.fq r1.allTrimmed.fq r2.allTrimmed.fq singletts.fq >&2 2> removeEmptyReads.log.txt\n'
+            output += 'python '+self.analysisScripts+'/removeEmptyReads.py r1.wgaIlluminaAndQualityTrimmed.fq r2.wgaIlluminaAndQualityTrimmed.fq r1.allTrimmed.fq r2.allTrimmed.fq singletts.fq >&2 2> removeEmptyReads.log.txt\n'
             
             #
             # remove temp files
@@ -407,13 +412,13 @@ class Sample(object):
             output += 'rm -v r2.wgaIlluminaAndQualityTrimmed.fq\n'
             output += 'wait\n'
         
-            #
-            # compress files
-            #
-            output += 'gzip -v9 r1.allTrimmed.fq &\n'
-            output += 'gzip -v9 r2.allTrimmed.fq &\n'
-            output += 'gzip -v9 singletts.fq &\n'
-            output += 'wait\n'
+        #
+        # compress files
+        #
+        output += 'gzip -v9 r1.allTrimmed.fq &\n'
+        output += 'gzip -v9 r2.allTrimmed.fq &\n'
+        if not inputData.trimgalore: output += 'gzip -v9 singletts.fq &\n'
+        output += 'wait\n'
         
         #
         # FASTQC
@@ -421,7 +426,7 @@ class Sample(object):
         output += 'module load bioinfo-tools FastQC\n'
         output += 'fastqc r1.allTrimmed.fq.gz &\n'
         output += 'fastqc r2.allTrimmed.fq.gz &\n'
-        output += 'fastqc singletts.fq.gz &\n'
+        if not inputData.trimgalore: output += 'fastqc singletts.fq.gz &\n'
         output += 'wait\n'
         output += 'mkdir fastqcResults\n'
         output += 'mv -v *.fq_fastqc* fastqcResults/\n'
@@ -703,7 +708,7 @@ class Sample(object):
         #
         # picard HS metrics
         #
-        output += 'java -Xmx3g -jar $picard/CalculateHsMetrics.jar BAIT_INTERVALS=~/singleFatCellExomeAnalysis/references/truseq_exome_targeted_regions.hg19.bed.chr.columnReOrdered.withHeader.chrRem TARGET_INTERVALS=~/singleFatCellExomeAnalysis/references/truseq_exome_targeted_regions.hg19.bed.chr.columnReOrdered.withHeader.chrRem INPUT=$file OUTPUT=$file.hs_metrics.summary.txt PER_TARGET_COVERAGE=$file.hs_metrics.perTargetCoverage.txt REFERENCE_SEQUENCE='+self.reference+'  1>&2 2> '+self.path+'/stderr.caluclateHsmetrics.txt \n'
+        output += 'java -Xmx3g -jar $picard/CalculateHsMetrics.jar BAIT_INTERVALS='+self.refpath+'/truseq_exome_targeted_regions.hg19.bed.chr.columnReOrdered.withHeader.chrRem TARGET_INTERVALS='+self.refpath+'/truseq_exome_targeted_regions.hg19.bed.chr.columnReOrdered.withHeader.chrRem INPUT=$file OUTPUT=$file.hs_metrics.summary.txt PER_TARGET_COVERAGE=$file.hs_metrics.perTargetCoverage.txt REFERENCE_SEQUENCE='+self.reference+'  1>&2 2> '+self.path+'/stderr.caluclateHsmetrics.txt \n'
         
         #
         # Final output and write script to file
@@ -748,7 +753,7 @@ class Sample(object):
         output += '--genotyping_mode DISCOVERY '
         output += '-stand_emit_conf 10 '
         output += '-stand_call_conf 30 '
-        output += '-L ~/singleFatCellExomeAnalysis/references/truseq_exome_targeted_regions.hg19.bed.chr.columnReOrdered.withHeader.chrRem.bed '
+        output += '-L '+self.refpath+'/truseq_exome_targeted_regions.hg19.bed.chr.columnReOrdered.withHeader.chrRem.bed '
         output += '--dbsnp $GATKbundle/dbsnp_138.b37.vcf '
         
         output += '--annotation AlleleBalance --annotation AlleleBalanceBySample --annotation BaseCounts --annotation BaseQualityRankSumTest '
@@ -876,8 +881,11 @@ class SampleCollection(object):
     def __init__(self,samples,basepath,collectionId):
         import os
         import time
+        import sys
     
         inputData = getComandlineInput()
+        self.analysisScripts = os.path.abspath(sys.argv[0]).split('startAnalysis')[0][:-1]
+        self.refpath = os.path.abspath(sys.argv[0]).split('analysisScripts')[0]+'references'
         self.email = inputData.email
         self.samples = samples
         self.collectionId = collectionId
@@ -927,16 +935,16 @@ class SampleCollection(object):
         output += 'GATK='+self.gatk_location+'\n'
         output += 'GATKbundle='+self.bundle_location+'\n'
         output += 'echo "$(date) Running on: $(hostname)"'+'\n'
-        output += 'workon py2.7'+'\n'
-        
-        output += 'python ~/singleFatCellExomeAnalysis/analysisScripts/mappingStatsForExcel.py '+self.samples[0].basepath+'/ '+'\n'
+
+        output += 'module load python/2.7'+'\n'
+        output += 'python '+self.analysisScripts+'/mappingStatsForExcel.py '+self.samples[0].basepath+'/ '+'\n'
         output += 'echo "HC" '+'\n'
         
         output += 'java -Xmx100g -jar $GATK -nt 16 '
         output += '-T  GenotypeGVCFs '
         output += '-R '+self.reference+' '
         output += '--variant '+self.gvcffiles+' '
-        output += '-L ~/singleFatCellExomeAnalysis/references/truseq_exome_targeted_regions.hg19.bed.chr.columnReOrdered.withHeader.chrRem.bed '
+        output += '-L '+self.refpath+'/truseq_exome_targeted_regions.hg19.bed.chr.columnReOrdered.withHeader.chrRem.bed '
         output += '--dbsnp $GATKbundle/dbsnp_138.b37.vcf '
         output += '-A StrandBiasBySample -A FisherStrand -A MappingQualityZero -A MappingQualityZeroBySample -A QualByDepth '
         output += ' '
@@ -1025,7 +1033,6 @@ class SampleCollection(object):
         output += 'echo "$(date) Running on: $(hostname)"'+'\n'
         output += 'echo "$(date) Running on: $(hostname)" >&2'+'\n'
         output += 'cd '+self.path+'\n'
-        output += 'workon py2.7'+'\n'
         output += 'reference='+self.reference+'\n'
         output += 'picard='+self.picard_location+'\n'
         output += 'GATK='+self.gatk_location+'\n'
@@ -1091,7 +1098,8 @@ class SampleCollection(object):
         
 
         if inputData.fatcell:
-            output +='python ~/singleFatCellExomeAnalysis/analysisScripts/filterVariants '+self.collectionId+'.Donor '+self.collectionId+'.Patient recalibrated_snps_raw_indels.vcf  >&2 2> '+self.path+'/stderr.filterVariantsMakeSummariesAndGraphs.log.txt \n'
+            output += 'workon py2.7'+'\n'
+            output +='python '+self.analysisScripts+'/filterVariants '+self.collectionId+'.Donor '+self.collectionId+'.Patient recalibrated_snps_raw_indels.vcf  >&2 2> '+self.path+'/stderr.filterVariantsMakeSummariesAndGraphs.log.txt \n'
         
 
         output +='\n'
