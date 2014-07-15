@@ -2,6 +2,9 @@
 
 # USAGE: python myHardFilter.py <donorID> <patientID> VCFfile1 VCFfile2 ... VCFfileN
 
+# NOTE THAT: this script requieres naming of files and sample ids similar to what they are in the startAnalysis script
+# and have not been tested for more than one vcf file simultaneously
+
 #
 # Import packages
 #
@@ -15,13 +18,19 @@ import pandas as pd
 import numpy as np
 print 'all imported'
 
-INCLUDEHETRO = False
-patDonReadCutoff = 20
-patDonQualCutoff = 30
-readDepthCutoff = 10
-genotypeQualCutoff = 30
-exclude1000Genomes = True
+#
+# Settings used these are hardcoded though feel free to change them if you want to try something that we did not use
+#
+INCLUDEHETRO = False #flag for including the hetrozygous variants or not
+patDonReadCutoff = 20 # read depth cutof for the recipient and donor whole blood genomic DNA samples
+patDonQualCutoff = 30 # genotype quality cutof for the recipient and donor whole blood genomic DNA samples
+readDepthCutoff = 10 # corresponding cutoff for the single cell samples
+genotypeQualCutoff = 30 # corresponding cutoff for the single cell samples
+exclude1000Genomes = True # flag to not output the geotypes for the 1000genome samples
 
+#
+# out put the settings used for logging purposes
+#
 print '\nsettings used:'
 print 'INCLUDEHETRO =', INCLUDEHETRO
 print 'patDonReadCutoff =', patDonReadCutoff
@@ -30,15 +39,21 @@ print 'readDepthCutoff =', readDepthCutoff
 print 'genotypeQualCutoff =',genotypeQualCutoff,'\n'
 
 def main():
+    """ main function that executes the other functions """
+    
     #
     # Reference ids
     #
     donId = sys.argv[1]
     patId = sys.argv[2]
     
+    # get the infile names
     infiles = sys.argv[3:]
-    printVcfLines = False 
+    printVcfLines = False # flag for printing the vcf lines to output, for debugging purposes
     
+    #
+    # extract the sample ids and variations from the input vcf files
+    #
     variations, samples = getVariations(infiles,printVcfLines)
     samples = sorted_nicely(samples)
     if exclude1000Genomes:
@@ -46,7 +61,15 @@ def main():
         for sample in samples:
             if not re.match('HG001[01][0-9]',sample): tmpSamples.append(sample)
         samples =tmpSamples
+    
+    #
+    # Parse the variants, create information table files and get data needed to make the ouput images
+    #
     piechart,csvVarCount = parseVariations(variations,samples)
+    
+    #
+    # create the raw image that were used to create the figures in the paper
+    #
     makeGraphics(samples,piechart,csvVarCount)
 
 def sorted_nicely( l ): 
@@ -56,27 +79,34 @@ def sorted_nicely( l ):
     return sorted(l, key = alphanum_key)
 
 def getVariations(infiles,printVcfLines):
+    
     #
     # READ ALL VARIATIONS
     #
-    variations = {} #STORES ALL THA VARIATIONS
-    novelVarCount = 0 # IF NOT A DBSNPID THEN ITS NOVEL COUNT THEM
+    variations = {} #Stores all variation data
+    novelVarCount = 0 # if the variant does not have a dbsnp id this counter is used to give them a incrementing number as an id
     
     for infilename in infiles:
         with open(infilename) as infile:
             for line in infile:
                 
-                variation = {} #EACH NEW LINE IS A VARIATION
+                # each new line in the vcf file is a variation create a empty dict to store the data
+                variation = {}
                 
-                if line[0] == "#": #THIS LINE IS HEADER
-                    if line[1] == 'C': #THIS LINE IS HEADER WITH SAMPLE INFO
+                if line[0] == "#": # lines starting with "#" are header lines and will be ignored except ... see next comment
+                    
+                    # this lane is the header line with the sample id information extract this information and store it in the "samples" list
+                    if line[1] == 'C': 
                         line = line.rstrip().split('\t')
                         #CHROM  POS     ID      REF     ALT     QUAL    FILTER  INFO    FORMAT  sampleID1 ... sampleIDn
                         samples = [line[i] for i in range(9,len(line))]
                     continue
                 
-                line = line.rstrip().split('\t') # SPLIT THE LINE TO COLUMNS AND SAVE THE INFO DP GT GQ PL AD FOR EACH SAMPLE
+                # For each line with variation data (not header) split the line based on the tabdelimited format and save the DP GT GQ PL AD iformation for each sample
+                line = line.rstrip().split('\t') 
                 for i in range(len(line)):
+                    
+                    # initially information common for all samples
                     if i == 0:
                         chromosome = line[i]
                         variation['crom'] = chromosome
@@ -93,41 +123,48 @@ def getVariations(infiles,printVcfLines):
                     elif i == 7: info = line[i]
                     elif i == 8: perSampleFormat = line[i]
                     elif i >= 9:
+                        
+                    # here starts the per sample information sepperated by ":" split based on that and save information
                         sampleInfo = line[i]
                         sampleId = samples[i-9]
                         if exclude1000Genomes and re.match('HG001[01][0-9]',sampleId): continue
                         if sampleInfo[0:2] != "./.":
-                            #try: GT,AD,DP,GQ,PL,SB = sampleInfo.split(':') #GT:AD:DP:GQ:PL:SB
+                            #try: GT,AD,DP,GQ,PL,SB = sampleInfo.split(':') #GT:AD:DP:GQ:PL:SB # This is a old format with some different annotations
                             SB=None
-                            try: GT,AD,DP,GQ,PL = sampleInfo.split(':') #GT:AD:DP:GQ:PL
+                            try: GT,AD,DP,GQ,PL = sampleInfo.split(':') # GT:AD:DP:GQ:PL current format
                             except:
                                 #sys.stderr.write( 'ERROR variant format is not GT:AD:DP:GQ:PL: ')
                                 #sys.stderr.write( '\t'.join(line) +'\n')
-                                continue #SKIP THIS VARIANT
+                                continue #Skip any sample that does not follow the expected vcf format
                             if DP == '.': DP = 0
-                            variation[sampleId] = {'DP':DP,'GT':GT,'GQ':GQ,'PL':PL,'AD':AD,'SB':SB} #SAVE SAMPLE INFO
-                            #try:
-                            #    if sampleId == patId and int(DP) >= 10: print '\t'.join(line)
-                            #except:
-                            #    print 'ERRORSCHMERROR: ',
-                            #    print  '\t'.join(line)
-                            #    sys.exit()    
+                            
+                            # Save the information for the current sample to the "variation" dictionary
+                            variation[sampleId] = {'DP':DP,'GT':GT,'GQ':GQ,'PL':PL,'AD':AD,'SB':SB} 
+
+                # check that the alternative and reference base is of same length ie that this is not an indel
                 if len(refBase) != len(altBase):
                     #print refBase,altBase,'skipping ahead to next line';
                     continue
                 else:
                     #print refBase,altBase, 'ok'
                     pass
-                if variation and passFilter and passFilter == 'PASS':# or variation: #SAVE VARIATION YO TABLE
+                
+                # check that the variation passes the vqsr and filtering and add it to the variations dictionary for further processing
+                if variation and passFilter and passFilter == 'PASS':
                     variations[rsID] = variation;
                     if printVcfLines: sys.stderr.write(  '\t'.join(line) +'\n')
+                    
+    # return all variants passing filter and a list of sample ids
     return variations, samples
 
 def parseVariations(variations,samples):
+    """ The function that extract informative SNPs and decides wherever a single cell is classified as recipient or donor at that loci """
 
+    # get the recipient/patient and donor ids, these much match the information in the vcf file 
     donId = sys.argv[1]
     patId = sys.argv[2]
 
+    # create files and dictionaries where the final information will be stored
     variationsTableTsv = open(patId.split('.')[0]+'.hetero='+str(INCLUDEHETRO)+'.pdrd='+str(patDonReadCutoff)+'.pdgq='+str(patDonQualCutoff)+'.scrd='+str(readDepthCutoff)+'.scgq='+str(genotypeQualCutoff)+'.variationsTable.tsv','w')
     variationsBySample = open(patId.split('.')[0]+'.hetero='+str(INCLUDEHETRO)+'.pdrd='+str(patDonReadCutoff)+'.pdgq='+str(patDonQualCutoff)+'.scrd='+str(readDepthCutoff)+'.scgq='+str(genotypeQualCutoff)+'.variationsBySample.tsv','w')
     topVariationsBySample = open(patId.split('.')[0]+'.hetero='+str(INCLUDEHETRO)+'.pdrd='+str(patDonReadCutoff)+'.pdgq='+str(patDonQualCutoff)+'.scrd='+str(readDepthCutoff)+'.scgq='+str(genotypeQualCutoff)+'.topVariationsBySample.tsv','w')
@@ -138,7 +175,7 @@ def parseVariations(variations,samples):
     piechart = {sample:{'PAT':0,'DON':0,'PAT_I':0,'DON_I':0,'TOTAL':0,'MIX':0,'SharedAllele':0} for sample in samples}
     
     #
-    # create headers
+    # create headers for the outfiles
     #
     variationsTableTsv.write('varID\tchrom\tpos\t')
     for sample in samples:
@@ -151,31 +188,34 @@ def parseVariations(variations,samples):
     variationsBySample.write('\n')
     topVariationsBySample.write('\n')
         
+    # initiate counters for the number of usefull variants etc
     patientDonorPossibleVariants = 0
     csvVarCount = 0
+    
     for varID, variation in variations.iteritems():
         
+        # set initiel values for flag that identifies the recipient or donnor sample to have generated a heterozygous genotype call
         patHetero = False
         donHetero = False
         
         #
-        # filtration
+        # filtration based on recipient and donor samples
         #
                 
-        #skip if we don't have genotypes for both pat and don
+        # Skip if we don't have genotypes for both pat and don
         if patId not in variation or donId not in variation: continue
         
-        #skip if there is no diff betwen pat and don
+        # Skip if there is no difference betwen pat and don geotypes
         if variation[patId]['GT'] == variation[donId]['GT']: continue
         
-        #skip if any of them are ./.
+        # Skip if any of them are ./.
         if './.' in [variation[donId]['GT'],variation[patId]['GT']]: continue
         
-        # skip if don not homo
+        # Skip if don not homozygous call or in case of INCLUDEHETRO mark the rsid
         if variation[donId]['GT'].split('/').count(variation[donId]['GT'].split('/')[0]) < 2 and not INCLUDEHETRO: continue
         elif variation[donId]['GT'].split('/').count(variation[donId]['GT'].split('/')[0]) < 2: varID += '_DH'; donHetero=True
         
-        # skip if pat not homo
+        # Skip if pat not homozygous call or in case of INCLUDEHETRO mark the rsid
         if variation[patId]['GT'].split('/').count(variation[patId]['GT'].split('/')[0]) < 2 and not INCLUDEHETRO: continue
         elif variation[patId]['GT'].split('/').count(variation[patId]['GT'].split('/')[0]) < 2: varID += '_PH'; patHetero=True
         
@@ -186,15 +226,15 @@ def parseVariations(variations,samples):
         if int(variation[patId]['GQ']) < genotypeQualCutoff or int(variation[donId]['GQ']) < genotypeQualCutoff: continue 
         
         #
-        # if variant pass all filters
+        # if variant pass all filters for the recipient and donor samples
         #
         else:
             
+            # count the number of homozygous variants passing filters
             if not patHetero and not donHetero:patientDonorPossibleVariants += 1
             
-            #skip if only two samples have data
+            #skip if only two samples have data ie only recipient and donor
             if len(variation) <= 2: continue
-
             
             # classify based on sample called genotype and patient and donor genotypes
             whoAmI = {variation[patId]['GT']:'PAT',variation[donId]['GT']:'DON'}
@@ -243,7 +283,7 @@ def parseVariations(variations,samples):
                     else: csvLine += '0,'
                 except KeyError: csvLine += '?,'; print 'WARNING DP or GQ missing from dictionary'
                 
-                # add sample to variationsTableTsv
+                # add sample to variationsTableTsv file
                 try:             variationsTableTsv.write(whoAmI[variation[sample]['GT']]+'\t')
                 except KeyError: variationsTableTsv.write('Mix\t')
                 try:             variationsTableTsv.write(str(variation[sample]['DP'])+'\t')
@@ -253,7 +293,7 @@ def parseVariations(variations,samples):
                 try:             variationsTableTsv.write(str(variation[sample]['AD']).replace(',','|')+'\t')
                 except KeyError: variationsTableTsv.write('?\t')
             
-            # if at least one sample is above the deifned cutoffs
+            # if at least one sample is above the deifned cutoffs add the variant to the output used for making the graphics
             if not noneAboveCutoff:
                 csv += '\n'+csvLine[:-1]
                 csvVarCount+=1
@@ -265,6 +305,7 @@ def parseVariations(variations,samples):
 
             variationsTableTsv.write('\n')
     
+            # prepare to sort the variations by read depth for each sample to get a sorted outfile in the end
             for sample in samples:
                 outputStr = ''
                 outputStr += '\t'+str(varID)+'\t'
@@ -290,6 +331,7 @@ def parseVariations(variations,samples):
                 variationsBySample.write(outputStr)
             variationsBySample.write('\n')
     
+    # sorting by DP and printing to file
     for sample in samples:
         readDepths = varsByDP[sample].keys()
         readDepths.sort()
@@ -299,23 +341,28 @@ def parseVariations(variations,samples):
     else:
         for row in range(len(samplesByDP[samples[0]])): topVariationsBySample.write(''.join([samplesByDP[sample][row] for sample in samples])[1:]+'\n')
     
+    # create the csv file needed to create graphics later on
     tempfile = open(patId.split('.')[0]+'.hetero='+str(INCLUDEHETRO)+'.pdrd='+str(patDonReadCutoff)+'.pdgq='+str(patDonQualCutoff)+'.scrd='+str(readDepthCutoff)+'.scgq='+str(genotypeQualCutoff)+'.variationsTable.csv','w')
     tempfile.write(csv)
     tempfile.close()
     
+    # close connections to output files
     topVariationsBySample.close()
     variationsTableTsv.close()
     variationsBySample.close()
 
+    # print info to stdout
     print 'There are ',patientDonorPossibleVariants, ' variations where patient and donor are differing homozygous and over cutoff values.'
     
     return piechart,csvVarCount
 
 def makeGraphics(samples,piechart,csvVarCount):
 
+    # get the recipient/patient and donor ids, these much match the information in the vcf file 
     donId = sys.argv[1]
     patId = sys.argv[2]
 
+    # set the lables and colors to use in the graphics
     patlable = 'Patient'
     donlable = 'Donor'
     mixlable = 'Mixed'
@@ -325,10 +372,12 @@ def makeGraphics(samples,piechart,csvVarCount):
     donicolor = '#FF99CC'
     mixcolor = '#CC9900'
     SharedAllelecolor = '#8B8B8B'
-    tmpdict = {patId:patId.split('.')[0]+patlable,donId:donId.split('.')[0]+donlable}
+    tmpdict = {patId:patId.split('.')[0]+patlable,donId:donId.split('.')[0]+donlable} # if you want to chage the recipient and donor ids this line must be changed aswell
     labels = [sample if (sample != donId and sample != patId) else tmpdict[sample] for sample in samples]
 
-    ## Make heat map
+    #
+    # Make the heat map
+    #
     print 'making heatmap'
     
     print 'reading csv data'
@@ -337,69 +386,76 @@ def makeGraphics(samples,piechart,csvVarCount):
     print 'done'
     
     print 'plotting'
+    
+    #
     # define individual colors as hex values
+    #
     cpool2 = ['#D0D0D0',mixcolor,patcolor,doncolor]
     if INCLUDEHETRO: cpool2 = ['#D0D0D0',mixcolor,patcolor,doncolor,paticolor,donicolor,SharedAllelecolor]
     cmap3 = col.ListedColormap(cpool2, 'indexed')
     cm.register_cmap(cmap=cmap3)
     
-    # Plot it out
+    #
+    # Make the plot
+    #
     fig, ax = plt.subplots()
-    heatmap = ax.pcolor(data, cmap=cmap3)#,shading='faceted',edgecolors='white',linewidths=1)#, alpha=0.8)
-    #ax.patch.set_hatch('x')
+    heatmap = ax.pcolor(data, cmap=cmap3)
     
-    # Format
+    #
+    # Format the figure
+    #
     fig = plt.gcf()
     fig.set_size_inches(csvVarCount/10,len(samples)/7.5)
-    
-    # turn off the frame
     ax.set_frame_on(False)
-    
-    # put the major ticks at the middle of each cell
     ax.set_yticks(np.arange(data.shape[0]) + 0.5, minor=False)
     ax.set_xticks(np.arange(data.shape[1]) + 0.5, minor=False)
-    
-    # want a more natural, table-like display
     ax.invert_yaxis()
     ax.xaxis.tick_top()
-    
-    # note I could have used nba_sort.columns but made "labels" instead
     ax.set_xticklabels(data.columns, minor=False,fontsize=5)
     ax.set_yticklabels(labels, minor=False,fontsize=5)
-    
-    # rotate the
     plt.xticks(rotation=90)
-    
     ax.grid(False)
-    
-    # Turn off all the ticks
     ax = plt.gca()
-    
     for t in ax.xaxis.get_major_ticks():
         #t.label.set_fontsize(5)
         t.tick1On = False
         t.tick2On = False
-    
     for t in ax.yaxis.get_major_ticks():
         #t.label.set_fontsize(5)
         t.tick1On = False
         t.tick2On = False
     
+    #
+    # Save the figure to a pdf file
+    #
     print 'saving'
     plt.savefig(patId.split('.')[0]+'.hetero='+str(INCLUDEHETRO)+'.pdrd='+str(patDonReadCutoff)+'.pdgq='+str(patDonQualCutoff)+'.scrd='+str(readDepthCutoff)+'.scgq='+str(genotypeQualCutoff)+".heatmap.pdf",dpi=100,bbox_inches='tight')
     plt.close()
     
+    #
+    # Make the piecharts
+    #
     print 'making pie charts'
     from matplotlib.gridspec import GridSpec
+    
+    # set sixe of figure and create a grid for the different samples
     fig = plt.figure(figsize=(len(samples)*3, 4), dpi=300)
     the_grid = GridSpec(1,len(samples))
+    
+    #
+    # for each sample make a small pie chart
+    #
     sampleNumber = 0
     for sample in samples:
+        
+        # set initial values for the current sample
         labels = []
         colors = []
         sizes = []
         ax = plt.subplot(the_grid[0, sampleNumber], aspect=1)
         ax.set_title(sample+'\n('+str(piechart[sample]['TOTAL'])+' variants)')
+        
+        # calculate the fraction of variations that correspond to each classification and prepare for plotting
         if piechart[sample]['TOTAL']:
             patfrac = round(100*float(piechart[sample]['PAT'])/float(piechart[sample]['TOTAL']),2)
             donfrac = round(100*float(piechart[sample]['DON'])/float(piechart[sample]['TOTAL']),2)
@@ -438,9 +494,14 @@ def makeGraphics(samples,piechart,csvVarCount):
             labels.append('SharedAllele')
             colors.append(SharedAllelecolor)
             sizes.append(SharedAllelefrac)
+        
+        # plot the pie chart
         plt.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', shadow=True, startangle=45)
         sampleNumber += 1
     
+    #
+    # save the figure to a pdf file
+    #
     plt.axis('equal')
     plt.savefig(patId.split('.')[0]+'.hetero='+str(INCLUDEHETRO)+'.pdrd='+str(patDonReadCutoff)+'.pdgq='+str(patDonQualCutoff)+'.scrd='+str(readDepthCutoff)+'.scgq='+str(genotypeQualCutoff)+".piechart.pdf",dpi=300,bbox_inches='tight')
     plt.close()
