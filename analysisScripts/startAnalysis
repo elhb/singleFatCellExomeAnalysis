@@ -259,6 +259,15 @@ def getComandlineInput():
         help='TrimGalore location (default /proj/b2011006/private/benjamin/programs/ ).'
         )
 
+    argparser.add_argument(
+        '--filter',
+        dest='filter',
+        metavar='<string>',
+        type=str,
+        required=False,
+        default='stringent',
+        help='how to filter alignments with samtools, stringent ="-f 2 -F 1804 -q 20", dont="", easy="-F 772 -q 20" (default stringent).'
+        )
 
     inputData = argparser.parse_args(sys.argv[1:])
     
@@ -516,7 +525,11 @@ class Sample(object):
         #
         # Remove all non properpairs or reads with low quality or not primary alignment (also filters pcd duplicate though this will have no effect as they are not marked yet)
         #
-        output += 'samtools view -S -h -f 2 -F 1804 -q 20 '+self.sam+' > '+self.sam+'.filtered  2> '+self.path+'/stderr.samtools.1.txt \n'
+        inputData = getComandlineInput()
+        if inputData.filter == 'stringent': output += 'samtools view -S -h -f 2 -F 1804 -q 20 '+self.sam+' > '+self.sam+'.filtered  2> '+self.path+'/stderr.samtools.1.txt \n'
+        elif inputData.filter == 'easy': output += 'samtools view -S -h -F 772 -q 20 '+self.sam+' > '+self.sam+'.filtered  2> '+self.path+'/stderr.samtools.1.txt \n'
+        elif inputData.filter == 'dont': output += 'samtools view -S -h '+self.sam+' > '+self.sam+'.filtered  2> '+self.path+'/stderr.samtools.1.txt \n'
+        else: raise ValueError
         output += 'rm -v '+self.sam+''+'\n'
         
         #
