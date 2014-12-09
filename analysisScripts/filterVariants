@@ -16,10 +16,17 @@ import numpy as np
 print 'all imported'
 
 INCLUDEHETRO = False
-patDonReadCutoff = 20
-patDonQualCutoff = 30
-readDepthCutoff = 10
-genotypeQualCutoff = 30
+try:
+    [patDonReadCutoff, patDonQualCutoff, readDepthCutoff, genotypeQualCutoff] = sys.argv[-1].split(':')
+    patDonReadCutoff = int(patDonReadCutoff)
+    patDonQualCutoff = int(patDonQualCutoff)
+    readDepthCutoff = int(readDepthCutoff)
+    genotypeQualCutoff = int(genotypeQualCutoff)
+except:
+    patDonReadCutoff = 20
+    patDonQualCutoff = 30
+    readDepthCutoff = 10
+    genotypeQualCutoff = 30
 exclude1000Genomes = True
 
 print '\nsettings used:'
@@ -35,8 +42,9 @@ def main():
     #
     donId = sys.argv[1]
     patId = sys.argv[2]
+    sys.stderr.write('Patient id = '+patId+'\nDonor id = '+donId+'\n')
     
-    infiles = sys.argv[3:]
+    infiles = sys.argv[3:-1]
     printVcfLines = False 
     
     variations, samples = getVariations(infiles,printVcfLines)

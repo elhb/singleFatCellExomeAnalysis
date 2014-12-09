@@ -83,19 +83,30 @@ def main():
                     if re.search('cutadapt',line):
                         notFound=False
                         r1 = line.split()[11]
+                        print '####HERE####'+line+'####'
                         line = trimmingScript.readline().rstrip()
                         r2 = line.split()[11]
                         break                
                 trimmingScript.close()
+
             if not notFound:
-                r1 = gzip.open(r1,'r')
-                r2 = gzip.open(r2,'r')
-                linecount = [None,0,0]#[None,bufcount(r1.name),bufcount(r2.name)]
+                try:
+                    r1 = gzip.open(r1,'r')
+                    r2 = gzip.open(r2,'r')
+                except IOError:
+                    sys.stderr.write('IOError: for files '+r1+' and '+r2+' aborting '+sample+' ...\n')
+                    sys.exit()
                 r1.readline()
                 r2.readline()
                 seq1=r1.readline().rstrip()
                 seq2=r2.readline().rstrip()
                 assert len(seq1)==len(seq2)
+
+                r1.close()
+                r2.close()
+                try:linecount = [None,bufcount(r1.name),bufcount(r2.name)]
+                except IOError:sys.stderr.write('WARNIG: '+sample+' is slightly oddball problem reading '+r1.name+' and/or '+r2.name+'\n');linecount =[None,0,0]#
+
                 assert linecount[1]==linecount[2]
                 preTrimmingReadCount = int(linecount[1])/4
                 preTrimmingBaseCount = int(linecount[1])/4*int(len(seq1))*2
@@ -113,7 +124,7 @@ def main():
             line = r1adapterTrimmingStats.readline().rstrip()
             r1BasesCutadapt = int(line.split()[2].split(' ')[0])
             line = r1adapterTrimmingStats.readline().rstrip()
-            r1TrimmedReadsCutadapt = int(line.split()[2].split(' ')[0])
+            r1TrimmedReadsCutadapt = int(float(line.split()[2].split(' ')[0]))
             line = r1adapterTrimmingStats.readline().rstrip()
             r1TrimmedBasesCutadapt = int(line.split()[2].split(' ')[0])
             
@@ -155,6 +166,7 @@ def main():
             r1qualtrimbases = 'NA'
             r1qualtrimbases = 'NA'
             r2qualbases = 'NA'
+            r2qualtrimbases = 'NA'
 
         try:
             removeEmptyreads =  open(path+sample+'/removeEmptyReads.log.txt','r')
@@ -188,9 +200,11 @@ def main():
             postmapnmarklines = open(path+sample+'/stderr.postMapNmark.txt','r').read().split('\n')
             mappedreadspassingfilters = int(postmapnmarklines[-15].split()[0])
             properlypaired = int(postmapnmarklines[-9].split()[0])/2
+            #print postmapnmarklines[-9]
             #print properlypaired,' was PP',percentage(properlypaired,pairs),'%'
         except  (IOError, IndexError):
             properlypaired = 'NA'
+            mappedreadspassingfilters = 'NA'
 
         try:
             markDups = open(path+sample+'/'+sample+'.MarkDupsMetrix','r')
@@ -266,6 +280,7 @@ def bufcount(filename):
 
 def percentage(count,total):
     if 'NA' in [total,count] or 'NANA' in [total,count]: return 'NA'
+    if total <=0.0: return 'NA'
     return round(float(count) / float(total),4)
     #return round(100* float(count) / float(total),2)
 

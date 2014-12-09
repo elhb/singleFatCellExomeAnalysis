@@ -8,6 +8,8 @@ def main():
     import sys
     import time
     
+    sys.stderr.write( '### CMD: '+' '.join(sys.argv) +'\n')
+    
     inputData = getComandlineInput()
     sampleCollectionId = inputData.sampleCollectionId
     infilesDictionary = {}
@@ -384,12 +386,18 @@ class Sample(object):
                 output += ''+self.analysisScripts+'/wgaAdapterTrimmer.py -i '+self.r1files[0]+' > r1.wgaTrimmed.fq 2> r1wgaTrimming.log.txt &\n'
                 output += ''+self.analysisScripts+'/wgaAdapterTrimmer.py -i '+self.r2files[0]+' > r2.wgaTrimmed.fq 2> r2wgaTrimming.log.txt &\n'
                 output += 'wait\n'
-            
+                
+                output += '\n'
+                output += 'cutadapt -n 10 -g GTGAGTGATGGTTGAGGTAGTGTGGAG -a CTCCACACTACCTCAACCATCACTCAC r1.wgaTrimmed.fq > r1.wgaTrimmed2.fq  2> r1wgaTrimming2.log.txt&\n'
+                output += 'cutadapt -n 10 -g GTGAGTGATGGTTGAGGTAGTGTGGAG -a CTCCACACTACCTCAACCATCACTCAC r2.wgaTrimmed.fq > r2.wgaTrimmed2.fq  2> r2wgaTrimming2.log.txt&\n'
+                output += 'wait\n'
+                output += '\n'
+                
                 #
                 # illumina  adapter trimming
                 #
-                output += 'cutadapt -n 3  -a CTGTCTCTTATACACATCTGACGCTGCCGACGA -a CTGTCTCTTATACACATCTCCGAGCCCACGAGAC -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC -a AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT r1.wgaTrimmed.fq > r1.wgaAndilluminaTrimmed.fq  2> r1adapterTrimming.log.txt  &\n'
-                output += 'cutadapt -n 3  -a CTGTCTCTTATACACATCTGACGCTGCCGACGA -a CTGTCTCTTATACACATCTCCGAGCCCACGAGAC -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC -a AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT r2.wgaTrimmed.fq > r2.wgaAndilluminaTrimmed.fq  2> r2adapterTrimming.log.txt &\n'
+                output += 'cutadapt -n 3  -a CTGTCTCTTATACACATCTGACGCTGCCGACGA -a CTGTCTCTTATACACATCTCCGAGCCCACGAGAC -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC -a AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT r1.wgaTrimmed2.fq > r1.wgaAndilluminaTrimmed.fq  2> r1adapterTrimming.log.txt  &\n'
+                output += 'cutadapt -n 3  -a CTGTCTCTTATACACATCTGACGCTGCCGACGA -a CTGTCTCTTATACACATCTCCGAGCCCACGAGAC -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC -a AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT r2.wgaTrimmed2.fq > r2.wgaAndilluminaTrimmed.fq  2> r2adapterTrimming.log.txt &\n'
                 output += 'wait\n'
             else:
                 output += 'cutadapt -n 3  -a CTGTCTCTTATACACATCTGACGCTGCCGACGA -a CTGTCTCTTATACACATCTCCGAGCCCACGAGAC -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC -a AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT '+self.r1files[0]+' > r1.wgaAndilluminaTrimmed.fq  2> r1adapterTrimming.log.txt  &\n'
@@ -402,6 +410,8 @@ class Sample(object):
                 #
                 output += 'rm -v r1.wgaTrimmed.fq\n'
                 output += 'rm -v r2.wgaTrimmed.fq\n'
+                output += 'rm -v r1.wgaTrimmed2.fq\n'
+                output += 'rm -v r2.wgaTrimmed2.fq\n'
                 output += 'wait\n'
             
             #
@@ -488,7 +498,7 @@ class Sample(object):
         #output += 'module load bioinfo-tools bwa/0.7.8\n'
         #output += 'bwa mem -t 16 /sw/data/uppnex/reference/Homo_sapiens/GRCh37/program_files/bwa/concat.fa '+self.r1files[0]+' '+self.r2files[0]+' > '+self.sam+'\n'
         #output += 'bowtie2 -1 '+self.r1files[0]+' -2 '+self.r2files[0]+' --very-sensitive-local -p16 -x '+self.reference+' > '+self.sam+'\n'
-        output += 'bowtie2 -1 '+self.r1files[0]+' -2 '+self.r2files[0]+' -p16 -x '+self.reference+' > '+self.sam+' 2> '+self.path+'/stderr.bowtie2.txt \n'
+        output += 'bowtie2 --maxins 2000 -1 '+self.r1files[0]+' -2 '+self.r2files[0]+' -p16 -x '+self.reference+' > '+self.sam+' 2> '+self.path+'/stderr.bowtie2.txt \n'
         output += 'echo -e "mapping Done. $(date) Running on: $(hostname)" 1>&2'+'\n'
         
         #
@@ -914,7 +924,7 @@ class SampleCollection(object):
         self.project = self.samples[0].project
         self.reference = self.samples[0].reference
         self.bamfiles = ' -I '.join([sample.recalbam for sample in self.samples])
-        self.gvcffiles = ' --variant '.join([sample.gvcf for sample in self.samples])
+        self.gvcffiles = ('\\'+'\n'+' --variant ').join([sample.gvcf for sample in self.samples])
         dummieGvcfs = getdummies()
         if dummieGvcfs: self.gvcffiles += ' --variant '+ ' --variant '.join([gvcf for gvcf in dummieGvcfs])
         self.jobidDependency = ''
@@ -1121,7 +1131,7 @@ class SampleCollection(object):
 
         if inputData.fatcell:
             output += 'workon py2.7'+'\n'
-            output +='python '+self.analysisScripts+'/filterVariants '+self.collectionId+'.Donor '+self.collectionId+'.Patient recalibrated_snps_raw_indels.vcf  >&2 2> '+self.path+'/stderr.filterVariantsMakeSummariesAndGraphs.log.txt \n'
+            output +='python '+self.analysisScripts+'/filterVariants '+self.collectionId+'.Donor '+self.collectionId+'.Patient recalibrated_snps_raw_indels.vcf  20:30:10:10 >&2 2> '+self.path+'/stderr.filterVariantsMakeSummariesAndGraphs.log.txt \n'
         
 
         output +='\n'
