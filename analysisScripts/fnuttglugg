@@ -7,6 +7,8 @@ a pipe for DNA sequence analysis
 use:
 fnuttglugg addSample <sampleName>
 fnuttglugg addFastq <sampleName> <r1> <r2>
+fnuttglugg createScripts <uppmaxAccount> <emailAdress>
+fnuttglugg submitScripts
 ...more to come ...
 fnuttglugg report
 """
@@ -40,6 +42,21 @@ def bufcount(filename):
 		f.close
 	return lines
 
+def submitSbatch(filename,dependency=None):
+    import subprocess
+    import sys
+    if dependency: command = ['sbatch','--dependency=afterok:'+':'.join(dependency),filename]
+    else:          command = ['sbatch',filename]
+    sbatch = subprocess.Popen( command, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
+    sbatch_out, errdata = sbatch.communicate()
+    if sbatch.returncode != 0:
+	print 'sbatch view Error code', sbatch.returncode, errdata
+	print sbatch_out
+	print filename
+	sys.exit()
+    jobid = sbatch_out.split('\n')[0].split(' ')[3]
+    return jobid
+
 class AnalysisPipe(object):
 
     def __init__(self):
@@ -58,6 +75,9 @@ class AnalysisPipe(object):
 	    sys.stderr.write('#ERROR_MSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# Please supply a path on your commandline (currently: "'+' '.join(sys.argv)+'")\n')
 	    sys.exit(1)
 	
+	AnalysisPipe.bowtie2Reference = '~/singleFatCellExomeAnalysis/references/GATKbundle/human_g1k_v37.fasta'
+	AnalysisPipe.picardLocation = '~/bin/picard-tools-1.114'
+
 	self.openLogfileConnection()
 	
 	return None
@@ -94,6 +114,7 @@ class AnalysisPipe(object):
 	elif self.action == 'addFastq':self.addFastq()
 	elif self.action == 'report':self.report()
 	elif self.action == 'createScripts':self.createScripts()
+	elif self.action == 'submitScripts':self.submitScripts()
 	else:
 	    msg = '#ERROR_MSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# Please supply a Valid action on your commandline (currently: "'+' '.join(sys.argv)+'"), exiting.\n'
 	    AnalysisPipe.logfile.write(msg)
@@ -172,6 +193,8 @@ class AnalysisPipe(object):
 
     def report(self, ):
 
+	import time
+	AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# Creating a report located at '+self.path+'/report.htm'+' \n')
 	import operator
     
 	samples = AnalysisPipe.database.getSamples()
@@ -234,8 +257,51 @@ class AnalysisPipe(object):
 
     def createScripts(self, ):
 
+	import time
+	AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# Creating sbatch scripts:\n')
+
 	for sample in AnalysisPipe.database.getSamples():
+	    AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# sample: '+sample.name+' ... \n')
+	    try: sample.getFastqs().next()
+	    except StopIteration:
+		AnalysisPipe.logfile.write('#WARNING#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# No fastq files found for sample: '+sample.name+' continuing with next sample.\n')
+		continue
 	    sample.trimFastqs()
+	    sample.mapFastqs()
+	    sample.mergeMapped()
+	    sample.filterAndFixMerged()
+	    sample.realignerTargetCreator()
+	    sample.reAlignAndReCalibrate()
+	    sample.haplotypeCalling()
+	    sample.qcSteps()
+
+    def submitScripts(self,sampleNameOrId=None):
+
+	import time
+
+	for sample in AnalysisPipe.database.getSamples():
+
+	    AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# Submitting sbatches for sample: '+sample.name+' ... \n')
+	    try: sample.getFastqs().next()
+	    except StopIteration:
+		AnalysisPipe.logfile.write('#WARNING#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# No fastq files found for sample: '+sample.name+' continuing with next sample.\n')
+		continue
+
+	    dependency = []
+	    for filePairId,readCount,fastq1,fastq2,sampleId in sample.getFastqs():
+
+		fileName = sample.scriptPath+'/trimming.'+sample.name+'.'+str(filePairId)+'.sh'
+		jobid = submitSbatch(fileName)
+		AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# Submitted trimming of fastq '+str(filePairId)+' for '+sample.name+' with job id '+str(jobid)+' \n')
+
+		fileName = sample.scriptPath+'/mapping.'+sample.name+'.'+str(filePairId)+'.sh'
+		jobid = submitSbatch(fileName,dependency=[jobid])
+		dependency.append(jobid)
+		AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# Submitted mapping of fastq '+str(filePairId)+' for '+sample.name+' with job id '+str(jobid)+' \n')
+
+	    fileName = sample.scriptPath+'/mergeMapped.'+sample.name+'.sh'
+	    jobid = submitSbatch(fileName,dependency=dependency)
+	    AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# Submitted mering of mapped data for '+sample.name+' with job id '+str(jobid)+' \n')
 
 class Database(object):
     
@@ -637,5 +703,121 @@ class Sample(object):
 	    output += 'echo "$(date) AllDone"'+'\n'
 	    output += 'echo "$(date) AllDone" >&2'+'\n'
 	    with open(self.scriptPath+'/trimming.'+self.name+'.'+str(filePairId)+'.sh','w') as outfile: outfile.write(output)
+
+    def mapFastqs(self):
+
+	for filePairId,readCount,fastq1,fastq2,sampleId in self.getFastqs():
+
+	    import sys
+	    import time
+	    try: project = sys.argv[3]
+	    except IndexError:
+		msg = '#ERROR_MSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# You must give a project number for the creation of sbatch scripts, exiting.\n'
+		AnalysisPipe.logfile.write(msg)
+		sys.stderr.write(msg)
+		sys.exit(1)
+
+	    #
+	    # sbatch header
+	    #
+	    output = '#! /bin/bash -l'+'\n'
+	    output += '#SBATCH -A '+project+'\n'
+	    output += '#SBATCH -n 16 -p node'+'\n'
+	    output += '#SBATCH -t 5:00:00'+'\n'
+	    output += '#SBATCH -J map.'+self.name+'.'+str(filePairId)+'\n'
+	    output += '#SBATCH -e '+self.logPath+'/stderr.mapping.'+self.name+'.'+str(filePairId)+'.txt'+'\n'
+	    output += '#SBATCH -o '+self.logPath+'/stdout.mapping.'+self.name+'.'+str(filePairId)+'.txt'+'\n'
+
+	    try:
+		output += '#SBATCH --mail-type=All'+'\n'
+		output += '#SBATCH --mail-user='+sys.argv[4]+'\n'
+	    except IndexError: pass
+
+	    #
+	    # define variebles and go to path
+	    #
+	    output += 'echo "$(date) Running on: $(hostname)"'+'\n'
+	    output += 'cd '+self.path+'\n'
+	    output += 'echo'+'\n'
+
+	    #
+	    # Bowtie2 mapping
+	    #output += 'module load bioinfo-tools bwa/0.7.8\n'
+	    #output += 'bwa mem -t 16 /sw/data/uppnex/reference/Homo_sapiens/GRCh37/program_files/bwa/concat.fa '+self.r1files[0]+' '+self.r2files[0]+' > '+self.sam+'\n'
+	    #output += 'bowtie2 -1 '+self.r1files[0]+' -2 '+self.r2files[0]+' --very-sensitive-local -p16 -x '+self.reference+' > '+self.sam+'\n'
+	    output += 'bowtie2 --maxins 2000 -p16 '
+	    output += '-1 '+self.dataPath+'/'+str(filePairId)+'.r1.allTrimmed.fq.gz '
+	    output += '-2 '+self.dataPath+'/'+str(filePairId)+'.r2.allTrimmed.fq.gz '
+	    output += '-x '+AnalysisPipe.bowtie2Reference+' '
+	    output += '> '+self.dataPath+'/'+str(filePairId)+'.sam '
+	    output += '2> '+self.logPath+'/stderr.bowtie2.'+str(filePairId)+'.txt \n'
+	    output += 'echo -e "mapping Done. $(date) Running on: $(hostname)" 1>&2'+'\n'
+
+	    #
+	    # Final output and write script to file
+	    #
+	    output += 'wait'+'\n'
+	    output += 'echo "$(date) AllDone"'+'\n'
+	    output += 'echo "$(date) AllDone" >&2'+'\n'
+	    with open(self.scriptPath+'/mapping.'+self.name+'.'+str(filePairId)+'.sh','w') as outfile: outfile.write(output)
+
+    def mergeMapped(self):
+	import sys
+	import time
+	try: project = sys.argv[3]
+	except IndexError:
+	    msg = '#ERROR_MSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# You must give a project number for the creation of sbatch scripts, exiting.\n'
+	    AnalysisPipe.logfile.write(msg)
+	    sys.stderr.write(msg)
+	    sys.exit(1)
+
+	#
+	# sbatch header
+	#
+	output = '#! /bin/bash -l'+'\n'
+	output += '#SBATCH -A '+project+'\n'
+	output += '#SBATCH -n 1 -p core'+'\n'
+	output += '#SBATCH -t 5:00:00'+'\n'
+	output += '#SBATCH -J merge.'+self.name+'\n'
+	output += '#SBATCH -e '+self.logPath+'/stderr.merge.'+self.name+'.txt'+'\n'
+	output += '#SBATCH -o '+self.logPath+'/stdout.merge.'+self.name+'.txt'+'\n'
+
+	try:
+	    output += '#SBATCH --mail-type=All'+'\n'
+	    output += '#SBATCH --mail-user='+sys.argv[4]+'\n'
+	except IndexError: pass
+
+	#
+	# define variebles and go to path
+	#
+	output += 'echo "$(date) Running on: $(hostname)"'+'\n'
+	output += 'cd '+self.path+'\n'
+	output += 'echo'+'\n'
+
+	#
+	# merge
+	#
+	inputFiles = ' INPUT='+' INPUT='.join([self.dataPath+'/'+str(filePairId)+'.sam' for filePairId,readCount,fastq1,fastq2,sampleId in self.getFastqs()])
+	output += 'java -Xmx5g -jar '+AnalysisPipe.picardLocation+'/MergeSamFiles.jar '+inputFiles+' OUTPUT='+self.dataPath+'/'+self.name+'.merged.sam '
+	output += '1>&2  2>  '+self.logPath+'/stderr.merging.'+self.name+'.txt \n'
+	output += 'echo -e "mapping Done. $(date) Running on: $(hostname)" 1>&2'+'\n'
+
+	#
+	# Final output and write script to file
+	#
+	output += 'wait'+'\n'
+	output += 'echo "$(date) AllDone"'+'\n'
+	output += 'echo "$(date) AllDone" >&2'+'\n'
+	with open(self.scriptPath+'/mergeMapped.'+self.name+'.sh','w') as outfile: outfile.write(output)
+
+    def filterAndFixMerged(self): pass
+
+    def realignerTargetCreator(self): pass
+    
+    def reAlignAndReCalibrate(self): pass
+
+    def haplotypeCalling(self):pass
+
+    def qcSteps(self): pass
 
 if __name__ == "__main__": main()
