@@ -1,0 +1,641 @@
+#!/usr/bin/env python
+
+helpMessage = """
+############ fnuttglugg ################
+a pipe for DNA sequence analysis
+
+use:
+fnuttglugg addSample <sampleName>
+fnuttglugg addFastq <sampleName> <r1> <r2>
+...more to come ...
+fnuttglugg report
+"""
+
+def main():
+    
+    import sys
+    
+    for term in ['h','help','-h','--help']:
+	if term in sys.argv:
+	    print helpMessage
+	    sys.exit()
+
+    app = AnalysisPipe()
+    app.run()
+
+def bufcount(filename):
+	""" returns the number of lines in a file
+	"""
+	import gzip
+	if filename.split('.')[-1] in ['gz','gzip']: f = gzip.open(filename)
+	else: f = open(filename)
+	lines = 0
+	buf_size = 1024 * 1024
+	read_f = f.read # loop optimization
+	
+	buf = read_f(buf_size)
+	while buf:
+		lines += buf.count('\n')
+		buf = read_f(buf_size)
+		f.close
+	return lines
+
+class AnalysisPipe(object):
+
+    def __init__(self):
+	
+	import sys
+	import os
+	import time
+	
+	try:
+	    path = sys.argv[1]
+	    path = os.path.abspath(path)
+	    if path[-1] == '/': path = path[:-1]
+	    AnalysisPipe.path = path
+	    AnalysisPipe.scriptPath = '/'+'/'.join(os.path.abspath(sys.argv[0]).split('/')[:-1])
+	except IndexError:
+	    sys.stderr.write('#ERROR_MSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# Please supply a path on your commandline (currently: "'+' '.join(sys.argv)+'")\n')
+	    sys.exit(1)
+	
+	self.openLogfileConnection()
+	
+	return None
+
+    def getDataBase(self):
+
+	import os
+	import time
+
+	AnalysisPipe.database = Database(self.path+'/data.db')
+	if not os.path.exists(AnalysisPipe.database.path): AnalysisPipe.database.create()
+
+    def run(self, ):
+	
+	import time
+	import sys
+	
+	try: self.action = sys.argv[2]
+	except IndexError:
+	    msg = '#ERROR_MSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# Please supply an action on your commandline (currently: "'+' '.join(sys.argv)+'"), exiting.\n'
+	    AnalysisPipe.logfile.write(msg)
+	    sys.stderr.write(msg)
+	    sys.exit(1)
+	
+	self.getDataBase()
+	
+	import os
+	
+	AnalysisPipe.database.addToRunsTable(time.time(),self.action,' '.join(sys.argv),False,os.getpid())
+	AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# Running '+' '.join(sys.argv)+'\n')
+
+	AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# Action is '+sys.argv[2]+'\n')
+	if self.action == 'addSample':self.addSample()
+	elif self.action == 'addFastq':self.addFastq()
+	elif self.action == 'report':self.report()
+	elif self.action == 'createScripts':self.createScripts()
+	else:
+	    msg = '#ERROR_MSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# Please supply a Valid action on your commandline (currently: "'+' '.join(sys.argv)+'"), exiting.\n'
+	    AnalysisPipe.logfile.write(msg)
+	    sys.stderr.write(msg)
+	    sys.exit(1)
+
+    def addFastq(self):
+
+	import sys
+	import time
+	
+	try: sample = sys.argv[3]
+	except IndexError:
+	    msg = '#ERROR_MSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# Please supply a sample name on your commandline (currently: "'+' '.join(sys.argv)+'"), exiting.\n'
+	    AnalysisPipe.logfile.write(msg)
+	    sys.stderr.write(msg)
+	    sys.exit(1)
+
+	try:
+	    f1 = sys.argv[4]
+	    f2 = sys.argv[5]
+	except IndexError:
+	    msg = '#ERROR_MSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# Please supply a pair of fastq files on your commandline (currently: "'+' '.join(sys.argv)+'"), exiting.\n'
+	    AnalysisPipe.logfile.write(msg)
+	    sys.stderr.write(msg)
+	    sys.exit(1)
+
+	AnalysisPipe.database.addFastqs(sample,f1,f2)
+
+    def addSample(self, ):
+	import sys
+	import time
+	AnalysisPipe.database.addSample(sys.argv[3])
+
+    def openLogfileConnection(self,):
+        """ open a connection to the logfile, creates a logfile if none is present """
+        
+        #
+        # Imports
+        #
+        import sys
+        import time
+        import os
+        
+        #
+        # for logmessages
+        #        
+        tmpLogMessages = []
+        
+        #
+        # check if logfile present open connection or create
+        #
+        AnalysisPipe.logfile = self.path + '/logfile.txt'
+        if os.path.isfile(AnalysisPipe.logfile):
+            if 'initiateAnalysis' in sys.argv:
+                sys.stderr.write('#ERROR_MSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# The logfile already exists please use another path to initiate the analysis.\n')
+                sys.exit(1)
+            else:
+                AnalysisPipe.logfile = open(AnalysisPipe.logfile,'a',1)
+                AnalysisPipe.logfile.write('----------------\n#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# Connection to logfile '+AnalysisPipe.logfile.name+' opened.\n')
+                return 0
+        else:
+            tmpLogMessage = '#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# Creating the logfile "'+AnalysisPipe.logfile+'".'
+            tmpLogMessages.append(tmpLogMessage)
+            tmpLogMessage = '#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# Looking for folder '+self.path+'...'
+            tmpLogMessages.append(tmpLogMessage)
+	    if not os.path.isdir(self.path):
+		tmpLogMessage = '#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# Path '+self.path+' not found creating...'
+		tmpLogMessages.append(tmpLogMessage)
+		os.mkdir(self.path)
+            AnalysisPipe.logfile = open(AnalysisPipe.logfile,'w',1)
+        
+	AnalysisPipe.logfile.write('\n'.join(tmpLogMessages)+'\n')
+	
+        return tmpLogMessages
+
+    def report(self, ):
+
+	import operator
+    
+	samples = AnalysisPipe.database.getSamples()
+	samplesbyName = {}
+	samplesbyId = {}
+	for sample in samples:
+	    samplesbyId[sample.id]=sample
+	    samplesbyName[sample.name]=sample
+	
+	reportFile = open(self.path+'/report.htm','w')
+	reportFile.write('<html>')
+	reportFile.write("""<head><style>
+	    body {background-color:white}
+	    h1   {color:black}
+	    p    {color:green}
+	    table, th, td {
+		border: 1px solid black;
+		border-collapse: collapse;
+	    }
+	    th {text-align: left;background-color:darkgray;color:white;}
+	    table {border-spacing: 5px;}
+	    th,td {padding: 15px;}
+	</style></head>""")
+
+	reportFile.write('<body>')
+	reportFile.write('<h1>Analysis Report '+self.path+'</h1>\n')
+	
+	reportFile.write('<h2>List of samples:</h2>')
+	reportFile.write('<table>')
+	reportFile.write('<tr>')
+	reportFile.write('<th>Sample Id</th>')
+	reportFile.write('<th>Sample Name</th> ')
+	reportFile.write('<th>Read Count</th> ')
+	reportFile.write('</tr>')
+	for sampleId, sample in sorted(samplesbyId.iteritems(), key=operator.itemgetter(0)):
+	    reportFile.write('<tr>')
+	    reportFile.write('<td>'+str(sampleId)+'</td><td>'+sample.name+'</td><td>'+str(sample.readCount)+'</td>')
+	    reportFile.write('<tr>')
+	reportFile.write('</table>')
+	
+	reportFile.write('<h2>List of fastqs:</h2>')
+	reportFile.write('<table>')
+	reportFile.write('<tr>')
+	reportFile.write('<th>File Id</th>')
+	reportFile.write('<th># Read Pairs</th> ')
+	reportFile.write('<th>Sample Name</th>')
+	reportFile.write('<th>File Name (r1)</th>')
+	reportFile.write('</tr>')
+	for filePairId,readCount,fastq1,fastq2,sampleId in sorted(AnalysisPipe.database.getFastqs(), key=operator.itemgetter(0)):
+	    reportFile.write('<tr>')
+	    reportFile.write('<td>'+str(filePairId)+'</td>'
+			     '<td>'+str(readCount)+'</td>'
+			     '<td>'+samplesbyId[int(sampleId)].name+'</td>'
+			     '<td>'+fastq1+'</td>')
+	    reportFile.write('</tr>')
+	reportFile.write('</table>')
+	reportFile.write('</body></html>\n')
+	
+	return 0
+
+    def createScripts(self, ):
+
+	for sample in AnalysisPipe.database.getSamples():
+	    sample.trimFastqs()
+
+class Database(object):
+    
+    def __init__(self, dbPath):
+	self.path = dbPath
+
+    def getConnection(self,):
+	#
+	# Import useful stuff
+	#
+	import sqlite3
+	import sys
+
+	#
+	# Create database and set
+	#
+	try: self.conn = sqlite3.connect(self.path)
+	except sqlite3.OperationalError:
+	    print 'ERROR: Trouble with the database, plase check your commandline.'
+	    sys.exit()
+	self.c = self.conn.cursor()
+
+    def commitAndClose(self,):
+	#
+	# commit changes and close connection
+	#
+	self.conn.commit()
+	self.conn.close()
+
+    def create(self,):
+	""" creates the database holding all information used in the analysis """
+	
+	self.getConnection()
+	
+	#
+	# Create tables
+	#
+	self.c.execute('''CREATE TABLE runs (startTime,command,commandLine,finishedSuccessfully,masterPid)''')
+	self.c.execute('''CREATE TABLE fastqs (filePairId,fastq1,fastq2,readCount,addedToReadsTable,minReadLength,sampleId,PRIMARY KEY (filePairId))''');
+	self.c.execute('''CREATE TABLE settings (variableName,defaultValue,value,setTime,PRIMARY KEY (variableName))''')
+	self.c.execute('''CREATE TABLE results (resultName,defaultValue,value,setTime,PRIMARY KEY (resultName))''')
+	self.c.execute('''CREATE TABLE samples (sampleId,sampleName,PRIMARY KEY (sampleId))''')
+	
+	self.commitAndClose()
+
+    def addToRunsTable(self, startTime, command, commandLine, finishedSuccessfully, masterPid):
+	
+	self.getConnection()
+	
+	#
+	# check if pid already in database
+	#
+	t = (masterPid,)
+	data = self.c.execute('SELECT masterPid, startTime FROM runs WHERE masterPid=?',t).fetchall()        
+	if data:
+	    for tmp1,tmp2 in data:
+
+	#
+	# if pid and startTime matches update the "finishedSuccessfully" entry
+	#
+		if tmp1 == masterPid and tmp2 == startTime:
+		    values = (startTime, command, commandLine, finishedSuccessfully, masterPid)
+		    self.c.execute('UPDATE runs SET finishedSuccessfully=? WHERE masterPid=? AND startTime=?', (finishedSuccessfully,masterPid,startTime))
+	
+	#
+	# if not in the database add a new row
+	#
+	else:
+	    values = (startTime, command, commandLine, finishedSuccessfully, masterPid)
+	    self.c.execute('INSERT INTO runs VALUES (?,?,?,?,?)', values)
+	
+	self.commitAndClose()
+	
+	return 0
+
+    def addSample(self, newSampleName):
+	
+	#
+	# Imports
+	#
+	import sys
+	import time
+	
+	#
+	# open connection to database
+	#
+	self.getConnection()
+	
+	sampleNames = []
+	sampleIds = []
+	
+	#
+	# check if any of the fastqs already in database
+	#
+	data = self.c.execute('SELECT sampleId,sampleName FROM samples').fetchall()
+	if data:
+	    for (sampleId,sampleName) in data:
+		#sampleName = sampleName[0]
+		sampleNames.append(sampleName)
+		sampleIds.append(sampleId)
+	    if newSampleName in sampleNames:
+		msg = '#ERROR_MSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# SampleName must be uniq, there is already a sample with name '+newSampleName+' , exiting.\n'
+		AnalysisPipe.logfile.write(msg)
+		sys.stderr.write(msg)
+		sys.exit(1)
+
+	
+	if sampleIds:  sampleId = max(sampleIds)+1
+	else:          sampleId = 0 
+	AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# Adding sample '+newSampleName+' to database with id '+str(sampleId)+'.\n')
+	values = (sampleId,newSampleName)
+	self.c.execute('INSERT INTO samples VALUES (?,?)', values)
+	
+	sample = Sample(sampleName=newSampleName, sampleId=sampleId)
+	sample.createDirs()
+	
+	self.commitAndClose()
+	
+	return 0
+
+    def getSamples(self):
+	#
+	# Imports
+	#
+	import sys
+	import time
+	
+	#
+	# open connection to database
+	#
+	self.getConnection()
+	
+	samples = []
+	
+	data = self.c.execute('SELECT sampleId,sampleName FROM samples').fetchall()
+	if data:
+	    for (sampleId,sampleName) in data: samples.append( Sample(sampleName=sampleName,sampleId=int(sampleId)) )
+	
+	self.commitAndClose()
+	
+	return samples
+
+    def addFastqs(self, sampleNameOrId, fastq1, fastq2):
+	
+	#
+	# Imports
+	#
+	import sys
+	import os
+	
+	fastq1 = os.path.abspath(fastq1)
+	fastq2 = os.path.abspath(fastq2)
+	
+	samples = AnalysisPipe.database.getSamples()
+	samplesbyName = {}
+	samplesbyId = {}
+	for sample in samples:
+	    samplesbyId[sample.id]=sample
+	    samplesbySame[sample.name]=sample
+	sampleName = None
+	sampleId = None
+	if int(sampleNameOrId) in samplesbyName.values():sampleId = sampleNameOrId; sampleName = samplesbyId[int(sampleId)].name
+	elif   sampleNameOrId  in samplesbyName.keys():sampleName = sampleNameOrId; sampleId = samplesbyName[sampleName].id
+	else:
+	    msg = '#ERROR_MSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# SampleName (or id) must be registered in the database, there is no sample with name or id '+str(sampleNameOrId)+' , exiting.\n'
+	    AnalysisPipe.logfile.write(msg)
+	    sys.stderr.write(msg)
+	    sys.exit(1)
+
+	#
+	# open connection to database
+	#
+	self.getConnection()
+	
+	filePairId = None
+	filePairIds = []
+	
+	#
+	# check if any of the fastqs already in database
+	#
+	data = self.c.execute('SELECT filePairId,fastq1,fastq2 FROM fastqs').fetchall()
+	if data:
+	    for filePair in data:
+		filePairId = int(filePair[0])
+		filePairIds.append(filePairId)
+		for fastq in [fastq1, fastq2]:
+		    if fastq in filePair:
+			message = 'ERROR: '+fastq+' already in the database.\nExiting after error.'
+			print message
+			AnalysisPipe.logfile.write(message+'\n')
+			sys.exit(1)
+	#
+	# if not in the database add a new row
+	#
+	AnalysisPipe.logfile.write('Getting readcount for file'+fastq1+' ... \n')
+	readCount = bufcount(fastq1)/4 #one read is four lines
+	AnalysisPipe.logfile.write('...done. The file has '+str(readCount)+' reads.\n')
+	addedToReadsTable = False#SEAseqPipeLine.startTimeStr
+	minReadLength = 'NA'
+
+	if filePairIds: filePairId = max(filePairIds)+1
+	else: filePairId = 0
+	values = (filePairId,fastq1,fastq2,readCount,addedToReadsTable,minReadLength,sampleId)
+	self.c.execute('INSERT INTO fastqs VALUES (?,?,?,?,?,?,?)', values)
+	
+	self.commitAndClose()
+	
+	return 0
+
+    def getFastqs(self,):
+	#
+	# Imports
+	#
+	import sys
+	
+	#
+	# open connection to database
+	#
+	self.getConnection()
+		
+	#
+	# get att data in fastqs table
+	#
+	filePairs = self.c.execute('SELECT filePairId,fastq1,fastq2,readCount,addedToReadsTable,minReadLength,sampleId FROM fastqs').fetchall()
+	
+	self.commitAndClose()
+	
+	#return [[readCount,fastq1,fastq2] if (not addedToReadsTable) else None for filePairId,fastq1,fastq2,readCount,addedToReadsTable,minReadLength in filePairs]
+	return [[filePairId,readCount,fastq1,fastq2,sampleId] for filePairId,fastq1,fastq2,readCount,addedToReadsTable,minReadLength,sampleId in filePairs]
+
+    def getRuns(self, runTypes):
+	
+	self.getConnection()
+	
+	runsInfo = []
+	data = self.c.execute('SELECT * FROM runs').fetchall()
+	for startTime, command, commandLine, finishedSuccessfully, masterPid in data:
+	    if command in runTypes: runsInfo.append([startTime, command, commandLine, finishedSuccessfully, masterPid])
+	
+	self.commitAndClose()
+	
+	return runsInfo
+
+class Sample(object):
+    
+    def __init__(self, sampleName=None,sampleId=None):
+	self.name = sampleName
+	self.id = int(sampleId)
+	self.path = AnalysisPipe.path+'/samples/'+self.name
+	self.scriptPath = AnalysisPipe.path+'/samples/'+self.name+'/script'
+	self.dataPath   = AnalysisPipe.path+'/samples/'+self.name+'/data'
+	self.logPath    = AnalysisPipe.path+'/samples/'+self.name+'/logs'
+	self.fastqcPath = AnalysisPipe.path+'/samples/'+self.name+'/fastQC'
+	self.dependencies = {}
+
+    @property
+    def readCount(self, ):
+	tmpCounter = 0
+	for filePairId,readCount,fastq1,fastq2,sampleId in AnalysisPipe.database.getFastqs():
+	    if int(sampleId) == self.id:tmpCounter+= readCount
+	return tmpCounter
+
+    def getFastqs(self):
+	self.fastqIds = []
+	for filePairId,readCount,fastq1,fastq2,sampleId in AnalysisPipe.database.getFastqs():
+	    if int(sampleId) == self.id:
+		self.fastqIds.append(filePairId)
+		yield [filePairId,readCount,fastq1,fastq2,sampleId]
+
+    def createDirs(self):
+        import os
+        try: os.makedirs(self.path)
+        except OSError:pass
+        try: os.makedirs(self.scriptPath)
+        except OSError:pass
+        try: os.makedirs(self.dataPath)
+        except OSError:pass
+        try: os.makedirs(self.fastqcPath)
+        except OSError:pass
+
+    def trimFastqs(self):
+	for filePairId,readCount,fastq1,fastq2,sampleId in self.getFastqs():
+
+	    import sys
+	    import time
+	    try: project = sys.argv[3]
+	    except IndexError:
+		msg = '#ERROR_MSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# You must give a project number for the creation of sbatch scripts, exiting.\n'
+		AnalysisPipe.logfile.write(msg)
+		sys.stderr.write(msg)
+		sys.exit(1)
+
+	    #
+	    # sbatch header
+	    #
+	    output = ''
+	    output += '#! /bin/bash -l'+'\n'
+	    output += '#SBATCH -A '+project+'\n'
+	    output += '#SBATCH -n 2 -p core'+'\n'
+	    output += '#SBATCH -t 72:00:00'+'\n'
+	    output += '#SBATCH -J trim.'+self.name+'.'+str(filePairId)+'\n'
+	    output += '#SBATCH -e '+self.logPath+'/stderr.trimming.'+self.name+'.'+str(filePairId)+'.txt'+'\n'
+	    output += '#SBATCH -o '+self.logPath+'/stdout.trimming.'+self.name+'.'+str(filePairId)+'.txt'+'\n'
+	    
+	    try:
+		output += '#SBATCH --mail-type=All'+'\n'
+		output += '#SBATCH --mail-user='+sys.argv[4]+'\n'
+	    except IndexError: pass
+	    
+	    #
+	    # define variebles and go to path
+	    #
+	    output += 'echo "$(date) Running on: $(hostname)"'+'\n'
+	    output += 'cd '+self.path+'\n'
+	    output += 'echo "-----"'+'\n'
+	    
+	    output += 'module load bioinfo-tools cutadapt/1.5.0 FastQC'+'\n'
+
+	    #
+	    # WGA adapter trimming
+	    #
+	    output += ''+AnalysisPipe.scriptPath+'/wgaAdapterTrimmer.py -i '+fastq1+' > '+self.dataPath+'/'+str(filePairId)+'.r1.wgaTrimmed.fq 2> '+self.logPath+'/rubiconWgaTrimming.'+str(filePairId)+'.r1.log.txt &\n'
+	    output += ''+AnalysisPipe.scriptPath+'/wgaAdapterTrimmer.py -i '+fastq2+' > '+self.dataPath+'/'+str(filePairId)+'.r2.wgaTrimmed.fq 2> '+self.logPath+'/rubiconWgaTrimming.'+str(filePairId)+'.r2.log.txt &\n'
+	    output += 'wait\n'
+	    
+	    output += '\n'
+	    output += 'cutadapt -n 10 -g GTGAGTGATGGTTGAGGTAGTGTGGAG -a CTCCACACTACCTCAACCATCACTCAC '+self.dataPath+'/'+str(filePairId)+'.r1.wgaTrimmed.fq > '+self.dataPath+'/'+str(filePairId)+'.r1.wgaTrimmed2.fq  2> '+self.logPath+'/malbacWgaTrimming.'+str(filePairId)+'.r1.log.txt &\n'
+	    output += 'cutadapt -n 10 -g GTGAGTGATGGTTGAGGTAGTGTGGAG -a CTCCACACTACCTCAACCATCACTCAC '+self.dataPath+'/'+str(filePairId)+'.r1.wgaTrimmed.fq > '+self.dataPath+'/'+str(filePairId)+'.r2.wgaTrimmed2.fq  2> '+self.logPath+'/malbacWgaTrimming.'+str(filePairId)+'.r2.log.txt &\n'
+	    output += 'wait\n'
+	    output += '\n'
+	    output += 'rm -v '+self.dataPath+'/'+str(filePairId)+'.r1.wgaTrimmed.fq '+self.dataPath+'/'+str(filePairId)+'.r2.wgaTrimmed.fq\n'
+	    
+	    #
+	    # illumina  adapter trimming
+	    #
+	    adaptersToTrim = '-a CTGTCTCTTATACACATCTGACGCTGCCGACGA -a CTGTCTCTTATACACATCTCCGAGCCCACGAGAC -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC -a AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT'
+	    output += 'cutadapt -n 3 '+adaptersToTrim+' '+self.dataPath+'/'+str(filePairId)+'.r1.wgaTrimmed2.fq > '+self.dataPath+'/'+str(filePairId)+'.r1.wgaAndilluminaTrimmed.fq 2> '+self.logPath+'/illuminaAndNexteraTrimming.'+str(filePairId)+'.r1.log.txt &\n'
+	    output += 'cutadapt -n 3 '+adaptersToTrim+' '+self.dataPath+'/'+str(filePairId)+'.r2.wgaTrimmed2.fq > '+self.dataPath+'/'+str(filePairId)+'.r2.wgaAndilluminaTrimmed.fq 2> '+self.logPath+'/illuminaAndNexteraTrimming.'+str(filePairId)+'.r2.log.txt &\n'
+	    output += 'wait\n'
+
+	    #
+	    # remove temp files
+	    #
+	    output += 'rm -v '+self.dataPath+'/'+str(filePairId)+'.r1.wgaTrimmed2.fq '+self.dataPath+'/'+str(filePairId)+'.r2.wgaTrimmed2.fq \n'
+	    output += 'wait\n'
+	    
+	    #
+	    # quality trimmming
+	    #
+	    output += ''+AnalysisPipe.scriptPath+'/TrimBWAstyle.pl -q 20 '+self.dataPath+'/'+str(filePairId)+'.r1.wgaAndilluminaTrimmed.fq > '+self.dataPath+'/'+str(filePairId)+'.r1.wgaIlluminaAndQualityTrimmed.fq 2> '+self.logPath+'/qualityTrimming.'+str(filePairId)+'.r1.log.txt &\n'
+	    output += ''+AnalysisPipe.scriptPath+'/TrimBWAstyle.pl -q 20 '+self.dataPath+'/'+str(filePairId)+'.r2.wgaAndilluminaTrimmed.fq > '+self.dataPath+'/'+str(filePairId)+'.r2.wgaIlluminaAndQualityTrimmed.fq 2> '+self.logPath+'/qualityTrimming.'+str(filePairId)+'.r2.log.txt &\n'
+	    output += 'wait\n'
+	    
+	    #
+	    # remove temp files
+	    #
+	    output += 'rm -v '+self.dataPath+'/'+str(filePairId)+'.r1.wgaAndilluminaTrimmed.fq '+self.dataPath+'/'+str(filePairId)+'.r2.wgaAndilluminaTrimmed.fq\n'
+	    output += 'wait\n'
+	    
+	    #
+	    # remove empty or "N" only sequences
+	    #
+	    output += 'python '+AnalysisPipe.scriptPath+'/removeEmptyReads.py '
+	    output += self.dataPath+'/'+str(filePairId)+'.r1.wgaIlluminaAndQualityTrimmed.fq '
+	    output += self.dataPath+'/'+str(filePairId)+'.r2.wgaIlluminaAndQualityTrimmed.fq '
+	    output += self.dataPath+'/'+str(filePairId)+'.r1.allTrimmed.fq '
+	    output += self.dataPath+'/'+str(filePairId)+'.r2.allTrimmed.fq '
+	    output += self.dataPath+'/'+str(filePairId)+'.singletts.fq '
+	    output += '>&2 2> '+self.logPath+'/qualityTrimming.'+str(filePairId)+'.removeEmptyReads.log.txt\n'
+	    
+	    #
+	    # remove temp files
+	    #
+	    output += 'rm -v '+self.dataPath+'/'+str(filePairId)+'.r1.wgaIlluminaAndQualityTrimmed.fq '+self.dataPath+'/'+str(filePairId)+'.r2.wgaIlluminaAndQualityTrimmed.fq\n'
+	    output += 'wait\n'
+	    
+	    #
+	    # compress files
+	    #
+	    output += 'gzip -v9 '+self.dataPath+'/'+str(filePairId)+'.r1.allTrimmed.fq &\n'
+	    output += 'gzip -v9 '+self.dataPath+'/'+str(filePairId)+'.r2.allTrimmed.fq  &\n'
+	    output += 'gzip -v9 '+self.dataPath+'/'+str(filePairId)+'.singletts.fq &\n'
+	    output += 'wait\n'
+	    
+	    #
+	    # FASTQC
+	    #
+	    output += 'fastqc '+self.dataPath+'/'+str(filePairId)+'.r1.allTrimmed.fq.gz &\n'
+	    output += 'fastqc '+self.dataPath+'/'+str(filePairId)+'.r2.allTrimmed.fq.gz &\n'
+	    output += 'fastqc '+self.dataPath+'/'+str(filePairId)+'.singletts.fq.gz &\n'
+	    output += 'wait\n'
+	    output += 'mv -v '+self.dataPath+'/*fastqc* '+self.fastqcPath+'/\n'
+	    
+	    #
+	    # Final output and write script to file
+	    #
+	    output += 'echo'+'\n'
+	    output += 'wait'+'\n'
+	    output += 'echo "$(date) AllDone"'+'\n'
+	    output += 'echo "$(date) AllDone" >&2'+'\n'
+	    with open(self.scriptPath+'/trimming.'+self.name+'.'+str(filePairId)+'.sh','w') as outfile: outfile.write(output)
+
+if __name__ == "__main__": main()
