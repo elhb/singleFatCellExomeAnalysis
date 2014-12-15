@@ -64,19 +64,22 @@ class AnalysisPipe(object):
 	import sys
 	import os
 	import time
-	
+
 	try:
 	    path = sys.argv[1]
 	    path = os.path.abspath(path)
 	    if path[-1] == '/': path = path[:-1]
 	    AnalysisPipe.path = path
 	    AnalysisPipe.scriptPath = '/'+'/'.join(os.path.abspath(sys.argv[0]).split('/')[:-1])
+	    AnalysisPipe.referencePath = '/'+'/'.join(os.path.abspath(sys.argv[0]).split('/')[:-2])+'/references'
 	except IndexError:
 	    sys.stderr.write('#ERROR_MSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# Please supply a path on your commandline (currently: "'+' '.join(sys.argv)+'")\n')
 	    sys.exit(1)
-	
+
 	AnalysisPipe.bowtie2Reference = '~/singleFatCellExomeAnalysis/references/GATKbundle/human_g1k_v37.fasta'
 	AnalysisPipe.picardLocation = '~/bin/picard-tools-1.114'
+	AnalysisPipe.gatkLocation = '~/singleFatCellExomeAnalysis/bin/GenomeAnalysisTK-3.1-1/GenomeAnalysisTK.jar'
+	AnalysisPipe.gatkBundleLocation = '~/singleFatCellExomeAnalysis/references/GATKbundle/'
 
 	self.openLogfileConnection()
 	
@@ -279,6 +282,7 @@ class AnalysisPipe(object):
 
 	import time
 
+	allSampleDependency = []
 	for sample in AnalysisPipe.database.getSamples():
 
 	    AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# Submitting sbatches for sample: '+sample.name+' ... \n')
@@ -302,6 +306,27 @@ class AnalysisPipe(object):
 	    fileName = sample.scriptPath+'/mergeMapped.'+sample.name+'.sh'
 	    jobid = submitSbatch(fileName,dependency=dependency)
 	    AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# Submitted mering of mapped data for '+sample.name+' with job id '+str(jobid)+' \n')
+
+	    fileName = sample.scriptPath+'/FilterAndFix.'+sample.name+'.sh'
+	    jobid = submitSbatch(fileName,dependency=[jobid])
+	    AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# Submitted fixing the of merged data for '+sample.name+' with job id '+str(jobid)+' \n')
+
+	    fileName = sample.scriptPath+'/realignerTargetCreator.'+sample.name+'.sh'
+	    jobid = submitSbatch(fileName,dependency=[jobid])
+	    AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# Submitted realignerTargetCreator of data for '+sample.name+' with job id '+str(jobid)+' \n')
+
+	    fileName = sample.scriptPath+'/reAlignAndReCalibrate.'+sample.name+'.sh'
+	    jobid = submitSbatch(fileName,dependency=[jobid])
+	    AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# Submitted reAlignAndReCalibrate of data for '+sample.name+' with job id '+str(jobid)+' \n')
+
+	    fileName = sample.scriptPath+'/haplotypeCalling.'+sample.name+'.sh'
+	    hapJobid = submitSbatch(fileName,dependency=[jobid])
+	    allSampleDependency.append(hapJobid)
+	    AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# Submitted haplotypecalling for '+sample.name+' with job id '+str(jobid)+' \n')
+	    
+	    fileName = sample.scriptPath+'/qcSteps.'+sample.name+'.sh'
+	    jobid = submitSbatch(fileName,dependency=[jobid])
+	    AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# Submitted qc steps for '+sample.name+' with job id '+str(jobid)+' \n')
 
 class Database(object):
     
@@ -451,6 +476,7 @@ class Database(object):
 	#
 	import sys
 	import os
+	import time
 	
 	fastq1 = os.path.abspath(fastq1)
 	fastq2 = os.path.abspath(fastq2)
@@ -460,10 +486,10 @@ class Database(object):
 	samplesbyId = {}
 	for sample in samples:
 	    samplesbyId[sample.id]=sample
-	    samplesbySame[sample.name]=sample
+	    samplesbyName[sample.name]=sample
 	sampleName = None
 	sampleId = None
-	if int(sampleNameOrId) in samplesbyName.values():sampleId = sampleNameOrId; sampleName = samplesbyId[int(sampleId)].name
+	if int(sampleNameOrId) in [int(value.id)  for value in samplesbyName.values()]:sampleId = sampleNameOrId; sampleName = samplesbyId[int(sampleId)].name
 	elif   sampleNameOrId  in samplesbyName.keys():sampleName = sampleNameOrId; sampleId = samplesbyName[sampleName].id
 	else:
 	    msg = '#ERROR_MSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# SampleName (or id) must be registered in the database, there is no sample with name or id '+str(sampleNameOrId)+' , exiting.\n'
@@ -546,7 +572,7 @@ class Database(object):
 	return runsInfo
 
 class Sample(object):
-    
+
     def __init__(self, sampleName=None,sampleId=None):
 	self.name = sampleName
 	self.id = int(sampleId)
@@ -580,6 +606,8 @@ class Sample(object):
         try: os.makedirs(self.dataPath)
         except OSError:pass
         try: os.makedirs(self.fastqcPath)
+        except OSError:pass
+        try: os.makedirs(self.logPath)
         except OSError:pass
 
     def trimFastqs(self):
@@ -810,14 +838,366 @@ class Sample(object):
 	output += 'echo "$(date) AllDone" >&2'+'\n'
 	with open(self.scriptPath+'/mergeMapped.'+self.name+'.sh','w') as outfile: outfile.write(output)
 
-    def filterAndFixMerged(self): pass
+    def filterAndFixMerged(self):
+	import sys
+	import time
+	try: project = sys.argv[3]
+	except IndexError:
+	    msg = '#ERROR_MSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# You must give a project number for the creation of sbatch scripts, exiting.\n'
+	    AnalysisPipe.logfile.write(msg)
+	    sys.stderr.write(msg)
+	    sys.exit(1)
 
-    def realignerTargetCreator(self): pass
+        #
+        # sbatch header
+        #
+	output = '#! /bin/bash -l'+'\n'
+	output += '#SBATCH -A '+project+'\n'
+	output += '#SBATCH -n 1 -p core'+'\n'
+	output += '#SBATCH -t 5:00:00'+'\n'
+	output += '#SBATCH -J fnf.'+self.name+'\n'
+	output += '#SBATCH -e '+self.logPath+'/stderr.filterAndFix.'+self.name+'.txt'+'\n'
+	output += '#SBATCH -o '+self.logPath+'/stdout.filterAndFix.'+self.name+'.txt'+'\n'
+
+	try:
+	    output += '#SBATCH --mail-type=All'+'\n'
+	    output += '#SBATCH --mail-user='+sys.argv[4]+'\n'
+	except IndexError: pass
+
+        #
+        # define variebles and go to path
+        #
+        output += 'echo "$(date) Running on: $(hostname)"'+'\n'
+        output += 'cd '+self.path+'\n'
+        output += 'echo'+'\n'
+        
+        #
+        # convert to bam file
+        #
+        output += 'java -Xmx5g -jar '+AnalysisPipe.picardLocation+'/SamFormatConverter.jar MAX_RECORDS_IN_RAM=2500000 '
+	output += 'INPUT='+ self.dataPath+'/'+self.name+'.merged.sam '
+	output += 'OUTPUT='+self.dataPath+'/'+self.name+'.merged.bam '
+	output += '1>&2  2> '+self.logPath+'/stderr.sam2bam.'+self.name+'.txt \n'
+        output += 'echo -e "sam2bam Done. $(date) Running on: $(hostname)" 1>&2'+'\n'
+        output += 'rm -v '+self.dataPath+'/'+self.name+'.merged.sam\n'
+
+        #
+        # sort the bam file
+        #
+        output += 'java -Xmx5g -jar '+AnalysisPipe.picardLocation+'/SortSam.jar MAX_RECORDS_IN_RAM=2500000 SORT_ORDER=coordinate '
+	output += 'INPUT='+ self.dataPath+'/'+self.name+'.merged.bam '
+        output += 'OUTPUT='+self.dataPath+'/'+self.name+'.sorted.bam '
+	output += 'CREATE_INDEX=true 1>&2  2> '
+	output += self.logPath+'/stderr.sortBam.'+self.name+'.txt \n'
+        output += 'echo -e "bam2sort Done. $(date) Running on: $(hostname)" 1>&2'+'\n'
+        output += 'rm -v '+self.dataPath+'/'+self.name+'.merged.bam\n'
+
+        #
+        # mark duplicates
+        #
+        output += 'java -Xmx5g -jar '+AnalysisPipe.picardLocation+'/MarkDuplicates.jar MAX_RECORDS_IN_RAM=2500000 VALIDATION_STRINGENCY=LENIENT '
+	output += 'INPUT='+ self.dataPath+'/'+self.name+'.sorted.bam '
+	output += 'OUTPUT='+self.dataPath+'/'+self.name+'.marked.bam '
+	output += 'METRICS_FILE='+self.logPath+'/markeDuplicatesMetrix.'+self.name+'.txt '
+	output += '1>&2  2> '+self.logPath+'/stderr.markeDuplicates.'+self.name+'.txt \n'
+        output += 'echo -e "mark Done. $(date) Running on: $(hostname)" 1>&2'+'\n'
+        output += 'rm -v '+self.dataPath+'/'+self.name+'.sorted.bam\n'
+
+        #
+        # fix missing information
+        #
+        output += 'java -Xmx5g -jar '+AnalysisPipe.picardLocation+'/AddOrReplaceReadGroups.jar '
+        output += 'MAX_RECORDS_IN_RAM=2500000 '
+        output += 'INPUT='+ self.dataPath+'/'+self.name+'.marked.bam '
+        output += 'OUTPUT='+self.dataPath+'/'+self.name+'.fixed.bam '
+        output += 'CREATE_INDEX=true RGID='+self.name+' RGLB='+self.name+' RGPL=NA RGSM='+self.name+' RGCN="NA" RGPU="NA"'+'  '
+	output += '1>&2  2> '+self.logPath+'/stderr.addAndReplaceReadGroups.'+self.name+'.txt \n'
+        output += 'echo "addorreplace Done. $(date) Running on: $(hostname)" 1>&2'+'\n'
+        output += 'rm -v '+self.dataPath+'/'+self.name+'.marked.bam\n'
+
+        #
+        # samtools flagstat
+        #
+        output += 'samtools flagstat '+self.dataPath+'/'+self.name+'.fixed.bam '+' 1>&2 2> '+self.logPath+'/fixedBamFlagstat.'+self.name+'.txt \n'
+        output += 'echo "flagstat Done. $(date) Running on: $(hostname)" 1>&2'+'\n'
+
+        #
+        # Final output and write script to file
+        #
+        output += 'wait'+'\n'
+        output += 'echo "$(date) AllDone"'+'\n'
+        output += 'echo "$(date) AllDone" >&2'+'\n'
+	with open(self.scriptPath+'/FilterAndFix.'+self.name+'.sh','w') as outfile: outfile.write(output)
+
+    def realignerTargetCreator(self):
+	import sys
+	import time
+	try: project = sys.argv[3]
+	except IndexError:
+	    msg = '#ERROR_MSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# You must give a project number for the creation of sbatch scripts, exiting.\n'
+	    AnalysisPipe.logfile.write(msg)
+	    sys.stderr.write(msg)
+	    sys.exit(1)
+
+        #
+        # sbatch header
+        #
+
+	output = '#! /bin/bash -l'+'\n'
+	output += '#SBATCH -A '+project+'\n'
+	output += '#SBATCH -n 16 -p node'+'\n'
+	output += '#SBATCH -t 72:00:00'+'\n'
+	output += '#SBATCH -J realTC.'+self.name+'\n'
+	output += '#SBATCH -e '+self.logPath+'/stderr.realTC.'+self.name+'.txt'+'\n'
+	output += '#SBATCH -o '+self.logPath+'/stdout.realTC.'+self.name+'.txt'+'\n'
+
+	try:
+	    output += '#SBATCH --mail-type=All'+'\n'
+	    output += '#SBATCH --mail-user='+sys.argv[4]+'\n'
+	except IndexError: pass
+
+        #
+        # define variebles and go to path
+        #
+        output += 'echo "$(date) Running on: $(hostname)"\n'
+
+        #
+        # Find targets for indel realignment
+        #
+        output += 'echo -e "-> RealignerTargetCreator <-"\n'
+        output += 'java -Xmx72g -jar '+AnalysisPipe.gatkLocation+' -T RealignerTargetCreator '
+	output += '-nt 16 '
+	output += '-I '+self.dataPath+'/'+self.name+'.fixed.bam'+' '
+	output += '-R '+AnalysisPipe.bowtie2Reference+' '
+	output += '-o '+self.dataPath+'/'+self.name+'.reAlignemntTargetIntervals.bed '
+        output += ' -known '+AnalysisPipe.gatkBundleLocation+'/Mills_and_1000G_gold_standard.indels.b37.vcf'
+        output += ' -known '+AnalysisPipe.gatkBundleLocation+'/1000G_phase1.indels.b37.vcf '
+	output += '1>&2 2> '+self.logPath+'/stderr.RealignerTargetCreator.'+self.name+'.txt;'
+        output += '\n'
+        
+        with open(self.scriptPath+'/realignerTargetCreator.'+self.name+'.sh','w') as outfile: outfile.write(output)
     
-    def reAlignAndReCalibrate(self): pass
+    def reAlignAndReCalibrate(self):
+	import sys
+	import time
+	try: project = sys.argv[3]
+	except IndexError:
+	    msg = '#ERROR_MSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# You must give a project number for the creation of sbatch scripts, exiting.\n'
+	    AnalysisPipe.logfile.write(msg)
+	    sys.stderr.write(msg)
+	    sys.exit(1)
 
-    def haplotypeCalling(self):pass
+        #
+        # sbatch header
+        #
+	output = '#! /bin/bash -l'+'\n'
+	output += '#SBATCH -A '+project+'\n'
+	output += '#SBATCH -n 1 -p core'+'\n'
+	output += '#SBATCH -t 72:00:00'+'\n'
+	output += '#SBATCH -J reAlign.'+self.name+'\n'
+	output += '#SBATCH -e '+self.logPath+'/stderr.reAlign.'+self.name+'.txt'+'\n'
+	output += '#SBATCH -o '+self.logPath+'/stdout.reAlign.'+self.name+'.txt'+'\n'
 
-    def qcSteps(self): pass
+	try:
+	    output += '#SBATCH --mail-type=All'+'\n'
+	    output += '#SBATCH --mail-user='+sys.argv[4]+'\n'
+	except IndexError: pass
+        output += 'echo "$(date) Running on: $(hostname)"\n'
+
+        #
+        # Realign reads around indels
+        #
+        output += 'echo -e "-> IndelRealigner <-"\n'
+        output += 'java -Xmx5g -jar '+AnalysisPipe.gatkLocation+' -T IndelRealigner '
+	output += '-I '+self.dataPath+'/'+self.name+'.fixed.bam'+' '
+	output += '-R '+AnalysisPipe.bowtie2Reference+' '
+	output += '-targetIntervals '+self.dataPath+'/'+self.name+'.reAlignemntTargetIntervals.bed '
+        output += ' -o '+self.dataPath+'/'+self.name+'.reAligned.bam'+' '
+        output += ' -known '+AnalysisPipe.gatkBundleLocation+'/Mills_and_1000G_gold_standard.indels.b37.vcf'
+        output += ' -known '+AnalysisPipe.gatkBundleLocation+'/1000G_phase1.indels.b37.vcf  '
+	output += '1>&2 2> '+self.logPath+'/stderr.indelRealigner.'+self.name+'.txt;'+'\n'
+        output += '\n'
+        output += 'echo "Done. $(date) Running on: $(hostname)"\n'
+        output += 'echo "$(date) Running on: $(hostname)"\n'
+        output += 'rm -v '+self.dataPath+'/'+self.name+'.fixed.bam'+'\n'
+        
+        #
+        # Quality recalibration
+        #
+        output += 'echo -e "-> BaseRecalibrator <-"\n'
+        output += 'java -Xmx5g -jar '+AnalysisPipe.gatkLocation+' -T BaseRecalibrator '
+	output += '-I '+self.dataPath+'/'+self.name+'.reAligned.bam'+' '
+	output += '-R '+AnalysisPipe.bowtie2Reference+' '
+	output += '-o '+self.dataPath+'/'+self.name+'.BQSR.grp'+' '
+        output += ' -knownSites '+AnalysisPipe.gatkBundleLocation+'/dbsnp_138.b37.vcf '
+	output += '1>&2 2> '+self.logPath+'/stderr.baseRecalibrator.'+self.name+'.txt;'+'\n'
+
+        output += '\n'
+        output += 'echo -e "-> PrintReads <-"\n'
+        output += 'java -Xmx5g -jar '+AnalysisPipe.gatkLocation+' -T PrintReads '
+	output += '-I '+self.dataPath+'/'+self.name+'.reAligned.bam'+' '
+	output += '-R '+AnalysisPipe.bowtie2Reference+' '
+	output += '-BQSR '+self.dataPath+'/'+self.name+'.BQSR.grp'+' '
+	output += '-o '+self.dataPath+'/'+self.name+'.reCalibrated.bam'+' '
+	output += '1>&2 2> '+self.path+'/stderr.printreads.txt ;\n'
+        output += 'rm -v '+self.dataPath+'/'+self.name+'.reAligned.bam'+'\n'
+
+	output += 'samtools view -h -F 4 '   +self.dataPath+'/'+self.name+'.reCalibrated.bam > '+self.dataPath+'/'+self.name+'.unmapRemoved.bam  2> '+self.logPath+'/stderr.samtoolsView.removeUnmap.'+self.name+'.txt \n'
+	output += 'samtools view -h -q 20 '  +self.dataPath+'/'+self.name+'.unmapRemoved.bam > '+self.dataPath+'/'+self.name+'.qualFiltered.bam  2> '+self.logPath+'/stderr.samtoolsView.qualFilter.'+self.name+'.txt \n'
+	output += 'samtools view -h -F 1024 '+self.dataPath+'/'+self.name+'.qualFiltered.bam > '+self.dataPath+'/'+self.name+'.noDuplicates.bam  2> '+self.logPath+'/stderr.samtoolsView.removeDups.'+self.name+'.txt \n'
+
+	output += 'java -Xmx5g -jar '+AnalysisPipe.picardLocation+'/BuildBamIndex.jar INPUT='+self.dataPath+'/'+self.name+'.unmapRemoved.bam '+'1>&2  2>  '+self.logPath+'/stderr.buildIndex1.'+self.name+'.txt \n'
+	output += 'java -Xmx5g -jar '+AnalysisPipe.picardLocation+'/BuildBamIndex.jar INPUT='+self.dataPath+'/'+self.name+'.qualFiltered.bam '+'1>&2  2>  '+self.logPath+'/stderr.buildIndex2.'+self.name+'.txt \n'
+	output += 'java -Xmx5g -jar '+AnalysisPipe.picardLocation+'/BuildBamIndex.jar INPUT='+self.dataPath+'/'+self.name+'.noDuplicates.bam '+'1>&2  2>  '+self.logPath+'/stderr.buildIndex3.'+self.name+'.txt \n'
+
+        output += 'samtools flagstat '+self.dataPath+'/'+self.name+'.reCalibrated.bam 1>&2 2> '+self.logPath+'/reCalibratedBamFlagstat.'+self.name+'.txt \n'
+	output += 'samtools flagstat '+self.dataPath+'/'+self.name+'.unmapRemoved.bam 1>&2 2> '+self.logPath+'/unmapRemovedBamFlagstat.'+self.name+'.txt \n'
+	output += 'samtools flagstat '+self.dataPath+'/'+self.name+'.qualFiltered.bam 1>&2 2> '+self.logPath+'/qualFilteredBamFlagstat.'+self.name+'.txt \n'
+	output += 'samtools flagstat '+self.dataPath+'/'+self.name+'.noDuplicates.bam 1>&2 2> '+self.logPath+'/noDuplicatesBamFlagstat.'+self.name+'.txt \n'
+
+        #output += 'rm -v '+self.dataPath+'/'+self.name+'.reCalibrated.bam\n'
+	#output += 'rm -v '+self.dataPath+'/'+self.name+'.unmapRemoved.bam\n'
+	#output += 'rm -v '+self.dataPath+'/'+self.name+'.qualFiltered.bam\n'
+
+        #
+        # Final output and write script to file
+        #
+        output += 'echo "Done. $(date) Running on: $(hostname)"\n'
+        output += 'wait\n'
+        output += 'echo "$(date) AllDone"\n'
+        with open(self.scriptPath+'/reAlignAndReCalibrate.'+self.name+'.sh','w') as outfile: outfile.write(output)
+
+    def haplotypeCalling(self):
+	import sys
+	import time
+	try: project = sys.argv[3]
+	except IndexError:
+	    msg = '#ERROR_MSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# You must give a project number for the creation of sbatch scripts, exiting.\n'
+	    AnalysisPipe.logfile.write(msg)
+	    sys.stderr.write(msg)
+	    sys.exit(1)
+
+        #
+        # sbatch header
+        #
+	output = '#! /bin/bash -l'+'\n'
+	output += '#SBATCH -A '+project+'\n'
+	output += '#SBATCH -n 1 -p core'+'\n'
+	output += '#SBATCH -t 72:00:00'+'\n'
+	output += '#SBATCH -J hapCal.'+self.name+'\n'
+	output += '#SBATCH -e '+self.logPath+'/stderr.haplotypeCalling.'+self.name+'.txt'+'\n'
+	output += '#SBATCH -o '+self.logPath+'/stdout.haplotypeCalling.'+self.name+'.txt'+'\n'
+
+	try:
+	    output += '#SBATCH --mail-type=All'+'\n'
+	    output += '#SBATCH --mail-user='+sys.argv[4]+'\n'
+	except IndexError: pass
+        output += 'echo "$(date) Running on: $(hostname)"\n'
+
+        output += 'echo "HC" '+'\n'
+        
+        output += 'java -Xmx5g -jar '+AnalysisPipe.gatkLocation+' '
+        output += '-T HaplotypeCaller '
+	output += '-R '+AnalysisPipe.bowtie2Reference+' '
+        output += '-I '+self.dataPath+'/'+self.name+'.noDuplicates.bam '
+        output += '--genotyping_mode DISCOVERY '
+        output += '-stand_emit_conf 10 '
+        output += '-stand_call_conf 30 '
+        output += '-L '+AnalysisPipe.referencePath+'/truseq_exome_targeted_regions.hg19.bed.chr.columnReOrdered.withHeader.chrRem.bed '
+        output += '--dbsnp $GATKbundle/dbsnp_138.b37.vcf '
+        output += '--annotation AlleleBalance --annotation AlleleBalanceBySample --annotation BaseCounts --annotation BaseQualityRankSumTest '
+        output += '--annotation ChromosomeCounts --annotation ClippingRankSumTest --annotation Coverage --annotation DepthPerAlleleBySample '
+        output += '--annotation DepthPerSampleHC --annotation FisherStrand --annotation GCContent --annotation HaplotypeScore --annotation HardyWeinberg '
+        output += '--annotation HomopolymerRun --annotation InbreedingCoeff --annotation LikelihoodRankSumTest --annotation LowMQ '
+        output += '--annotation MVLikelihoodRatio --annotation MappingQualityRankSumTest --annotation MappingQualityZero --annotation MappingQualityZeroBySample '
+        output += '--annotation NBaseCount --annotation QualByDepth --annotation RMSMappingQuality --annotation ReadPosRankSumTest --annotation SampleList '
+        output += '--annotation SnpEff --annotation SpanningDeletions --annotation StrandBiasBySample --annotation TandemRepeatAnnotator '
+        output += '--annotation TransmissionDisequilibriumTest --annotation VariantType '#--annotation StrandOddsRatio 
+        output += '--emitRefConfidence GVCF --variant_index_type LINEAR --variant_index_parameter 128000 '
+        output += '-o '+self.dataPath+'/'+self.name+'.gvcf '
+	output += '1>&2 2> '+self.logPath+'/stderr.haplotypeCallerGatk.'+self.name+'.txt &'+'\n'
+        output += 'wait'+'\n'
+
+        #
+        # Final output and write script to file
+        #
+        output += 'echo "Done. $(date) Running on: $(hostname)"\n'
+        output += 'wait\n'
+        output += 'echo "$(date) AllDone"\n'
+        with open(self.scriptPath+'/haplotypeCalling.'+self.name+'.sh','w') as outfile: outfile.write(output)
+
+    def qcSteps(self):
+	import sys
+	import time
+	try: project = sys.argv[3]
+	except IndexError:
+	    msg = '#ERROR_MSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# You must give a project number for the creation of sbatch scripts, exiting.\n'
+	    AnalysisPipe.logfile.write(msg)
+	    sys.stderr.write(msg)
+	    sys.exit(1)
+
+        #
+        # sbatch header
+        #
+	output = '#! /bin/bash -l'+'\n'
+	output += '#SBATCH -A '+project+'\n'
+	output += '#SBATCH -n 1 -p core'+'\n'
+	output += '#SBATCH -t 72:00:00'+'\n'
+	output += '#SBATCH -J qcSteps.'+self.name+'\n'
+	output += '#SBATCH -e '+self.logPath+'/stderr.qcSteps.'+self.name+'.txt'+'\n'
+	output += '#SBATCH -o '+self.logPath+'/stdout.qcSteps.'+self.name+'.txt'+'\n'
+
+	try:
+	    output += '#SBATCH --mail-type=All'+'\n'
+	    output += '#SBATCH --mail-user='+sys.argv[4]+'\n'
+	except IndexError: pass
+        output += 'echo "$(date) Running on: $(hostname)"\n'
+
+        #
+        # GATK callable Loci
+        #
+        output += 'echo "$(date) Running on: $(hostname)"'+'\n'
+        output += 'echo -e "-> CallableLoci <-"'+'\n'
+        output += 'java -Xmx5g -jar '+AnalysisPipe.gatkLocation+' -T CallableLoci '
+	output +='-I '+self.dataPath+'/'+self.name+'.noDuplicates.bam '
+	output +='-summary '+self.dataPath+'/'+self.name+'.callableLociSummary.txt '
+	output +='-o '+self.dataPath+'/'+self.name+'.callableLoci.bed '
+	output +='-R '+AnalysisPipe.bowtie2Reference+' '+'\n'
+        output += 'echo "Done. $(date) Running on: $(hostname)"'+'\n'
+        output += 'echo'+'\n'
+        output += 'echo "-----"'+'\n'
+
+        #
+        # qacompute
+        #
+        output += 'echo "$(date) Running on: $(hostname)"'+'\n'
+        output += 'echo -e "-> Pauls qacompute <-"'+'\n'
+        output += '/proj/b2010052/scripts/qaCompute -d -q 10 '
+	output += '-m '+self.dataPath+'/'+self.name+'.noDuplicates.bam '
+	output += self.dataPath+'/'+self.name+'.qacompute.out '
+	output += '> '+self.logPath+'/'+self.name+'.qacompute.stdout.txt '
+	output += '2> '+self.logPath+'/'+self.name+'.qacompute.stderr.txt '+'\n'
+        output += 'echo "Done. $(date) Running on: $(hostname)"'+'\n'
+
+        #
+        # picard HS metrics
+        #
+        output += 'java -Xmx3g -jar $picard/CalculateHsMetrics.jar '
+	output += 'BAIT_INTERVALS='+AnalysisPipe.referencePath+'/truseq_exome_targeted_regions.hg19.bed.chr.columnReOrdered.withHeader.chrRem '
+	output += 'TARGET_INTERVALS='+AnalysisPipe.referencePath+'/truseq_exome_targeted_regions.hg19.bed.chr.columnReOrdered.withHeader.chrRem '
+	output += 'INPUT='+self.dataPath+'/'+self.name+'.noDuplicates.bam '
+	output += 'OUTPUT='+self.dataPath+'/'+self.name+'.hs_metrics.summary.txt '
+	output += 'PER_TARGET_COVERAGE='+self.dataPath+'/'+self.name+'.hs_metrics.perTargetCoverage.txt '
+	output += 'REFERENCE_SEQUENCE='+AnalysisPipe.bowtie2Reference+'  '
+	output += '1>&2 2> '+self.logPath+'/'+self.name+'.stderr.caluclateHsmetrics.txt \n'
+
+        #
+        # Final output and write script to file
+        #
+        output += 'echo'+'\n'
+        output += 'wait'+'\n'
+        output += 'echo "$(date) AllDone"'+'\n'
+        output += 'echo "$(date) AllDone" >&2'+'\n'
+        with open(self.scriptPath+'/qcSteps.'+self.name+'.sh','w') as outfile: outfile.write(output)
 
 if __name__ == "__main__": main()
