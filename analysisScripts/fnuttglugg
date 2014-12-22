@@ -25,14 +25,31 @@ def main():
     app = AnalysisPipe()
     app.run()
 
-def extractData(infile=None,pattern=None):
+def thousandString(string):
+    outstring = ''
+    for i in range(len(string)):
+	outstring += string[-(i+1)]
+	if (i+1)%3 == 0: outstring += ' '
+    return outstring[::-1]
+
+def percentage(count,total):
+    if 'NA' in [total,count]: return 'NA'
+    if float(total) <=0.0: return 'NA'
+    #return round(float(count) / float(total),4)
+    return round(100* float(count) / float(total),2)
+
+def extractData(infile=None,pattern=None,checkType='data'):
     import re
+    if not pattern: return 'NoPatternGiven'
+    if not infile: return 'NoInfileGiven'
     try:
 	with open(infile) as infile:
 	    data = infile.read()
 	    p = re.compile(pattern)
-	    m = p.match(data)
-	    if m: return m.groupdict()
+	    m = p.search(data)
+	    if m:
+		if   checkType=='data':   return m.groupdict()
+		elif checkType=='program':return 'FinishedOK'
 	    else: return 'NoMatchFound'
     except IOError, e:
 	assert e.errno == 2;
@@ -70,6 +87,9 @@ def submitSbatch(filename,dependency=None):
     jobid = sbatch_out.split('\n')[0].split(' ')[3]
     return jobid
 
+def graphForeachSample(Sample):
+    pass
+
 class AnalysisPipe(object):
 
     def __init__(self):
@@ -83,8 +103,9 @@ class AnalysisPipe(object):
 	    path = os.path.abspath(path)
 	    if path[-1] == '/': path = path[:-1]
 	    AnalysisPipe.path = path
-	    AnalysisPipe.scriptPath = '/'+'/'.join(os.path.abspath(sys.argv[0]).split('/')[:-1])
-	    AnalysisPipe.referencePath = '/'+'/'.join(os.path.abspath(sys.argv[0]).split('/')[:-2])+'/references'
+	    AnalysisPipe.programPath = os.path.abspath(sys.argv[0])
+	    AnalysisPipe.scriptPath    = '/'+'/'.join(AnalysisPipe.programPath.split('/')[:-1])
+	    AnalysisPipe.referencePath = '/'+'/'.join(AnalysisPipe.programPath.split('/')[:-2])+'/references'
 	except IndexError:
 	    sys.stderr.write('#ERROR_MSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# Please supply a path on your commandline (currently: "'+' '.join(sys.argv)+'")\n')
 	    sys.exit(1)
@@ -131,6 +152,7 @@ class AnalysisPipe(object):
 	elif self.action == 'report':self.report()
 	elif self.action == 'createScripts':self.createScripts()
 	elif self.action == 'submitScripts':self.submitScripts()
+	elif self.action == 'makeGraphics':self.makeGraphics()
 	else:
 	    msg = '#ERROR_MSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# Please supply a Valid action on your commandline (currently: "'+' '.join(sys.argv)+'"), exiting.\n'
 	    AnalysisPipe.logfile.write(msg)
@@ -210,8 +232,9 @@ class AnalysisPipe(object):
     def report(self, ):
 
 	import time
-	AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# Creating a report located at '+self.path+'/report.htm'+' \n')
 	import operator
+	import os
+	AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# Creating a report located at '+self.path+'/report.htm'+' \n')
     
 	samples = AnalysisPipe.database.getSamples()
 	samplesbyName = {}
@@ -224,34 +247,70 @@ class AnalysisPipe(object):
 	reportFile = open(self.path+'/report.htm','w')
 	reportFile.write('<html>')
 	reportFile.write("""<head><style>
-	    body {background-color:white}
+	    body {
+		background-color:white
+		font-family : Arial,"Myriad Web",Verdana,Helvetica,sans-serif;
+	    }
 	    h1   {color:black}
 	    p    {color:green}
+	    
 	    table, th, td {
 		border: 1px solid black;
 		border-collapse: collapse;
+		
+		font-size : 12;
 	    }
-	    th {text-align: left;background-color:darkgray;color:white;}
-	    table {border-spacing: 5px;}
-	    th,td {padding: 15px;}
+	    th {
+		text-align: center;
+		background-color:darkgray;
+		color:white;
+		border: 1px solid black;
+	    }
+	    table {border-spacing: 1px;}
+	    th,td {padding: 5px;}
+	    td {text-align: center;}
 	</style></head>""")
 
 	reportFile.write('<body>')
 	reportFile.write('<h1>Analysis Report '+self.path+'</h1>\n')
-	
+
 	reportFile.write('<h2>List of samples:</h2>')
 	reportFile.write('<table>')
 	reportFile.write('<tr>')
 	reportFile.write('<th>Sample Id</th>')
-	reportFile.write('<th>Sample Name</th> ')
-	reportFile.write('<th>Read Count</th> ')
+	reportFile.write('<th>Sample Name</th>')
+	reportFile.write('<th>Read Pair Count</th>')
+	reportFile.write('<th>Pairs After Trimming</th>')
+	reportFile.write('<th>Overall Mapping Rate<br>(bowtie)</th>')
+	reportFile.write('<th>Overall Mapping Rate<br>(flagstat)</th>')
+	reportFile.write('<th>Duplication Rate<br>(preFilter)</th>')
+	reportFile.write('<th>Unmapped or<br>Low Mapping Quality</th>')
+	reportFile.write('<th>Left After<br>All Filtering</th>')
 	reportFile.write('</tr>')
 	for sampleId, sample in sorted(samplesbyId.iteritems(), key=operator.itemgetter(0)):
 	    reportFile.write('<tr>')
-	    reportFile.write('<td>'+str(sampleId)+'</td><td>'+sample.name+'</td><td>'+str(sample.readCount)+'</td>')
+	    reportFile.write('<td>'+str(sampleId)+'</td>')
+	    reportFile.write('<td>'+sample.name+'</td>')
+	    reportFile.write('<td>'+thousandString(str(sample.readCount))+'</td>')
+	    try:            reportFile.write('<td>'+thousandString(str(int(sample.stats['removeEmptyReads']['sum']['pairsOut'])))+' ('+str(percentage(sample.stats['removeEmptyReads']['sum']['pairsOut'],sample.readCount))+'%)</td>')
+	    except KeyError:reportFile.write('<td>NA (NA%)</td>')
+	    try:
+		tmpCount  = sum([sample.stats['bowtie2']['sum'][tmp] for tmp in ['singleSingleMap','singleMultiMap']])
+		tmpCount += sum([sample.stats['bowtie2']['sum'][tmp] for tmp in ['discordantPairs','properPairsMultiMap','properPairs']])*2
+		reportFile.write('<td>'+str(percentage(tmpCount,sample.stats['bowtie2']['sum']['totalReads']*2))+'%</td>')
+		assert sample.stats['bowtie2']['sum']['totalReads'] == sample.stats['removeEmptyReads']['sum']['pairsOut'], 'Error: pair counts do not match'
+	    except KeyError:reportFile.write('<td>NA%</td>')
+	    try: reportFile.write('<td>'+str(percentage(int(sample.stats['fixedBamFlagstat']['mapped']),int(sample.stats['fixedBamFlagstat']['totalReads'])))+'%</td>')
+	    except (KeyError, TypeError) as e:reportFile.write('<td>NA%</td>')
+	    try: reportFile.write('<td>'+str(percentage(int(sample.stats['fixedBamFlagstat']['duplicates']),int(sample.stats['fixedBamFlagstat']['totalReads'])))+'%</td>')
+	    except (KeyError, TypeError) as e:reportFile.write('<td>NA%</td>')
+	    try: reportFile.write('<td>'+str(percentage(int(sample.stats['qualFilteredBamFlagstat']['totalReads']),int(sample.stats['fixedBamFlagstat']['totalReads'])))+'%</td>')
+	    except (KeyError, TypeError) as e:reportFile.write('<td>NA%</td>')
+	    try: reportFile.write('<td>'+str(percentage(int(sample.stats['noDuplicatesBamFlagstat']['mapped']),int(sample.stats['fixedBamFlagstat']['totalReads'])))+'%</td>')
+	    except (KeyError, TypeError) as e:reportFile.write('<td>NA%</td>')
 	    reportFile.write('<tr>')
 	reportFile.write('</table>')
-	
+
 	reportFile.write('<h2>List of fastqs:</h2>')
 	reportFile.write('<table>')
 	reportFile.write('<tr>')
@@ -259,15 +318,85 @@ class AnalysisPipe(object):
 	reportFile.write('<th># Read Pairs</th> ')
 	reportFile.write('<th>Sample Name</th>')
 	reportFile.write('<th>File Name (r1)</th>')
+	reportFile.write('<th>FastQC r1</th>')
+	reportFile.write('<th>FastQC r2</th>')
 	reportFile.write('</tr>')
 	for filePairId,readCount,fastq1,fastq2,sampleId in sorted(AnalysisPipe.database.getFastqs(), key=operator.itemgetter(0)):
 	    reportFile.write('<tr>')
-	    reportFile.write('<td>'+str(filePairId)+'</td>'
-			     '<td>'+str(readCount)+'</td>'
-			     '<td>'+samplesbyId[int(sampleId)].name+'</td>'
-			     '<td>'+fastq1+'</td>')
+	    reportFile.write('<td>'+str(filePairId)+'</td>')
+	    reportFile.write('<td>'+thousandString(str(readCount))+'</td>')
+	    reportFile.write('<td>'+samplesbyId[int(sampleId)].name+'</td>')
+	    reportFile.write('<td>'+fastq1+'</td>')
+	    if os.path.exists(samplesbyId[int(sampleId)].fastqcPath+'/'+str(filePairId)+'.r1.allTrimmed_fastqc.html'): reportFile.write('<td><a href="'+os.path.relpath(samplesbyId[int(sampleId)].fastqcPath+'/'+str(filePairId)+'.r1.allTrimmed_fastqc.html','/'.join(reportFile.name.split('/')[:-1]))+'">here</a></td>')
+	    else:reportFile.write('<td>NA</td>')
+	    if os.path.exists(samplesbyId[int(sampleId)].fastqcPath+'/'+str(filePairId)+'.r2.allTrimmed_fastqc.html'): reportFile.write('<td><a href="'+os.path.relpath(samplesbyId[int(sampleId)].fastqcPath+'/'+str(filePairId)+'.r2.allTrimmed_fastqc.html','/'.join(reportFile.name.split('/')[:-1]))+'">here</a></td>')
+	    else:reportFile.write('<td>NA</td>')
 	    reportFile.write('</tr>')
 	reportFile.write('</table>')
+
+	reportFile.write('<h2>Trimming Details:</h2>')
+	reportFile.write('<h3>Samples:</h3>')
+	reportFile.write('<table>')
+	reportFile.write('<tr>')
+	reportFile.write('<th>Sample Id</th>')
+	reportFile.write('<th>Sample Name</th>')
+	reportFile.write('<th>Original Bases</th>')
+	reportFile.write('<th>% rubicon adapter</th>')
+	reportFile.write('<th>% malbac adapter</th>')
+	reportFile.write('<th>% illumina Adapters</th>')
+	reportFile.write('<th>% quality trimmed</th>')
+	reportFile.write('</tr>')
+	for sampleId, sample in sorted(samplesbyId.iteritems(), key=operator.itemgetter(0)):
+	    reportFile.write('<tr>')
+	    reportFile.write('<td>'+str(sampleId)+'</td>')
+	    reportFile.write('<td>'+sample.name+'</td>')
+	    try: reportFile.write('<td>'+thousandString(str(int(sample.stats['rubiconWgaTrimming']['sum']['totalBases'])))+'</td>')
+	    except (KeyError, TypeError) as e: reportFile.write('<td>NA</td>')
+	    try: reportFile.write('<td>'+str(percentage(int(sample.stats['rubiconWgaTrimming']['sum']['trimmedBases']),int(sample.stats['rubiconWgaTrimming']['sum']['totalBases'])))+'%</td>')
+	    except (KeyError, TypeError) as e:reportFile.write('<td>NA%</td>')
+	    try: reportFile.write('<td>'+str(percentage(int(sample.stats['malbacWgaTrimming']['sum']['trimmedBases']),int(sample.stats['rubiconWgaTrimming']['sum']['totalBases'])))+'%</td>')
+	    except (KeyError, TypeError) as e:reportFile.write('<td>NA%</td>')
+	    try: reportFile.write('<td>'+str(percentage(int(sample.stats['illuminaAndNexteraTrimming']['sum']['trimmedBases']),int(sample.stats['rubiconWgaTrimming']['sum']['totalBases'])))+'%</td>')
+	    except (KeyError, TypeError) as e:reportFile.write('<td>NA%</td>')
+	    try: reportFile.write('<td>'+str(percentage(int(sample.stats['qualityTrimming']['sum']['trimmedBases']),int(sample.stats['rubiconWgaTrimming']['sum']['totalBases'])))+'%</td>')
+	    except (KeyError, TypeError) as e:reportFile.write('<td>NA%</td>')
+	    reportFile.write('<tr>')
+	reportFile.write('</table>')
+
+	reportFile.write('<h3>Files (r1 then r2):</h3>')
+	reportFile.write('<table>')
+	reportFile.write('<tr>')
+	reportFile.write('<th>File Id</th>')
+	reportFile.write('<th>Sample Name</th>')
+	reportFile.write('<th colspan="2">Original Bases</th>')
+	reportFile.write('<th colspan="2">% rubicon adapter</th>')
+	reportFile.write('<th colspan="2">% malbac adapter</th>')
+	reportFile.write('<th colspan="2">% illumina Adapters</th>')
+	reportFile.write('<th colspan="2">% quality trimmed</th>')
+	reportFile.write('</tr>')
+	for filePairId,readCount,fastq1,fastq2,sampleId in sorted(AnalysisPipe.database.getFastqs(), key=operator.itemgetter(0)):
+	    sample = samplesbyId[int(sampleId)]
+	    reportFile.write('<tr>')
+	    reportFile.write('<td>'+str(filePairId)+'</td>')
+	    reportFile.write('<td>'+sample.name+'</td>')
+	    for read in ['r1','r2']:
+		try: reportFile.write('<td>'+thousandString(str(int(sample.stats['rubiconWgaTrimming'][filePairId][read]['totalBases'])))+'</td>')
+		except (KeyError, TypeError) as e:reportFile.write('<td>NA</td>')
+	    for read in ['r1','r2']:
+		try: reportFile.write('<td>'+str(percentage(int(sample.stats['rubiconWgaTrimming'][filePairId][read]['trimmedBases']),int(sample.stats['rubiconWgaTrimming'][filePairId][read]['totalBases'])))+'%</td>')
+		except (KeyError, TypeError) as e:reportFile.write('<td>NA%</td>')
+	    for read in ['r1','r2']:
+		try: reportFile.write('<td>'+str(percentage(int(sample.stats['malbacWgaTrimming'][filePairId][read]['trimmedBases']),int(sample.stats['rubiconWgaTrimming'][filePairId][read]['totalBases'])))+'%</td>')
+		except (KeyError, TypeError) as e:reportFile.write('<td>NA%</td>')
+	    for read in ['r1','r2']:
+		try: reportFile.write('<td>'+str(percentage(int(sample.stats['illuminaAndNexteraTrimming'][filePairId][read]['trimmedBases']),int(sample.stats['rubiconWgaTrimming'][filePairId][read]['totalBases'])))+'%</td>')
+		except (KeyError, TypeError) as e:reportFile.write('<td>NA%</td>')
+	    for read in ['r1','r2']:
+		try: reportFile.write('<td>'+str(percentage(int(sample.stats['qualityTrimming'][filePairId][read]['trimmedBases']),int(sample.stats['rubiconWgaTrimming'][filePairId][read]['totalBases'])))+'%</td>')
+		except (KeyError, TypeError) as e:reportFile.write('<td>NA%</td>')
+	    reportFile.write('<tr>')
+	reportFile.write('</table>')
+
 	reportFile.write('</body></html>\n')
 	
 	return 0
@@ -341,6 +470,224 @@ class AnalysisPipe(object):
 	    fileName = sample.scriptPath+'/qcSteps.'+sample.name+'.sh'
 	    jobid = submitSbatch(fileName,dependency=[jobid])
 	    AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# Submitted qc steps for '+sample.name+' with job id '+str(jobid)+' \n')
+
+    def makeISizePlot(self):
+
+	import pysam
+	import numpy as np
+	import matplotlib.pyplot as plt
+	import operator
+	import sys
+	import os
+
+	colors = ['b','b:','r','r:','g','g:','c','c:','m','m:','y','y:','k','k:']+[i+'--' for i in 'rgbcmyk']+[i+'-.' for i in 'rgbcmyk'] # ['-' | '--' | '-.' | ':' | 'None' | ' ' | '']
+	isizes = {}
+
+	for sample in AnalysisPipe.database.getSamples():
+	    bamfile = pysam.Samfile(sample.dataPath+'/'+sample.name+'.noDuplicates.bam', "rb")
+	    for read in bamfile.fetch():
+		if read.tlen >= 1:
+		    try:isizes[sample.name].append(int(read.tlen))
+		    except KeyError:isizes[sample.name]= [read.tlen]
+
+	fig, axes = plt.subplots(1, sharex=True)
+	plots = []
+	incrementer=0
+
+	for sample in AnalysisPipe.database.getSamples():
+	    #n, bins, patches = axes.hist(isizes[sample.name], 50, normed=1, histtype='step',label=sample.name)
+	    counter = {}
+	    total = 0
+
+	    for isize in isizes[sample.name]:
+		try:counter[isize] += 1
+		except KeyError: counter[isize] = 1
+		total+=1
+
+	    y = [percentage(value,total) for key, value in sorted(counter.iteritems(), key=operator.itemgetter(0))]
+	    #y = [value for key, value in sorted(counter.iteritems(), key=operator.itemgetter(0))]
+	    x = sorted(counter.keys())
+	    plots.append(axes.plot(x, y,colors[incrementer],label=sample.name))
+	    incrementer+=1
+	    axes.set_xlim([0,1000])
+
+	handles, labels = axes.get_legend_handles_labels()
+	hl = sorted(zip(handles, labels), key=operator.itemgetter(1))
+	handles2, labels2 = zip(*hl)
+	axes.legend(handles2, labels2,loc=0,fontsize='small')
+	axes.set_xlabel('InsertSize (final filtered data)')
+	axes.set_ylabel('Frequency')
+	plt.savefig(AnalysisPipe.path+'/graphics/insertSizes.pdf',dpi=50,bbox_inches='tight')
+	plt.savefig(AnalysisPipe.path+'/graphics/insertSizes.png',dpi=50,bbox_inches='tight')
+
+    def makeGraphics(self,):
+
+	import pysam
+	import numpy as np
+	import matplotlib.pyplot as plt
+	import operator
+	import sys
+	import os
+	import time
+	import multiprocessing
+
+	try: os.mkdir(AnalysisPipe.path+'/graphics')
+	except OSError: pass
+
+	perBaseCoverages = {}
+	depthPerPosition = {}
+	referenceBaseCount = {}
+	sampleCount = sum([1 for sample in AnalysisPipe.database.getSamples()])
+
+	poolOfProcesses = multiprocessing.Pool(min([multiprocessing.cpu_count(),sampleCount]),maxtasksperchild=1)
+	parallelResults = poolOfProcesses.imap_unordered(graphForeachSample,AnalysisPipe.database.getSamples(),chunksize=1)
+
+	AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# Loading indata ...\n')
+	for sample in AnalysisPipe.database.getSamples():
+	    sys.stderr.write('sample '+sample.name+' ...\n')
+	    sampleCount += 1
+
+	    perBaseCoverages[sample.name] = {}
+	    depthPerPosition[sample.name] = {}
+	    referenceBaseCount[sample.name] = 0
+
+	    bedtoolsFile = open(sample.dataPath+'/'+sample.name+'.bedtools.coverage.bed')
+	    for line in bedtoolsFile:
+
+		referenceBaseCount[sample.name] += 1
+		line = line.rstrip().split('\t')
+
+		try:            perBaseCoverages[sample.name][int(line[-1])] += 1
+		except KeyError:perBaseCoverages[sample.name][int(line[-1])] = 1
+
+		try:
+		    #depthPerPosition[sample.name][line[0]][int(line[1])+int(line[5])-1] = int(line[-1])
+		    depthPerPosition[sample.name][line[0]]['refPos'].append(int(line[1])+int(line[5])-1)
+		    depthPerPosition[sample.name][line[0]]['rd'].append(int(line[-1])) 
+		except KeyError:
+		    #depthPerPosition[sample.name][line[0]] = {int(line[1])+int(line[5])-1:int(line[-1])}
+		    depthPerPosition[sample.name][line[0]] = {'refPos':[int(line[1])+int(line[5])-1],'rd':[int(line[-1])]}
+	AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# All data loaded.\n')
+
+	for value in referenceBaseCount.values(): assert value == referenceBaseCount.values()[0]
+	colors = ['b','b:','r','r:','g','g:','c','c:','m','m:','y','y:','k','k:']+[i+'--' for i in 'rgbcmyk']+[i+'-.' for i in 'rgbcmyk'] # ['-' | '--' | '-.' | ':' | 'None' | ' ' | '']
+
+	# lorenz curve and gini index
+	AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# Generating lorentzcurve graph...\n')
+	fig, axes = plt.subplots(1, sharex=True)
+	plots = []
+	a = [i/10.0 for i in range(0,11,1)]
+	plots.append(axes.plot(a, a,'b-o',label='EvenDist, 0.00%'))
+	incrementer = 0
+	for sample in AnalysisPipe.database.getSamples():
+	    pre_x = [count for rd, count in sorted(perBaseCoverages[sample.name].iteritems(), key=operator.itemgetter(0))]
+	    pre_y = [rd*count for rd, count in sorted(perBaseCoverages[sample.name].iteritems(), key=operator.itemgetter(0))]
+	    pre_x2 = [sum(pre_x[:i]) for i in range(len(pre_x))]
+	    pre_y2 = [sum(pre_y[:i]) for i in range(len(pre_y))]
+	    sequencedBases = sum(pre_y)
+	    x = [0]+[float(value)/referenceBaseCount[sample.name] for value in pre_x2]
+	    y = [0]+[float(value)/sequencedBases  for value in pre_y2]
+	    B = sum( [((y[i]+y[i+1])/2.0)*(x[i+1]-x[i]) for i in range(len(x)-1)] )
+	    A = 0.5 - B
+	    G = A / (A + B)
+	    assert A + B == 0.5
+	    assert G == 2*A
+	    assert G == 1 - 2*B
+	    giniApprox = round(100*G,2)
+	    plots.append(axes.plot(x, y,colors[incrementer],label=sample.name+', '+str(giniApprox)+'%'))
+	    incrementer+=1
+	handles, labels = axes.get_legend_handles_labels()
+	hl = sorted(zip(handles, labels), key=operator.itemgetter(1))
+	handles2, labels2 = zip(*hl)
+	axes.legend(handles2, labels2,loc=0,fontsize='small')
+	axes.set_xlabel('% of Targeted Bases')
+	axes.set_ylabel('% of Sequenced Bases')
+	plt.savefig(AnalysisPipe.path+'/graphics/lorentzCurve.pdf',dpi=50,bbox_inches='tight')
+	plt.savefig(AnalysisPipe.path+'/graphics/lorentzCurve.png',dpi=50,bbox_inches='tight')
+
+	# make coverage at rd plot
+	AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# Generating coverage at rd graph...\n')
+	fig, axes = plt.subplots(1, sharex=True)
+	plots = []
+	incrementer=0
+	for sample in AnalysisPipe.database.getSamples():
+	    sampleMaxCoverage = max( perBaseCoverages[sample.name].keys() )
+	    sampleMinCoverage = min( perBaseCoverages[sample.name].keys() )
+	    sampleAverageCoverage = sum( [rd*count for rd,count in perBaseCoverages[sample.name].iteritems()] ) / sum( perBaseCoverages[sample.name].values() )
+	    print sample.name,sampleMinCoverage,sampleMaxCoverage,sampleAverageCoverage
+	    x = sorted(perBaseCoverages[sample.name].keys())
+	    y = [count for rd,count in sorted(perBaseCoverages[sample.name].iteritems(),key=operator.itemgetter(0))]
+	    yCum = [percentage(sum(y[i:]),referenceBaseCount[sample.name]) for i in range(len(y))]
+	    plots.append(axes.plot(x, yCum, colors[incrementer],label=sample.name))
+	    axes.set_xlim([0,50])
+	    incrementer+=1
+	handles, labels = axes.get_legend_handles_labels()
+	hl = sorted(zip(handles, labels), key=operator.itemgetter(1))
+	handles2, labels2 = zip(*hl)
+	axes.legend(handles2, labels2,loc=0,fontsize='small')
+	axes.set_xlabel('Coverage')
+	axes.set_ylabel('% of targeted bases')
+	plt.savefig(AnalysisPipe.path+'/graphics/exomecoverage.pdf',dpi=50,bbox_inches='tight')
+	plt.savefig(AnalysisPipe.path+'/graphics/exomecoverage.png',dpi=50,bbox_inches='tight')
+
+	# make rd over reference graph
+	AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# Generating rd over reference graph...\n')
+	outputEvery = 100
+	slidingWindowSize = outputEvery*10
+	for chrom in depthPerPosition[sample.name].keys():
+
+	    fig, axes = plt.subplots(sampleCount, sharex=True)
+	    fig.set_size_inches(30,sampleCount*3)
+	    axes[0].set_title("Chromosome "+chrom+" coverage over concatenated targets")
+
+	    tmpCounter = 0
+	    for sample in AnalysisPipe.database.getSamples():
+
+		referencePositions = depthPerPosition[sample.name][chrom]['refPos']
+		readDepths = depthPerPosition[sample.name][chrom]['rd']
+		assert len(readDepths) == len(referencePositions)
+		windowAverage = [sum(readDepths[i:i+slidingWindowSize])/float(slidingWindowSize) for i in range(len(readDepths))]
+		concatednatedRefPos = range(len(referencePositions))
+
+		axes[tmpCounter].plot(concatednatedRefPos, windowAverage, lw=1,color="green")
+		axes[tmpCounter].fill_between(concatednatedRefPos,0,windowAverage, color="green",alpha=0.5)
+		axes[tmpCounter].set_xlabel(sample.name)
+		tmpCounter+=1
+
+	    for i in range(sampleCount):axes[i].set_ylim(0,30);axes[i].set_xlim(min(concatednatedRefPos),max(concatednatedRefPos))
+	    plt.savefig(AnalysisPipe.path+'/graphics/readDepth.'+chrom+'.pdf',dpi=50,bbox_inches="tight")
+	    plt.savefig(AnalysisPipe.path+'/graphics/readDepth.'+chrom+'.png',dpi=50,bbox_inches="tight")
+
+	#	for i in range(len(infiles)):
+	#	    infile = open(infiles[i])
+	#	    for line in infile:
+	#	        line=line.rstrip().split("\t");
+	#	        val[i].append(int(line[2]))
+	#	        if i ==0:
+	#	           #chrom.append(int(line[0]));
+	#	           pos.append(int(line[1]));
+	#
+	#	# skip real genomic coordinates
+	#	pos = range(len(pos))
+	#
+	#	tmp = {i:[] for i in range(len(infiles))}
+	#	tmp["pos"] = []
+	#	outputEvery = 100
+	#	slidingWindow = outputEvery*10
+	#	for i in range(len(pos)):
+	#	    if i%outputEvery==0:
+	#	        tmp["pos"].append(pos[i])
+	#	        try: for i2 in range(len(infiles)): tmp[i2].append(sum(val[i2][i:i+slidingWindow])/float(slidingWindow))
+	#	        except IndexError: for i2 in range(len(infiles)): tmp[i2].append(0)
+	#
+	#	for i in val: val[i] = tmp[i]
+	#
+	#	pos = tmp["pos"]
+
+	# make isize plot
+	self.makeISizePlot()
+
+	return 0
 
 class Database(object):
     
@@ -484,7 +831,7 @@ class Database(object):
 	return samples
 
     def addFastqs(self, sampleNameOrId, fastq1, fastq2):
-	
+
 	#
 	# Imports
 	#
@@ -503,8 +850,10 @@ class Database(object):
 	    samplesbyName[sample.name]=sample
 	sampleName = None
 	sampleId = None
-	if int(sampleNameOrId) in [int(value.id)  for value in samplesbyName.values()]:sampleId = sampleNameOrId; sampleName = samplesbyId[int(sampleId)].name
-	elif   sampleNameOrId  in samplesbyName.keys():sampleName = sampleNameOrId; sampleId = samplesbyName[sampleName].id
+	try:
+	    if int(sampleNameOrId) in [int(value.id)  for value in samplesbyName.values()]:sampleId = sampleNameOrId; sampleName = samplesbyId[int(sampleId)].name
+	except ValueError: pass
+	if   sampleNameOrId  in samplesbyName.keys():sampleName = sampleNameOrId; sampleId = samplesbyName[sampleName].id
 	else:
 	    msg = '#ERROR_MSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# SampleName (or id) must be registered in the database, there is no sample with name or id '+str(sampleNameOrId)+' , exiting.\n'
 	    AnalysisPipe.logfile.write(msg)
@@ -573,16 +922,16 @@ class Database(object):
 	return [[filePairId,readCount,fastq1,fastq2,sampleId] for filePairId,fastq1,fastq2,readCount,addedToReadsTable,minReadLength,sampleId in filePairs]
 
     def getRuns(self, runTypes):
-	
+
 	self.getConnection()
-	
+
 	runsInfo = []
 	data = self.c.execute('SELECT * FROM runs').fetchall()
 	for startTime, command, commandLine, finishedSuccessfully, masterPid in data:
 	    if command in runTypes: runsInfo.append([startTime, command, commandLine, finishedSuccessfully, masterPid])
-	
+
 	self.commitAndClose()
-	
+
 	return runsInfo
 
 class Sample(object):
@@ -660,7 +1009,8 @@ class Sample(object):
 	    output += 'cd '+self.path+'\n'
 	    output += 'echo "-----"'+'\n'
 	    
-	    output += 'module load bioinfo-tools cutadapt/1.5.0 FastQC'+'\n'
+	    output += 'module load bioinfo-tools FastQC #cutadapt/1.5.0'+'\n'
+	    output += 'workon py2.7\n\n'
 
 	    #
 	    # WGA adapter trimming
@@ -671,7 +1021,7 @@ class Sample(object):
 	    
 	    output += '\n'
 	    output += 'cutadapt -n 10 -g GTGAGTGATGGTTGAGGTAGTGTGGAG -a CTCCACACTACCTCAACCATCACTCAC '+self.dataPath+'/'+str(filePairId)+'.r1.wgaTrimmed.fq > '+self.dataPath+'/'+str(filePairId)+'.r1.wgaTrimmed2.fq  2> '+self.logPath+'/malbacWgaTrimming.'+str(filePairId)+'.r1.log.txt &\n'
-	    output += 'cutadapt -n 10 -g GTGAGTGATGGTTGAGGTAGTGTGGAG -a CTCCACACTACCTCAACCATCACTCAC '+self.dataPath+'/'+str(filePairId)+'.r1.wgaTrimmed.fq > '+self.dataPath+'/'+str(filePairId)+'.r2.wgaTrimmed2.fq  2> '+self.logPath+'/malbacWgaTrimming.'+str(filePairId)+'.r2.log.txt &\n'
+	    output += 'cutadapt -n 10 -g GTGAGTGATGGTTGAGGTAGTGTGGAG -a CTCCACACTACCTCAACCATCACTCAC '+self.dataPath+'/'+str(filePairId)+'.r2.wgaTrimmed.fq > '+self.dataPath+'/'+str(filePairId)+'.r2.wgaTrimmed2.fq  2> '+self.logPath+'/malbacWgaTrimming.'+str(filePairId)+'.r2.log.txt &\n'
 	    output += 'wait\n'
 	    output += '\n'
 	    output += 'rm -v '+self.dataPath+'/'+str(filePairId)+'.r1.wgaTrimmed.fq '+self.dataPath+'/'+str(filePairId)+'.r2.wgaTrimmed.fq\n'
@@ -712,7 +1062,7 @@ class Sample(object):
 	    output += self.dataPath+'/'+str(filePairId)+'.r1.allTrimmed.fq '
 	    output += self.dataPath+'/'+str(filePairId)+'.r2.allTrimmed.fq '
 	    output += self.dataPath+'/'+str(filePairId)+'.singletts.fq '
-	    output += '>&2 2> '+self.logPath+'/qualityTrimming.'+str(filePairId)+'.removeEmptyReads.log.txt\n'
+	    output += '>&2 2> '+self.logPath+'/removeEmptyReads.'+str(filePairId)+'.log.txt\n'
 	    
 	    #
 	    # remove temp files
@@ -740,6 +1090,7 @@ class Sample(object):
 	    #
 	    # Final output and write script to file
 	    #
+            output += '\n'+AnalysisPipe.programPath+' '+AnalysisPipe.path+' report\n'
 	    output += 'echo'+'\n'
 	    output += 'wait'+'\n'
 	    output += 'echo "$(date) AllDone"'+'\n'
@@ -794,10 +1145,14 @@ class Sample(object):
 	    output += '> '+self.dataPath+'/'+str(filePairId)+'.sam '
 	    output += '2> '+self.logPath+'/stderr.bowtie2.'+str(filePairId)+'.txt \n'
 	    output += 'echo -e "mapping Done. $(date) Running on: $(hostname)" 1>&2'+'\n'
+	    output += 'rm -v '+self.dataPath+'/'+str(filePairId)+'.r1.allTrimmed.fq.gz'+'\n'
+	    output += 'rm -v '+self.dataPath+'/'+str(filePairId)+'.r2.allTrimmed.fq.gz'+'\n'
+	    
 
 	    #
 	    # Final output and write script to file
 	    #
+	    output += '\n'+AnalysisPipe.programPath+' '+AnalysisPipe.path+' report\n'
 	    output += 'wait'+'\n'
 	    output += 'echo "$(date) AllDone"'+'\n'
 	    output += 'echo "$(date) AllDone" >&2'+'\n'
@@ -912,8 +1267,8 @@ class Sample(object):
         output += 'java -Xmx5g -jar '+AnalysisPipe.picardLocation+'/MarkDuplicates.jar MAX_RECORDS_IN_RAM=2500000 VALIDATION_STRINGENCY=LENIENT '
 	output += 'INPUT='+ self.dataPath+'/'+self.name+'.sorted.bam '
 	output += 'OUTPUT='+self.dataPath+'/'+self.name+'.marked.bam '
-	output += 'METRICS_FILE='+self.logPath+'/markeDuplicatesMetrix.'+self.name+'.txt '
-	output += '1>&2  2> '+self.logPath+'/stderr.markeDuplicates.'+self.name+'.txt \n'
+	output += 'METRICS_FILE='+self.logPath+'/markDuplicatesMetrix.'+self.name+'.txt '
+	output += '1>&2  2> '+self.logPath+'/stderr.markDuplicates.'+self.name+'.txt \n'
         output += 'echo -e "mark Done. $(date) Running on: $(hostname)" 1>&2'+'\n'
         output += 'rm -v '+self.dataPath+'/'+self.name+'.sorted.bam\n'
 
@@ -938,6 +1293,7 @@ class Sample(object):
         #
         # Final output and write script to file
         #
+        output += '\n'+AnalysisPipe.programPath+' '+AnalysisPipe.path+' report\n'
         output += 'wait'+'\n'
         output += 'echo "$(date) AllDone"'+'\n'
         output += 'echo "$(date) AllDone" >&2'+'\n'
@@ -1055,27 +1411,27 @@ class Sample(object):
 	output += '-o '+self.dataPath+'/'+self.name+'.reCalibrated.bam'+' '
 	output += '1>&2 2> '+self.logPath+'/stderr.printreads.txt ;\n'
         output += 'rm -v '+self.dataPath+'/'+self.name+'.reAligned.bam'+'\n'
+        output += 'samtools flagstat '+self.dataPath+'/'+self.name+'.reCalibrated.bam > '+self.logPath+'/reCalibratedBamFlagstat.'+self.name+'.txt \n'
 
 	output += 'samtools view -b -F 4 '   +self.dataPath+'/'+self.name+'.reCalibrated.bam > '+self.dataPath+'/'+self.name+'.unmapRemoved.bam  2> '+self.logPath+'/stderr.samtoolsView.removeUnmap.'+self.name+'.txt \n'
-	output += 'samtools view -b -q 20 '  +self.dataPath+'/'+self.name+'.unmapRemoved.bam > '+self.dataPath+'/'+self.name+'.qualFiltered.bam  2> '+self.logPath+'/stderr.samtoolsView.qualFilter.'+self.name+'.txt \n'
-	output += 'samtools view -b -F 1024 '+self.dataPath+'/'+self.name+'.qualFiltered.bam > '+self.dataPath+'/'+self.name+'.noDuplicates.bam  2> '+self.logPath+'/stderr.samtoolsView.removeDups.'+self.name+'.txt \n'
-
 	output += 'java -Xmx5g -jar '+AnalysisPipe.picardLocation+'/BuildBamIndex.jar INPUT='+self.dataPath+'/'+self.name+'.unmapRemoved.bam '+'1>&2  2>  '+self.logPath+'/stderr.buildIndex1.'+self.name+'.txt \n'
-	output += 'java -Xmx5g -jar '+AnalysisPipe.picardLocation+'/BuildBamIndex.jar INPUT='+self.dataPath+'/'+self.name+'.qualFiltered.bam '+'1>&2  2>  '+self.logPath+'/stderr.buildIndex2.'+self.name+'.txt \n'
-	output += 'java -Xmx5g -jar '+AnalysisPipe.picardLocation+'/BuildBamIndex.jar INPUT='+self.dataPath+'/'+self.name+'.noDuplicates.bam '+'1>&2  2>  '+self.logPath+'/stderr.buildIndex3.'+self.name+'.txt \n'
-
-        output += 'samtools flagstat '+self.dataPath+'/'+self.name+'.reCalibrated.bam > '+self.logPath+'/reCalibratedBamFlagstat.'+self.name+'.txt \n'
 	output += 'samtools flagstat '+self.dataPath+'/'+self.name+'.unmapRemoved.bam > '+self.logPath+'/unmapRemovedBamFlagstat.'+self.name+'.txt \n'
-	output += 'samtools flagstat '+self.dataPath+'/'+self.name+'.qualFiltered.bam > '+self.logPath+'/qualFilteredBamFlagstat.'+self.name+'.txt \n'
-	output += 'samtools flagstat '+self.dataPath+'/'+self.name+'.noDuplicates.bam > '+self.logPath+'/noDuplicatesBamFlagstat.'+self.name+'.txt \n'
+        output += 'rm -v '+self.dataPath+'/'+self.name+'.reCalibrated.bam\n'
 
-        #output += 'rm -v '+self.dataPath+'/'+self.name+'.reCalibrated.bam\n'
-	#output += 'rm -v '+self.dataPath+'/'+self.name+'.unmapRemoved.bam\n'
-	#output += 'rm -v '+self.dataPath+'/'+self.name+'.qualFiltered.bam\n'
+	output += 'samtools view -b -q 20 '  +self.dataPath+'/'+self.name+'.unmapRemoved.bam > '+self.dataPath+'/'+self.name+'.qualFiltered.bam  2> '+self.logPath+'/stderr.samtoolsView.qualFilter.'+self.name+'.txt \n'
+	output += 'java -Xmx5g -jar '+AnalysisPipe.picardLocation+'/BuildBamIndex.jar INPUT='+self.dataPath+'/'+self.name+'.qualFiltered.bam '+'1>&2  2>  '+self.logPath+'/stderr.buildIndex2.'+self.name+'.txt \n'
+	output += 'samtools flagstat '+self.dataPath+'/'+self.name+'.qualFiltered.bam > '+self.logPath+'/qualFilteredBamFlagstat.'+self.name+'.txt \n'
+	output += 'rm -v '+self.dataPath+'/'+self.name+'.unmapRemoved.bam\n'
+
+	output += 'samtools view -b -F 1024 '+self.dataPath+'/'+self.name+'.qualFiltered.bam > '+self.dataPath+'/'+self.name+'.noDuplicates.bam  2> '+self.logPath+'/stderr.samtoolsView.removeDups.'+self.name+'.txt \n'
+	output += 'java -Xmx5g -jar '+AnalysisPipe.picardLocation+'/BuildBamIndex.jar INPUT='+self.dataPath+'/'+self.name+'.noDuplicates.bam '+'1>&2  2>  '+self.logPath+'/stderr.buildIndex3.'+self.name+'.txt \n'
+	output += 'samtools flagstat '+self.dataPath+'/'+self.name+'.noDuplicates.bam > '+self.logPath+'/noDuplicatesBamFlagstat.'+self.name+'.txt \n'
+	output += 'rm -v '+self.dataPath+'/'+self.name+'.qualFiltered.bam\n'
 
         #
         # Final output and write script to file
         #
+        output += '\n'+AnalysisPipe.programPath+' '+AnalysisPipe.path+' report\n'
         output += 'echo "Done. $(date) Running on: $(hostname)"\n'
         output += 'wait\n'
         output += 'echo "$(date) AllDone"\n'
@@ -1118,7 +1474,7 @@ class Sample(object):
         output += '-stand_emit_conf 10 '
         output += '-stand_call_conf 30 '
         output += '-L '+AnalysisPipe.referencePath+'/truseq_exome_targeted_regions.hg19.bed.chr.columnReOrdered.withHeader.chrRem.bed '
-        output += '--dbsnp $GATKbundle/dbsnp_138.b37.vcf '
+        output += '--dbsnp '+AnalysisPipe.gatkBundleLocation+'/dbsnp_138.b37.vcf '
         output += '--annotation AlleleBalance --annotation AlleleBalanceBySample --annotation BaseCounts --annotation BaseQualityRankSumTest '
         output += '--annotation ChromosomeCounts --annotation ClippingRankSumTest --annotation Coverage --annotation DepthPerAlleleBySample '
         output += '--annotation DepthPerSampleHC --annotation FisherStrand --annotation GCContent --annotation HaplotypeScore --annotation HardyWeinberg '
@@ -1196,8 +1552,8 @@ class Sample(object):
         #
         # picard HS metrics
         #
-        output += 'java -Xmx3g -jar $picard/CalculateHsMetrics.jar '
-	output += 'BAIT_INTERVALS='+AnalysisPipe.referencePath+'/truseq_exome_targeted_regions.hg19.bed.chr.columnReOrdered.withHeader.chrRem '
+        output += 'java -Xmx3g -jar '+AnalysisPipe.picardLocation+'/CalculateHsMetrics.jar '
+	output += 'BAIT_INTERVALS='  +AnalysisPipe.referencePath+'/truseq_exome_targeted_regions.hg19.bed.chr.columnReOrdered.withHeader.chrRem '
 	output += 'TARGET_INTERVALS='+AnalysisPipe.referencePath+'/truseq_exome_targeted_regions.hg19.bed.chr.columnReOrdered.withHeader.chrRem '
 	output += 'INPUT='+self.dataPath+'/'+self.name+'.noDuplicates.bam '
 	output += 'OUTPUT='+self.dataPath+'/'+self.name+'.hs_metrics.summary.txt '
@@ -1205,10 +1561,20 @@ class Sample(object):
 	output += 'REFERENCE_SEQUENCE='+AnalysisPipe.bowtie2Reference+'  '
 	output += '1>&2 2> '+self.logPath+'/'+self.name+'.stderr.caluclateHsmetrics.txt \n'
 
+
+	#
+	# make files for coverage checks
+	#
+	output += "bedtools coverage -abam "+self.dataPath+'/'+self.name+'.noDuplicates.bam'+" -b "+AnalysisPipe.referencePath+"/truseq_exome_targeted_regions.hg19.bed.chr.columnReOrdered.withHeader.chrRem.bed -d > "+self.dataPath+'/'+self.name+'.bedtools.coverage.bed\n'
+	output += "awk '{print $7}' "+self.dataPath+'/'+self.name+'.bedtools.coverage.bed'+" | sort -n | uniq -c | awk '{print $1\"\\t\"$2}'> "+self.dataPath+'/'+self.name+".coverageDistribution.tsv\n"
+	output += "awk '{print $1 \"\\t\" $2+$6-1 \"\\t\" $7}' "+self.dataPath+'/'+self.name+'.bedtools.coverage.bed'+" > "+self.dataPath+'/'+self.name+".depthPerPosition.tsv\n"
+
+	
         #
         # Final output and write script to file
         #
-        output += 'echo'+'\n'
+        output += '\n'+AnalysisPipe.programPath+' '+AnalysisPipe.path+' report\n'
+	output += 'echo'+'\n'
         output += 'wait'+'\n'
         output += 'echo "$(date) AllDone"'+'\n'
         output += 'echo "$(date) AllDone" >&2'+'\n'
@@ -1233,119 +1599,48 @@ class Sample(object):
 	    stats['qualityTrimming'][filePairId]    = {'r1':None,'r2':None}
 	    
 	    for read in ['r1','r2']:
+		stats['rubiconWgaTrimming'][filePairId][read]         = extractData(infile=self.logPath+'/rubiconWgaTrimming.'+str(filePairId)+'.'+read+'.log.txt',        pattern="Running wgaAdapterTrimmer.py\nProcessed a total of\t(?P<totalReads>\d+)\treads. \(.+\)\nProcessed a total of\t(?P<totalBases>\d+)\tbases \(.+\).\ntrimmed a total of\t(?P<trimmedBases>\d+)\tbases in the start of reads \(.+\).\nwgaAdapterTrimmer.py done exiting ...\n?")
+		stats['malbacWgaTrimming'][filePairId][read]          = extractData(infile=self.logPath+'/malbacWgaTrimming.'+str(filePairId)+'.'+read+'.log.txt',         pattern="cutadapt version .+\nCommand line parameters: -n 10 -g GTGAGTGATGGTTGAGGTAGTGTGGAG -a CTCCACACTACCTCAACCATCACTCAC .+\nMaximum error rate\: .+\%\n\s+No. of adapters\: 2\n\s+Processed reads\:\s+(?P<totalReads>\d+)\n\s+Processed bases\:\s+(?P<totalBases>\d+) bp \(.+ Mbp\)\n\s+Trimmed reads\:\s+(?P<trimmedReads>\d+) \(.+\%\)\n\s+Trimmed bases\:\s+(?P<trimmedBases>\d+) bp \(.+ Mbp\) \(.+\% of total\)\n\s+Too short reads\:\s+.+ \(.+\% of processed reads\)\n\s+Too long reads\:\s+.+ \(.+\% of processed reads\)\n\s+Total time\:\s+.+ s\n\s+Time per read\:\s+.+ ms")
+		stats['illuminaAndNexteraTrimming'][filePairId][read] = extractData(infile=self.logPath+'/illuminaAndNexteraTrimming.'+str(filePairId)+'.'+read+'.log.txt',pattern="cutadapt version .+\nCommand line parameters: -n .+\nMaximum error rate\: .+\%\n\s+No. of adapters\: 4\n\s+Processed reads\:\s+(?P<totalReads>\d+)\n\s+Processed bases\:\s+(?P<totalBases>\d+) bp \(.+ Mbp\)\n\s+Trimmed reads\:\s+(?P<trimmedReads>\d+) \(.+\%\)\n\s+Trimmed bases\:\s+(?P<trimmedBases>\d+) bp \(.+ Mbp\) \(.+\% of total\)\n\s+Too short reads\:\s+.+ \(.+\% of processed reads\)\n\s+Too long reads\:\s+.+ \(.+\% of processed reads\)\n\s+Total time\:\s+.+ s\n\s+Time per read\:\s+.+ ms")
+		stats['qualityTrimming'][filePairId][read]            = extractData(infile=self.logPath+'/qualityTrimming.'+str(filePairId)+'.'+read+'.log.txt',           pattern='(?P<totalBasess>\d+)\tbases\n(?P<trimmedBases>\d+)\ttrimmed')
 
-		#try:
-		#    with open(self.logPath+'/rubiconWgaTrimming.'+str(filePairId)+'.'+read+'.log.txt') as infile:
-		#	data = infile.read()
-		#	p = re.compile("Running wgaAdapterTrimmer.py\nProcessed a total of\t(?P<totalReads>\d+)\treads. \(.+\)\nProcessed a total of\t(?P<totalBases>\d+)\tbases \(.+\).\ntrimmed a total of\t(?P<trimmedBases>\d+)\tbases in the start of reads \(.+\).\nwgaAdapterTrimmer.py done exiting ...\n?")
-		#	m = p.match(data)
-		#	if m: stats['rubiconWgaTrimming'][filePairId][read] = m.groupdict()
-		#except IOError, e:
-		#    assert e.errno == 2;
-		#    stats['rubiconWgaTrimming'][filePairId][read] = 'NotFinished'
-		stats['rubiconWgaTrimming'][filePairId][read] = extractData(infile=self.logPath+'/rubiconWgaTrimming.'+str(filePairId)+'.'+read+'.log.txt',pattern="Running wgaAdapterTrimmer.py\nProcessed a total of\t(?P<totalReads>\d+)\treads. \(.+\)\nProcessed a total of\t(?P<totalBases>\d+)\tbases \(.+\).\ntrimmed a total of\t(?P<trimmedBases>\d+)\tbases in the start of reads \(.+\).\nwgaAdapterTrimmer.py done exiting ...\n?")
+	    stats['removeEmptyReads'][filePairId] = extractData(infile=self.logPath+'/removeEmptyReads.'+str(filePairId)+'.log.txt',pattern="""Running removeEmptyReads.py:\nHeader one is empty exiting.\n(?P<totalReads>\d+) read pairs processed.\n(?P<pairsOut>\d+) read pairs to outfiles .+.\n(?P<singlets>\d+) single reads to outfile .+.\nremoveEmptyReads Exiting.""")
+	    stats['bowtie2'][filePairId]          = extractData(infile=self.logPath+'/stderr.bowtie2.'+str(filePairId)+'.txt',      pattern="""(?P<totalReads>\d+) reads; of these:\n\s+(?P<pairedReads>\d+) \(\d+.\d+\%\) were paired; of these:\n\s+(?P<notPropMapedPair>\d+) \(\d+.\d+\%\) aligned concordantly 0 times\n\s+(?P<properPairs>\d+) \(\d+.\d+\%\) aligned concordantly exactly 1 time\n\s+(?P<properPairsMultiMap>\d+) \(\d+.\d+\%\) aligned concordantly >1 times\n\s+----\n\s+(?P<notPropMapedPair2>\d+) pairs aligned concordantly 0 times; of these:\n\s+(?P<discordantPairs>\d+) \(\d+.\d+\%\) aligned discordantly 1 time\n\s+----\n\s+(?P<unMappedPair>\d+) pairs aligned 0 times concordantly or discordantly; of these:\n\s+(?P<possibleSingletons>\d+) mates make up the pairs; of these:\n\s+(?P<unMappedReads>\d+) \(\d+.\d+\%\) aligned 0 times\n\s+(?P<singleSingleMap>\d+) \(\d+.\d+\%\) aligned exactly 1 time\n\s+(?P<singleMultiMap>\d+) \(\d+.\d+\%\) aligned >1 times\n(?P<overallAlignmentRate>\d+.\d+)\% overall alignment rate""")
 
-		try:
-		    with open(self.logPath+'/malbacWgaTrimming.'+str(filePairId)+'.'+read+'.log.txt') as infile:
-			data = infile.read()
-			p = re.compile("cutadapt version .+\nCommand line parameters: -n 10 -g GTGAGTGATGGTTGAGGTAGTGTGGAG -a CTCCACACTACCTCAACCATCACTCAC .+\nMaximum error rate\: .+\%\n\s+No. of adapters\: 2\n\s+Processed reads\:\s+(?P<totalReads>\d+)\n\s+Processed bases\:\s+(?P<totalBases>\d+) bp \(.+ Mbp\)\n\s+Trimmed reads\:\s+(?P<trimmedReads>\d+) \(.+\%\)\n\s+Trimmed bases\:\s+(?P<trimmedBases>\d+) bp \(.+ Mbp\) \(.+\% of total\)\n\s+Too short reads\:\s+.+ \(.+\% of processed reads\)\n\s+Too long reads\:\s+.+ \(.+\% of processed reads\)\n\s+Total time\:\s+.+ s\n\s+Time per read\:\s+.+ ms")
-			m = p.match(data)
-			if m: stats['malbacWgaTrimming'][filePairId][read] = m.groupdict()
-		except IOError, e:
-		    assert e.errno == 2;
-		    stats['malbacWgaTrimming'][filePairId][read] = 'NotFinished'
+	stats['merging'] = extractData(infile=self.logPath+'/stderr.merging.'+self.name+'.txt',pattern="Finished reading inputs.+\n.+picard.sam.MergeSamFiles done. Elapsed time",checkType='program')
+	pattern = 'LIBRARY\tUNPAIRED_READS_EXAMINED\tREAD_PAIRS_EXAMINED\tUNMAPPED_READS\tUNPAIRED_READ_DUPLICATES\tREAD_PAIR_DUPLICATES\tREAD_PAIR_OPTICAL_DUPLICATES\tPERCENT_DUPLICATION\tESTIMATED_LIBRARY_SIZE\n(?P<LIBRARY>.+)\t(?P<UNPAIRED_READS_EXAMINED>\d+)\t(?P<READ_PAIRS_EXAMINED>\d+)\t(?P<UNMAPPED_READS>\d+)\t(?P<UNPAIRED_READ_DUPLICATES>\d+)\t(?P<READ_PAIR_DUPLICATES>\d+)\t(?P<READ_PAIR_OPTICAL_DUPLICATES>\d+)\t(?P<PERCENT_DUPLICATION>\d+\,\d+)\t(?P<ESTIMATED_LIBRARY_SIZE>\d+)'
+	oldpattern="""LIBRARY\tUNPAIRED_READS_EXAMINED\tREAD_PAIRS_EXAMINED\tUNMAPPED_READS\tUNPAIRED_READ_DUPLICATES\tREAD_PAIR_DUPLICATES\tREAD_PAIR_OPTICAL_DUPLICATES\tPERCENT_DUPLICATION\tESTIMATED_LIBRARY_SIZE\n(?P<Library>.+)\s+(?P<unPairedReads>\d+)\s+(?P<totalReads>\d+)\s+(?P<unMapped>\d+)\s+(?P<unPairedDups>\d+)\s+(?P<pairDups>\d+)\s+(?P<opticalDups>\d+)\s+(?P<percentageDuplication>\d+\,\d+)\s+(?P<estLibSize>\d+)"""
+	stats['markDuplicatesMetrix'] = extractData(infile=self.logPath+'/markDuplicatesMetrix.'+self.name+'.txt',pattern=pattern)
+	stats['fixedBamFlagstat']        = extractData(infile=self.logPath+'/fixedBamFlagstat.'+self.name+'.txt',       pattern="""(?P<totalReads>\d+) \+ 0 in total \(QC-passed reads \+ QC-failed reads\)\n(?P<duplicates>\d+) \+ 0 duplicates\n(?P<mapped>\d+) \+ 0 mapped \(\d+.\d+\%:-nan\%\)\n(?P<paired>\d+) \+ 0 paired in sequencing\n(?P<read1>\d+) \+ 0 read1\n(?P<read2>\d+) \+ 0 read2\n(?P<properlyPaired>\d+) \+ 0 properly paired \(\d+.\d+\%:-nan\%\)\n(?P<bothMapped>\d+) \+ 0 with itself and mate mapped\n(?P<singletons>\d+) \+ 0 singletons \(\d+.\d+\%:-nan\%\)\n(?P<mateOnDiffChr>\d+) \+ 0 with mate mapped to a different chr\n(?P<mateOnDiffChrq5>\d+) \+ 0 with mate mapped to a different chr \(mapQ>=5\)""")
+	stats['reCalibratedBamFlagstat'] = extractData(infile=self.logPath+'/reCalibratedBamFlagstat.'+self.name+'.txt',pattern="""(?P<totalReads>\d+) \+ 0 in total \(QC-passed reads \+ QC-failed reads\)\n(?P<duplicates>\d+) \+ 0 duplicates\n(?P<mapped>\d+) \+ 0 mapped \(\d+.\d+\%:-nan\%\)\n(?P<paired>\d+) \+ 0 paired in sequencing\n(?P<read1>\d+) \+ 0 read1\n(?P<read2>\d+) \+ 0 read2\n(?P<properlyPaired>\d+) \+ 0 properly paired \(\d+.\d+\%:-nan\%\)\n(?P<bothMapped>\d+) \+ 0 with itself and mate mapped\n(?P<singletons>\d+) \+ 0 singletons \(\d+.\d+\%:-nan\%\)\n(?P<mateOnDiffChr>\d+) \+ 0 with mate mapped to a different chr\n(?P<mateOnDiffChrq5>\d+) \+ 0 with mate mapped to a different chr \(mapQ>=5\)""")
+	stats['unmapRemovedBamFlagstat'] = extractData(infile=self.logPath+'/unmapRemovedBamFlagstat.'+self.name+'.txt',pattern="""(?P<totalReads>\d+) \+ 0 in total \(QC-passed reads \+ QC-failed reads\)\n(?P<duplicates>\d+) \+ 0 duplicates\n(?P<mapped>\d+) \+ 0 mapped \(\d+.\d+\%:-nan\%\)\n(?P<paired>\d+) \+ 0 paired in sequencing\n(?P<read1>\d+) \+ 0 read1\n(?P<read2>\d+) \+ 0 read2\n(?P<properlyPaired>\d+) \+ 0 properly paired \(\d+.\d+\%:-nan\%\)\n(?P<bothMapped>\d+) \+ 0 with itself and mate mapped\n(?P<singletons>\d+) \+ 0 singletons \(\d+.\d+\%:-nan\%\)\n(?P<mateOnDiffChr>\d+) \+ 0 with mate mapped to a different chr\n(?P<mateOnDiffChrq5>\d+) \+ 0 with mate mapped to a different chr \(mapQ>=5\)""")
+	stats['qualFilteredBamFlagstat'] = extractData(infile=self.logPath+'/qualFilteredBamFlagstat.'+self.name+'.txt',pattern="""(?P<totalReads>\d+) \+ 0 in total \(QC-passed reads \+ QC-failed reads\)\n(?P<duplicates>\d+) \+ 0 duplicates\n(?P<mapped>\d+) \+ 0 mapped \(\d+.\d+\%:-nan\%\)\n(?P<paired>\d+) \+ 0 paired in sequencing\n(?P<read1>\d+) \+ 0 read1\n(?P<read2>\d+) \+ 0 read2\n(?P<properlyPaired>\d+) \+ 0 properly paired \(\d+.\d+\%:-nan\%\)\n(?P<bothMapped>\d+) \+ 0 with itself and mate mapped\n(?P<singletons>\d+) \+ 0 singletons \(\d+.\d+\%:-nan\%\)\n(?P<mateOnDiffChr>\d+) \+ 0 with mate mapped to a different chr\n(?P<mateOnDiffChrq5>\d+) \+ 0 with mate mapped to a different chr \(mapQ>=5\)""")
+	stats['noDuplicatesBamFlagstat'] = extractData(infile=self.logPath+'/noDuplicatesBamFlagstat.'+self.name+'.txt',pattern="""(?P<totalReads>\d+) \+ 0 in total \(QC-passed reads \+ QC-failed reads\)\n(?P<duplicates>\d+) \+ 0 duplicates\n(?P<mapped>\d+) \+ 0 mapped \(\d+.\d+\%:-nan\%\)\n(?P<paired>\d+) \+ 0 paired in sequencing\n(?P<read1>\d+) \+ 0 read1\n(?P<read2>\d+) \+ 0 read2\n(?P<properlyPaired>\d+) \+ 0 properly paired \(\d+.\d+\%:-nan\%\)\n(?P<bothMapped>\d+) \+ 0 with itself and mate mapped\n(?P<singletons>\d+) \+ 0 singletons \(\d+.\d+\%:-nan\%\)\n(?P<mateOnDiffChr>\d+) \+ 0 with mate mapped to a different chr\n(?P<mateOnDiffChrq5>\d+) \+ 0 with mate mapped to a different chr \(mapQ>=5\)""")
+	
+	self.logPath+'/'+self.name+'.qacompute.stdout.txt'
+	self.logPath+'/'+self.name+'.qacompute.stderr.txt'
+	self.dataPath+'/'+self.name+'.qacompute.out '
+	#self.logPath+'/'+self.name+'.stderr.caluclateHsmetrics.txt'
+	pattern = 'READ_GROUP\n(?P<BAIT_SET>.+)\t(?P<GENOME_SIZE>\d+)\t(?P<BAIT_TERRITORY>\d+)\t(?P<TARGET_TERRITORY>\d+)\t(?P<BAIT_DESIGN_EFFICIENCY>\d+(\,\d+)?)\t(?P<TOTAL_READS>\d+)\t(?P<PF_READS>\d+)\t(?P<PF_UNIQUE_READS>\d+)\t(?P<PCT_PF_READS>\d+(\,\d+)?)\t(?P<PCT_PF_UQ_READS>\d+(\,\d+)?)\t(?P<PF_UQ_READS_ALIGNED>\d+)\t(?P<PCT_PF_UQ_READS_ALIGNED>\d+(\,\d+)?)\t(?P<PF_UQ_BASES_ALIGNED>\d+)\t(?P<ON_BAIT_BASES>\d+)\t(?P<NEAR_BAIT_BASES>\d+)\t(?P<OFF_BAIT_BASES>\d+)\t(?P<ON_TARGET_BASES>\d+)\t(?P<PCT_SELECTED_BASES>\d+(\,\d+)?)\t(?P<PCT_OFF_BAIT>\d+(\,\d+)?)\t(?P<ON_BAIT_VS_SELECTED>\d+(\,\d+)?)\t(?P<MEAN_BAIT_COVERAGE>\d+(\,\d+)?)\t(?P<MEAN_TARGET_COVERAGE>\d+(\,\d+)?)\t(?P<PCT_USABLE_BASES_ON_BAIT>\d+(\,\d+)?)\t(?P<PCT_USABLE_BASES_ON_TARGET>\d+(\,\d+)?)\t(?P<FOLD_ENRICHMENT>\d+(\,\d+)?)\t(?P<ZERO_CVG_TARGETS_PCT>\d+(\,\d+)?)\t(?P<FOLD_80_BASE_PENALTY>(\?)|(\d+?(\,\d+)?))\t(?P<PCT_TARGET_BASES_2X>(\?)|(\d+?(\,\d+)?))\t(?P<PCT_TARGET_BASES_10X>(\?)|(\d+?(\,\d+)?))\t(?P<PCT_TARGET_BASES_20X>(\?)|(\d+?(\,\d+)?))\t(?P<PCT_TARGET_BASES_30X>(\?)|(\d+?(\,\d+)?))\t(?P<PCT_TARGET_BASES_40X>(\?)|(\d+?(\,\d+)?))\t(?P<PCT_TARGET_BASES_50X>(\?)|(\d+?(\,\d+)?))\t(?P<PCT_TARGET_BASES_100X>\d+(\,\d+)?)\t(?P<HS_LIBRARY_SIZE>(\s?)|(\d+(\,\d+)?))\t(?P<HS_PENALTY_10X>\d+(\,\d+)?)\t(?P<HS_PENALTY_20X>\d+(\,\d+)?)\t(?P<HS_PENALTY_30X>\d+(\,\d+)?)\t(?P<HS_PENALTY_40X>\d+(\,\d+)?)\t(?P<HS_PENALTY_50X>\d+(\,\d+)?)\t(?P<HS_PENALTY_100X>\d+(\,\d+)?)'
+	stats['hs_metrics.summary'] = extractData(infile=self.dataPath+'/'+self.name+'.hs_metrics.summary.txt',pattern=pattern)
 
-		try:
-		    with open(self.logPath+'/illuminaAndNexteraTrimming.'+str(filePairId)+'.'+read+'.log.txt') as infile:
-			data = infile.read()
-			p = re.compile("cutadapt version .+\nCommand line parameters: -n .+\nMaximum error rate\: .+\%\n\s+No. of adapters\: 4\n\s+Processed reads\:\s+(?P<totalReads>\d+)\n\s+Processed bases\:\s+(?P<totalBases>\d+) bp \(.+ Mbp\)\n\s+Trimmed reads\:\s+(?P<trimmedReads>\d+) \(.+\%\)\n\s+Trimmed bases\:\s+(?P<trimmedBases>\d+) bp \(.+ Mbp\) \(.+\% of total\)\n\s+Too short reads\:\s+.+ \(.+\% of processed reads\)\n\s+Too long reads\:\s+.+ \(.+\% of processed reads\)\n\s+Total time\:\s+.+ s\n\s+Time per read\:\s+.+ ms")
-			m = p.match(data)
-			if m: stats['illuminaAndNexteraTrimming'][filePairId][read] = m.groupdict()
-		except IOError, e:
-		    assert e.errno == 2;
-		    stats['illuminaAndNexteraTrimming'][filePairId][read] = 'NotFinished'
-
-		try:
-		    with open(self.logPath+'/qualityTrimming.'+str(filePairId)+'.'+read+'.log.txt') as infile:
-			data = infile.read()
-			p = re.compile('(?P<totalBasess>\d+)\tbases\n(?P<trimmedBases>\d+)\ttrimmed')
-			m = p.match(data)
-			if m: stats['qualityTrimming'][filePairId][read] = m.groupdict()
-		except IOError, e:
-		    assert e.errno == 2;
-		    stats['qualityTrimming'][filePairId][read] = 'NotFinished'
-
-	    try:
-		with open(self.logPath+'/qualityTrimming.'+str(filePairId)+'.removeEmptyReads.log.txt') as infile:
-		    data = infile.read()
-		    p = re.compile("""Running removeEmptyReads.py:\nHeader one is empty exiting.\n(?P<totalReads>\d+) read pairs processed.\n(?P<pairsOut>\d+) read pairs to outfiles .+.\n(?P<singlets>\d+) single reads to outfile .+.\nremoveEmptyReads Exiting.""")
-		    m = p.match(data)
-		    if m:stats['removeEmptyReads'][filePairId] = m.groupdict()
-	    except IOError, e:
-		assert e.errno == 2;
-		stats['removeEmptyReads'][filePairId] = 'NotFinished'
-
-	    #self.logPath+'/stderr.trimming.'+self.name+'.'+str(filePairId)+'.txt'
-	    #self.logPath+'/stdout.trimming.'+self.name+'.'+str(filePairId)+'.txt'
-
-	    #self.fastqcPath+'/\n'
-
-	    #self.logPath+'/stderr.mapping.'+self.name+'.'+str(filePairId)+'.txt'
-	    #self.logPath+'/stdout.mapping.'+self.name+'.'+str(filePairId)+'.txt'
-
-	    try:
-		with open(self.logPath+'/stderr.bowtie2.'+str(filePairId)+'.txt') as infile:
-		    data = infile.read()
-		    p = re.compile("""(?P<totalReads>\d+) reads; of these:\n\s+\d+ \(\d+.\d+\%\) were paired; of these:\n\s+\d+ \(\d+.\d+\%\) aligned concordantly 0 times\n\s+\d+ \(\d+.\d+\%\) aligned concordantly exactly 1 time\n\s+\d+ \(\d+.\d+\%\) aligned concordantly >1 times\n    ----\n\s+\d+ pairs aligned concordantly 0 times; of these:\n\s+(?P<discordantPairs>\d+) \(\d+.\d+\%\) aligned discordantly 1 time\n    ----\n\s+\d+ pairs aligned 0 times concordantly or discordantly; of these:\n\s+\d+ mates make up the pairs; of these:\n\s+\d+ \(\d+.\d+\%\) aligned 0 times\n\s+(?P<singleSingleMap>\d+) \(\d+.\d+\%\) aligned exactly 1 time\n\s+(?P<singleMultiMap>\d+) \(\d+.\d+\%\) aligned >1 times\n(?P<overallAlignmentRate>\d+.\d+)\% overall alignment rate""")
-		    m = p.match(data)
-		    if m:stats['bowtie2'][filePairId] = m.groupdict()
-		    else:stats['bowtie2'][filePairId] = 'NoMatch'
-	    except IOError, e:
-		assert e.errno == 2;
-		stats['bowtie2'][filePairId] = 'NotFinished'
-
+	### OUTFILES TO ADD CHECHS FOR LATER:
+	#self.logPath+'/stderr.trimming.'+self.name+'.'+str(filePairId)+'.txt'
+	#self.logPath+'/stdout.trimming.'+self.name+'.'+str(filePairId)+'.txt'
+	#self.fastqcPath+'/\n'
+	#self.logPath+'/stderr.mapping.'+self.name+'.'+str(filePairId)+'.txt'
+	#self.logPath+'/stdout.mapping.'+self.name+'.'+str(filePairId)+'.txt'
 	#self.logPath+'/stderr.merge.'+self.name+'.txt'
 	#self.logPath+'/stdout.merge.'+self.name+'.txt'
-	try:
-	    with open(self.logPath+'/stderr.merging.'+self.name+'.txt') as infile:
-		data = infile.read()
-		p = re.compile("Finished reading inputs.+\n.+picard.sam.MergeSamFiles done. Elapsed time")
-		m = p.search(data)
-		if m:stats['merging'] = 'Finished OK'
-		else: stats['merging'] = 'NoMatch'
-	except IOError, e:
-	    assert e.errno == 2;
-	    stats['merging'] = 'NotFinished'
-
 	#self.logPath+'/stderr.filterAndFix.'+self.name+'.txt'
 	#self.logPath+'/stdout.filterAndFix.'+self.name+'.txt'
 	#self.logPath+'/stderr.sam2bam.'+self.name+'.txt'
 	#self.logPath+'/stderr.sortBam.'+self.name+'.txt'
-	try:
-	    with open(self.logPath+'/markeDuplicatesMetrix.'+self.name+'.txt') as infile:
-		data = infile.read()
-		p = re.compile("""LIBRARY\tUNPAIRED_READS_EXAMINED\tREAD_PAIRS_EXAMINED\tUNMAPPED_READS\tUNPAIRED_READ_DUPLICATES\tREAD_PAIR_DUPLICATES\tREAD_PAIR_OPTICAL_DUPLICATES\tPERCENT_DUPLICATION\tESTIMATED_LIBRARY_SIZE\n(?P<Library>.+)\s+(?P<unPairedReads>\d+)\s+(?P<totalReads>\d+)\s+(?P<unMapped>\d+)\s+(?P<unPairedDups>\d+)\s+(?P<pairDups>\d+)\s+(?P<opticalDups>\d+)\s+(?P<percentageDuplication>\d+\,\d+)\s+(?P<estLibSize>\d+)""")
-		m = p.search(data)
-		if m:stats['markeDuplicatesMetrix'] = m.groupdict()
-	except IOError, e:
-	    assert e.errno == 2;
-	    stats['markeDuplicatesMetrix'] = 'NotFinished'
-	#self.logPath+'/stderr.markeDuplicates.'+self.name+'.txt'
+	#self.logPath+'/stderr.markDuplicates.'+self.name+'.txt'
 	#self.logPath+'/stderr.addAndReplaceReadGroups.'+self.name+'.txt'
-	try:
-	    with open(self.logPath+'/fixedBamFlagstat.'+self.name+'.txt') as infile:
-		data = infile.read()
-		p = re.compile("""(?P<totalReads>\d+) \+ 0 in total \(QC-passed reads \+ QC-failed reads\)\n(?P<duplicates>\d+) \+ 0 duplicates\n(?P<mapped>\d+) \+ 0 mapped \(\d+.\d+\%:-nan\%\)\n(?P<paired>\d+) \+ 0 paired in sequencing\n(?P<read1>\d+) \+ 0 read1\n(?P<read2>\d+) \+ 0 read2\n(?P<properlyPaired>\d+) \+ 0 properly paired \(\d+.\d+\%:-nan\%\)\n(?P<bothMapped>\d+) \+ 0 with itself and mate mapped\n(?P<singletons>\d+) \+ 0 singletons \(\d+.\d+\%:-nan\%\)\n(?P<mateOnDiffChr>\d+) \+ 0 with mate mapped to a different chr\n(?P<mateOnDiffChrq5>\d+) \+ 0 with mate mapped to a different chr \(mapQ>=5\)""")
-		m = p.match(data)
-		if m:stats['fixedBamFlagstat'] = m.groupdict()
-	except IOError, e:
-	    assert e.errno == 2;
-	    stats['fixedBamFlagstat'] = 'NotFinished'
-
 	#self.logPath+'/stderr.realTC.'+self.name+'.txt'
 	#self.logPath+'/stdout.realTC.'+self.name+'.txt'
 	#self.logPath+'/stderr.RealignerTargetCreator.'+self.name+'.txt;'
-
 	#self.logPath+'/stderr.reAlign.'+self.name+'.txt'
 	#self.logPath+'/stdout.reAlign.'+self.name+'.txt'
 	#self.logPath+'/stderr.indelRealigner.'+self.name+'.txt;'+''
@@ -1357,61 +1652,13 @@ class Sample(object):
 	#self.logPath+'/stderr.buildIndex1.'+self.name+'.txt'
 	#self.logPath+'/stderr.buildIndex2.'+self.name+'.txt'
 	#self.logPath+'/stderr.buildIndex3.'+self.name+'.txt'
-	
-	try:
-	    with open(self.logPath+'/reCalibratedBamFlagstat.'+self.name+'.txt') as infile:
-		data = infile.read()
-		p = re.compile("""(?P<totalReads>\d+) \+ 0 in total \(QC-passed reads \+ QC-failed reads\)\n(?P<duplicates>\d+) \+ 0 duplicates\n(?P<mapped>\d+) \+ 0 mapped \(\d+.\d+\%:-nan\%\)\n(?P<paired>\d+) \+ 0 paired in sequencing\n(?P<read1>\d+) \+ 0 read1\n(?P<read2>\d+) \+ 0 read2\n(?P<properlyPaired>\d+) \+ 0 properly paired \(\d+.\d+\%:-nan\%\)\n(?P<bothMapped>\d+) \+ 0 with itself and mate mapped\n(?P<singletons>\d+) \+ 0 singletons \(\d+.\d+\%:-nan\%\)\n(?P<mateOnDiffChr>\d+) \+ 0 with mate mapped to a different chr\n(?P<mateOnDiffChrq5>\d+) \+ 0 with mate mapped to a different chr \(mapQ>=5\)""")
-		m = p.match(data)
-		if m:stats['reCalibratedBamFlagstat'] = m.groupdict()
-	except IOError, e:
-	    assert e.errno == 2;
-	    stats['reCalibratedBamFlagstat'] = 'NotFinished'
-	
-	try:
-	    with open(self.logPath+'/unmapRemovedBamFlagstat.'+self.name+'.txt') as infile:
-		data = infile.read()
-		p = re.compile("""(?P<totalReads>\d+) \+ 0 in total \(QC-passed reads \+ QC-failed reads\)\n(?P<duplicates>\d+) \+ 0 duplicates\n(?P<mapped>\d+) \+ 0 mapped \(\d+.\d+\%:-nan\%\)\n(?P<paired>\d+) \+ 0 paired in sequencing\n(?P<read1>\d+) \+ 0 read1\n(?P<read2>\d+) \+ 0 read2\n(?P<properlyPaired>\d+) \+ 0 properly paired \(\d+.\d+\%:-nan\%\)\n(?P<bothMapped>\d+) \+ 0 with itself and mate mapped\n(?P<singletons>\d+) \+ 0 singletons \(\d+.\d+\%:-nan\%\)\n(?P<mateOnDiffChr>\d+) \+ 0 with mate mapped to a different chr\n(?P<mateOnDiffChrq5>\d+) \+ 0 with mate mapped to a different chr \(mapQ>=5\)""")
-		m = p.match(data)
-		if m:stats['unmapRemovedBamFlagstat'] = m.groupdict()
-	except IOError, e:
-	    assert e.errno == 2;
-	    stats['unmapRemovedBamFlagstat'] = 'NotFinished'
-	
-	try:
-	    with open(self.logPath+'/qualFilteredBamFlagstat.'+self.name+'.txt') as infile:
-		data = infile.read()
-		p = re.compile("""(?P<totalReads>\d+) \+ 0 in total \(QC-passed reads \+ QC-failed reads\)\n(?P<duplicates>\d+) \+ 0 duplicates\n(?P<mapped>\d+) \+ 0 mapped \(\d+.\d+\%:-nan\%\)\n(?P<paired>\d+) \+ 0 paired in sequencing\n(?P<read1>\d+) \+ 0 read1\n(?P<read2>\d+) \+ 0 read2\n(?P<properlyPaired>\d+) \+ 0 properly paired \(\d+.\d+\%:-nan\%\)\n(?P<bothMapped>\d+) \+ 0 with itself and mate mapped\n(?P<singletons>\d+) \+ 0 singletons \(\d+.\d+\%:-nan\%\)\n(?P<mateOnDiffChr>\d+) \+ 0 with mate mapped to a different chr\n(?P<mateOnDiffChrq5>\d+) \+ 0 with mate mapped to a different chr \(mapQ>=5\)""")
-		m = p.match(data)
-		if m:stats['qualFilteredBamFlagstat'] = m.groupdict()
-	except IOError, e:
-	    assert e.errno == 2;
-	    stats['qualFilteredBamFlagstat'] = 'NotFinished'
-	
-	try:
-	    with open(self.logPath+'/noDuplicatesBamFlagstat.'+self.name+'.txt') as infile:
-		data = infile.read()
-		p = re.compile("""(?P<totalReads>\d+) \+ 0 in total \(QC-passed reads \+ QC-failed reads\)\n(?P<duplicates>\d+) \+ 0 duplicates\n(?P<mapped>\d+) \+ 0 mapped \(\d+.\d+\%:-nan\%\)\n(?P<paired>\d+) \+ 0 paired in sequencing\n(?P<read1>\d+) \+ 0 read1\n(?P<read2>\d+) \+ 0 read2\n(?P<properlyPaired>\d+) \+ 0 properly paired \(\d+.\d+\%:-nan\%\)\n(?P<bothMapped>\d+) \+ 0 with itself and mate mapped\n(?P<singletons>\d+) \+ 0 singletons \(\d+.\d+\%:-nan\%\)\n(?P<mateOnDiffChr>\d+) \+ 0 with mate mapped to a different chr\n(?P<mateOnDiffChrq5>\d+) \+ 0 with mate mapped to a different chr \(mapQ>=5\)""")
-		m = p.match(data)
-		if m:stats['noDuplicatesBamFlagstat'] = m.groupdict()
-	except IOError, e:
-	    assert e.errno == 2;
-	    stats['noDuplicatesBamFlagstat'] = 'NotFinished'
-
 	#self.logPath+'/stderr.haplotypeCallerGatk.'+self.name+'.txt'
 	#self.logPath+'/stderr.haplotypeCalling.'+self.name+'.txt'
 	#self.logPath+'/stdout.haplotypeCalling.'+self.name+'.txt'
 	#self.dataPath+'/'+self.name+'.gvcf '
-
 	#self.logPath+'/stderr.qcSteps.'+self.name+'.txt'
 	#self.logPath+'/stdout.qcSteps.'+self.name+'.txt'
-	self.logPath+'/'+self.name+'.qacompute.stdout.txt'
-	self.logPath+'/'+self.name+'.qacompute.stderr.txt'
-	self.dataPath+'/'+self.name+'.qacompute.out '
-	#self.logPath+'/'+self.name+'.stderr.caluclateHsmetrics.txt'
-	self.dataPath+'/'+self.name+'.hs_metrics.summary.txt '
 	#self.dataPath+'/'+self.name+'.hs_metrics.perTargetCoverage.txt '
-
 	#self.dataPath+'/'+str(filePairId)+'.sam'
 	#self.dataPath+'/'+self.name+'.merged.sam'
 	#self.dataPath+'/'+self.name+'.reAlignemntTargetIntervals.bed '
@@ -1422,27 +1669,28 @@ class Sample(object):
 	#self.dataPath+'/'+self.name+'.noDuplicates.bam '
 	#self.dataPath+'/'+self.name+'.callableLociSummary.txt '
 	#self.dataPath+'/'+self.name+'.callableLoci.bed '
-	#
 
-	#try:
-	#    with open() as infile:
-	#	data = infile.read()
-	#	p = re.compile()
-	#	m = p.match(data)
-	#	if m:stats[''] = m.groupdict()
-	#except IOError, e:
-	#    assert e.errno == 2;
-	#    stats[''] = 'NotFinished'
-
+	# make sums
 	for program in ['illuminaAndNexteraTrimming','malbacWgaTrimming','qualityTrimming','rubiconWgaTrimming']:
-	    for filePairId,readCount,fastq1,fastq2,sampleId in self.getFastqs():
-		for read in ['r1','r2']: pass
+	    try:
+		sums = {variable:0 for variable in stats[program][self.getFastqs().next()[0]]['r1'].keys()}
+		for filePairId,readCount,fastq1,fastq2,sampleId in self.getFastqs():
+		    for read in ['r1','r2']:
+			for variable, value in stats[program][filePairId][read].iteritems(): sums[variable]+=float(value)
+		stats[program]['sum']= sums
+	    except AttributeError: pass
 	for program in ['removeEmptyReads','bowtie2']:
-	    for filePairId,readCount,fastq1,fastq2,sampleId in self.getFastqs():
-		pass#stats['bowtie2'][filePairId]
+	    try:
+		sums = {variable:0 for variable in stats[program][self.getFastqs().next()[0]].keys()}
+		for filePairId,readCount,fastq1,fastq2,sampleId in self.getFastqs():
+		    for variable, value in stats[program][filePairId].iteritems(): sums[variable]+=float(value)
+		stats[program]['sum']= sums
+	    except AttributeError: pass
 	    
-    
-	print self.name
+	self.stats = stats
+
+#	 debug output
+	print "\n######## "+self.name+" ######## "
 	for key,value in stats.iteritems():
 	    print '    ',key
 	    try:
@@ -1452,3 +1700,22 @@ class Sample(object):
 	    except:print '        ',value
 
 if __name__ == "__main__": main()
+
+
+# Should add
+# program checks
+# Lorentz curve
+# exome coverage
+# exome coverage @ RD
+# insert sizes
+# HS metrics summary
+
+# Possible picard tols to utilize
+# BamIndexStats
+# CollectMultipleMetrics
+#    CollectAlignmentSummaryMetrics
+#    CollectInsertSizeMetrics
+# CollectGcBiasMetrics
+# EstimateLibraryComplexity
+# CollectWgsMetrics or CalculateHsMetrics
+# GenotypeConcordance
