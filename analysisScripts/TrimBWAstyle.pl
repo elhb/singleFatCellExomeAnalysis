@@ -1,0 +1,1 @@
+/home/erikb/singleFatCellExomeAnalysis/analysisScripts/TrimBWAstyle.pl
