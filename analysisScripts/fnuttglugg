@@ -2,7 +2,8 @@
 
 helpMessage = """
 ############ fnuttglugg ################
-a pipe for DNA sequence analysis
+This is a pipe for DNA sequence analysis.
+You can use it to look at fat cells and other stuff.
 
 use:
 fnuttglugg <analysisPath> addSample <sampleName> [refType eg. Pat/Don/gDNA/True]
