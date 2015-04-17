@@ -8,7 +8,7 @@ You can use it to look at fat cells and other stuff.
 use:
 fnuttglugg <analysisPath> addSample <sampleName> [refType eg. Pat/Don/gDNA/True]
 fnuttglugg <analysisPath> addFastq <sampleName> <r1> <r2>
-fnuttglugg <analysisPath> createScripts <uppmaxAccount> <"wgs"|"exome"> <emailAdress>
+fnuttglugg <analysisPath> createScripts <uppmaxProjectNumber> <"wgs"|"exome"> <emailAdress>
 fnuttglugg <analysisPath> submitScripts
 ...more to come ...
 fnuttglugg <analysisPath> report
@@ -3407,8 +3407,8 @@ class Sample(object):
 	    output += 'cd '+self.path+'\n'
 	    output += 'echo "-----"'+'\n'
 	    
-	    output += 'module load bioinfo-tools FastQC #cutadapt/1.5.0'+'\n'
-	    output += 'workon py2.7\n\n'
+	    output += 'module load bioinfo-tools python/2.7 FastQC cutadapt/1.8.0 bowtie2 samtools'+'\n'
+	    #output += 'workon py2.7\n\n'
 
 	    #
 	    # WGA adapter trimming
@@ -3537,6 +3537,8 @@ class Sample(object):
 	    output += 'echo "$(date) Running on: $(hostname)"'+'\n'
 	    output += 'cd '+self.path+'\n'
 	    output += 'echo'+'\n'
+	    
+	    output += 'module load bioinfo-tools python/2.7 FastQC cutadapt/1.8.0 bowtie2 samtools'+'\n'
 
 	    #
 	    # Bowtie2 mapping
