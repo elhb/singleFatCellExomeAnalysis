@@ -1167,7 +1167,7 @@ class AnalysisPipe(object):
 	    path = os.path.abspath(path)
 	    if path[-1] == '/': path = path[:-1]
 	    AnalysisPipe.path = path
-	    AnalysisPipe.programPath = os.path.abspath(sys.argv[0])
+	    AnalysisPipe.programPath = os.readlink(os.path.abspath(sys.argv[0]))
 	    AnalysisPipe.scriptPath    = '/'+'/'.join(AnalysisPipe.programPath.split('/')[:-1])
 	    AnalysisPipe.referencePath = '/'+'/'.join(AnalysisPipe.programPath.split('/')[:-2])+'/references'
 	except IndexError:
