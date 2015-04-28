@@ -381,7 +381,7 @@ def parallelMakeRDOverChromPlots(sample): #this function need to call some other
     # set window size and initiate other "variables"
     #
     if AnalysisPipe.settings.mode=='wgs':slidingWindowSize = 10000
-    if AnalysisPipe.settings.mode=='exome':slidingWindowSize = 1000
+    if AnalysisPipe.settings.mode=='exome':slidingWindowSize = 10000
     lastChromosome = None
     referencePositions = []
     readDepths = []
@@ -668,6 +668,196 @@ def parallelMakeRDOverChromPlots(sample): #this function need to call some other
 		windowLower = currentPosition-slidingWindowSize/2
 		windowUpper = currentPosition+slidingWindowSize/2
 	else: pass
+##################################################################################
+## TO NOT LOOSE LAST CHROMOSOME VERY UGLY THO SHOULD WORK NEED TO BE FIXED LATER #
+    currentChromosome = 'mockCHR'
+    if currentChromosome != lastChromosome:
+	    #
+	    # NEW CHROMOSOME initiate new variables make plots and summaries
+	    #
+	    #if AnalysisPipe.settings.mode=='wgs':outputEvery = lengthOfChromByName[currentChromosome]/1000
+	    #if AnalysisPipe.settings.mode=='exome':outputEvery = lengthOfChromByName[currentChromosome]/(1000*100)#exome approx 1%
+	    #currentPosition = outputEvery
+	    #windowLower = currentPosition-slidingWindowSize/2
+	    #windowUpper = currentPosition+slidingWindowSize/2
+
+	    # for all chroms that != None and have read depth data for the ref
+	    if lastChromosome:
+		if rdOverRef_x and rdOverRef_y:
+		    
+		    #
+		    # Convert the position translation dictionary
+		    #
+		    invertedPostitionTranslationDict = {lastChromosome:{tmpRowNumber:tmpPosition for tmpPosition,tmpRowNumber in postitionTranslationDict[lastChromosome].iteritems()}}
+
+		    sys.stderr.write(sample.name+' making plot chromosome '+lastChromosome+' ...\n')
+		    AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'#'+str(AnalysisPipe.masterPid)+'# Generating rd over reference graph '+sample.name+'(pid='+str(os.getpid())+') chrom='+lastChromosome+'...\n')
+
+		    #
+		    # make boxplot
+		    #
+		    fig, ax = plt.subplots(1, sharex=True)
+		    ax.set_title("Chromosome "+str(lastChromosome)+" RD boxplot")
+		    #ax.plot(rdOverRef_x, rdOverRef_y, lw=1,color="green")
+		    moreThanZero = [i for i in rdOverRef_y if i > 0]
+		    plt.boxplot([rdOverRef_y,moreThanZero])
+		    plt.savefig(sample.plotsPath+'/boxplotRD.'+sample.name+'.'+lastChromosome+'.pdf',dpi=50,bbox_inches="tight")
+		    plt.savefig(sample.plotsPath+'/boxplotRD.'+sample.name+'.'+lastChromosome+'.png',dpi=50,bbox_inches="tight")
+		    plt.close(fig)
+		    
+		    #
+		    # plot the readdepth data
+		    #
+		    fig, axes = plt.subplots(1, sharex=True)
+		    if type(axes) != list: axes = [axes]
+		    fig.set_size_inches(30,3)
+		    if AnalysisPipe.settings.mode=='wgs': axes[0].set_title("Chromosome "+str(lastChromosome)+" wgs read depth/coverage")
+		    if AnalysisPipe.settings.mode=='exome': axes[0].set_title("Chromosome "+str(lastChromosome)+" concatenated exons read depth/coverage")
+		    tmpCounter = 0
+		    axes[tmpCounter].plot(rdOverRef_x, rdOverRef_y, lw=1,color="green")
+		    axes[tmpCounter].fill_between(rdOverRef_x,0,rdOverRef_y, color="green",alpha=0.5)
+		    axes[tmpCounter].set_xlabel(sample.name)
+
+		    #
+		    # Set X and Y scales
+		    #
+		    maxY = 0
+		    maxY = max([maxY,max(rdOverRef_y)])
+		    yscalemax = max([30,max([myround(maxY),2])])
+		    yscalemax = max([30,np.percentile(moreThanZero, 75)*2])
+		    axes[tmpCounter].set_ylim( 0, yscalemax);
+		    if AnalysisPipe.settings.mode == 'wgs':   axes[tmpCounter].set_xlim( min(rdOverRef_x), lengthOfChromByName[lastChromosome])#max(rdOverRef_x) )
+		    if AnalysisPipe.settings.mode == 'exome': axes[tmpCounter].set_xlim( min(rdOverRef_x), max(rdOverRef_x) )
+		    
+		    #
+		    # Plot the identification and ADO estimation SNP positions
+		    #
+		    #snps = {lastChromosome:[[10479794,'Patient'],[38226767,'Patient'],[38226768,'Patient'],[38226769,'Patient'],[38226770,'Donor'],[90179536,'Donor'],[154026876,'Donor'],[186389971,'Patient'],[236140570,'Patient']]}
+		    if snps:
+			lastClass = None
+			chunkPositions = []
+			for pos,classification in snps[lastChromosome]:
+			    if classification != lastClass:
+				if chunkPositions and lastClass:
+				    if AnalysisPipe.settings.mode=='exome':
+					tmpChunkPositions = chunkPositions
+					chunkPositions = []
+					for tmpPos in tmpChunkPositions:
+					    try: chunkPositions.append(postitionTranslationDict[lastChromosome][tmpPos])
+					    except KeyError:
+						if tmpPos+1 in postitionTranslationDict[lastChromosome]: chunkPositions.append(postitionTranslationDict[lastChromosome][tmpPos+1])
+						elif tmpPos-1 in postitionTranslationDict[lastChromosome]: chunkPositions.append(postitionTranslationDict[lastChromosome][tmpPos-1])
+						else: AnalysisPipe.logfile.write('#WARNING#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'#'+str(AnalysisPipe.masterPid)+'# cannot fin position translation for '+sample.name+' chrom='+lastChromosome+' position='+thousandString(tmpPos)+'...\n')
+				    #print sample.name, lastChromosome, lastClass, len(chunkPositions), [thousandString(i) for i in chunkPositions]
+				    if   lastClass == 'Patient': axes[tmpCounter].plot(chunkPositions,[yscalemax*0.95 for i in chunkPositions],'o-',color=patcolor)
+				    elif lastClass == 'Donor':   axes[tmpCounter].plot(chunkPositions,[yscalemax*0.90 for i in chunkPositions],'o-',color=doncolor)
+				    elif lastClass == 'mix':     axes[tmpCounter].plot(chunkPositions,[yscalemax*0.85 for i in chunkPositions],'o-',color=mixcolor)
+				    elif lastClass == 'other':   axes[tmpCounter].plot(chunkPositions,[yscalemax*0.80 for i in chunkPositions],'o-',color=othercolor)
+				chunkPositions = [pos]
+				lastClass = classification
+			    else:
+				chunkPositions.append(pos)
+			if chunkPositions and lastClass:
+			    if AnalysisPipe.settings.mode=='exome':
+				tmpChunkPositions = chunkPositions
+				chunkPositions = []
+				for tmpPos in tmpChunkPositions:
+				    try: chunkPositions.append(postitionTranslationDict[lastChromosome][tmpPos])
+				    except KeyError:
+					if tmpPos+1 in postitionTranslationDict[lastChromosome]: chunkPositions.append(postitionTranslationDict[lastChromosome][tmpPos+1])
+					elif tmpPos-1 in postitionTranslationDict[lastChromosome]: chunkPositions.append(postitionTranslationDict[lastChromosome][tmpPos-1])
+					else: AnalysisPipe.logfile.write('#WARNING#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'#'+str(AnalysisPipe.masterPid)+'# cannot fin position translation for '+sample.name+' chrom='+lastChromosome+' position='+thousandString(tmpPos)+'...\n')
+			    if   lastClass == 'Patient': axes[tmpCounter].plot(chunkPositions,[yscalemax*0.95 for i in chunkPositions],'o-',color=patcolor)
+			    elif lastClass == 'Donor':   axes[tmpCounter].plot(chunkPositions,[yscalemax*0.90 for i in chunkPositions],'o-',color=doncolor)
+			    elif lastClass == 'mix':     axes[tmpCounter].plot(chunkPositions,[yscalemax*0.85 for i in chunkPositions],'o-',color=mixcolor)
+			    elif lastClass == 'other':   axes[tmpCounter].plot(chunkPositions,[yscalemax*0.80 for i in chunkPositions],'o-',color=othercolor)
+			#if snps[lastChromosome]['Patient']: axes[tmpCounter].plot(snps[lastChromosome]['Patient'],[yscalemax*0.95 for i in snps[lastChromosome]['Patient']],'o',color=patcolor)
+			#if snps[lastChromosome]['Donor']:   axes[tmpCounter].plot(snps[lastChromosome]['Donor'],  [yscalemax*0.90 for i in snps[lastChromosome]['Donor']],  'o',color=doncolor)
+			#if snps[lastChromosome]['mix']:     axes[tmpCounter].plot(snps[lastChromosome]['mix'],    [yscalemax*0.85 for i in snps[lastChromosome]['mix']],    'o',color=mixcolor)
+			#if snps[lastChromosome]['other']:   axes[tmpCounter].plot(snps[lastChromosome]['other'],  [yscalemax*0.80 for i in snps[lastChromosome]['other']],  'o',color=othercolor)
+		    if ado:
+			lastClass = None
+			chunkPositions = []
+			#print sample.name, ado[lastChromosome]
+			for pos,classification in ado[lastChromosome]:
+			    if classification != lastClass:
+				#print sample.name, lastChromosome, lastClass, len(chunkPositions), [thousandString(i) for i in chunkPositions]
+				if chunkPositions and lastClass:
+				    #print sample.name, lastClass, chunkPositions,'BEFORE'
+				    if AnalysisPipe.settings.mode=='exome':
+					tmpChunkPositions = chunkPositions
+					chunkPositions = []
+					for tmpPos in tmpChunkPositions:
+					    try: chunkPositions.append(postitionTranslationDict[lastChromosome][tmpPos])
+					    except KeyError:AnalysisPipe.logfile.write('#WARNING#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'#'+str(AnalysisPipe.masterPid)+'# cannot fin position translation for '+sample.name+' chrom='+lastChromosome+' position='+thousandString(tmpPos)+'...\n')
+				    #print sample.name, lastClass, chunkPositions
+				    if   lastClass == 'correct': axes[tmpCounter].plot(chunkPositions,[yscalemax*0.75 for i in chunkPositions],'o-',color='yellow')
+				    elif lastClass == 'dropout': axes[tmpCounter].plot(chunkPositions,[yscalemax*0.70 for i in chunkPositions],'o-',color='orangered')
+				chunkPositions = [pos]
+				lastClass = classification
+			    else:
+				chunkPositions.append(pos)
+			if chunkPositions and lastClass:
+			    if AnalysisPipe.settings.mode=='exome':
+				tmpChunkPositions = chunkPositions
+				chunkPositions = []
+				for tmpPos in tmpChunkPositions:
+				    try: chunkPositions.append(postitionTranslationDict[lastChromosome][tmpPos])
+				    except KeyError:AnalysisPipe.logfile.write('#WARNING#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'#'+str(AnalysisPipe.masterPid)+'# cannot fin position translation for '+sample.name+' chrom='+lastChromosome+' position='+thousandString(tmpPos)+'...\n')
+			    if   lastClass == 'correct': axes[tmpCounter].plot(chunkPositions,[yscalemax*0.75 for i in chunkPositions],'o-',color='yellow')
+			    elif lastClass == 'dropout': axes[tmpCounter].plot(chunkPositions,[yscalemax*0.70 for i in chunkPositions],'o-',color='orangered')
+#			if ado[lastChromosome]['correct']: axes[tmpCounter].plot(ado[lastChromosome]['correct'],[yscalemax*0.75 for i in ado[lastChromosome]['correct']],'o--',color='yellow')
+#			if ado[lastChromosome]['dropout']: axes[tmpCounter].plot(ado[lastChromosome]['dropout'],[yscalemax*0.70 for i in ado[lastChromosome]['dropout']],'o--',color='orangered')
+#		    tmpCounter+=1
+		    
+		    #
+		    # Set X-ticks lables
+		    #
+		    if AnalysisPipe.settings.mode == 'wgs':
+			a=axes[0].get_xticks().tolist()
+			a = [thousandString(tmpPos) for tmpPos in a]
+			axes[0].set_xticklabels(a)
+		    if AnalysisPipe.settings.mode == 'exome':
+			a=axes[0].get_xticks().tolist()
+			lasta = [a[-1]]
+			a = [thousandString(invertedPostitionTranslationDict[lastChromosome][int(tmpPos)]) for tmpPos in a[:-1]]
+			axes[0].set_xticklabels(a)
+		    
+		    #
+		    # Save the figure to png and pdf files
+		    #
+		    plt.savefig(sample.plotsPath+'/readDepth.'+sample.name+'.'+lastChromosome+'.pdf',dpi=50,bbox_inches="tight")
+		    plt.savefig(sample.plotsPath+'/readDepth.'+sample.name+'.'+lastChromosome+'.png',dpi=50,bbox_inches="tight")
+		    plt.close(fig)
+
+	    sys.stderr.write(sample.name+' start loading data chromosome '+currentChromosome+' ...\n')
+
+	    #
+	    # Reset values for next chromosome
+	    #
+	    #print 'value reset after chrom',lastChromosome
+	#    currentPosition = outputEvery
+	#    windowLower = currentPosition-slidingWindowSize/2
+	#    windowUpper = currentPosition+slidingWindowSize/2
+	#    rdOverRef_y = []
+	#    rdOverRef_x = []
+	#    rowBuffer = []
+	#    lastChromosome = currentChromosome
+	#    if AnalysisPipe.settings.mode == 'wgs':
+	#	lineChrom,linePosFrom,linePosTo,lineDepth = line.rstrip().split('\t')
+	#	rowBuffer.append([lineChrom,0,int(linePosFrom),0])
+	#    if AnalysisPipe.settings.mode == 'exome':
+	#	bedFileRowNumber=1
+	#	lineChrom,fetureStart,featureEnd,strand,featureName,feturePos,lineDepth = line.rstrip().split('\t')
+	#	linePosFrom = bedFileRowNumber
+	#	linePosTo = bedFileRowNumber+1
+	#	#if bedFileRowNumber in [1587054, 159127, 1621117]: print bedFileRowNumber,'=',line.rstrip(),'==>',int(fetureStart)+int(feturePos)-1
+	#	#if int(fetureStart)+int(feturePos)-1 in [26604522, 26753942, 27238150]: print '#################################WTF', bedFileRowNumber,'=',line.rstrip(),'==>',int(fetureStart)+int(feturePos)-1
+	#	#if int(fetureStart)+int(feturePos)-1 in postitionTranslationDict[currentChromosome]: print 'OverWrite============>',int(fetureStart)+int(feturePos)-1,postitionTranslationDict[currentChromosome][int(fetureStart)+int(feturePos)-1],bedFileRowNumber
+	#	postitionTranslationDict[currentChromosome][int(fetureStart)+int(feturePos)-1] = bedFileRowNumber
+	#    #if tmp == 1:break
+	    tmp +=1
+##################################################################################
 
     #AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'#'+str(AnalysisPipe.masterPid)+'# joining to main, '+sample.name+' ...\n')    
     return sample
@@ -988,6 +1178,8 @@ class AnalysisPipe(object):
 	AnalysisPipe.picardLocation = '~/bin/picard-tools-1.114'
 	AnalysisPipe.gatkLocation = '~/singleFatCellExomeAnalysis/bin/GenomeAnalysisTK-3.1-1/GenomeAnalysisTK.jar'
 	AnalysisPipe.gatkBundleLocation = '~/singleFatCellExomeAnalysis/references/GATKbundle/'
+	AnalysisPipe.picardLocation = '/sw/apps/bioinfo/picard/1.114/milou/'
+	AnalysisPipe.gatkLocation = '/sw/apps/bioinfo/GATK/3.1.1/GenomeAnalysisTK.jar'
 
 	self.openLogfileConnection()
 	
@@ -1030,7 +1222,7 @@ class AnalysisPipe(object):
 	doneIds = []
 	for filePairId,readCount,fastq1,fastq2,sampleId in AnalysisPipe.database.getFastqs():
 	    try:
-		if sampleId not in doneIds:
+		if sampleId not in doneIds and sampleId in samplesById:
 		    sys.stderr.write('creating '+destination+'/samples/'+samplesById[int(sampleId)].name+'\n')
 		    os.mkdir(destination+'/samples/'+samplesById[int(sampleId)].name)
 		    if os.path.exists(samplesById[int(sampleId)].fastqcPath): shutil.copytree(samplesById[int(sampleId)].fastqcPath, destination+'/samples/'+samplesById[int(sampleId)].name+'/fastQC')
@@ -1405,7 +1597,7 @@ class AnalysisPipe(object):
 	    except (KeyError, TypeError) as e:reportFile.write('<td><font color="red">NA%</font></td>')
 	    try: reportFile.write('<td>'+str(percentage(int(sample.stats['noDuplicatesBamFlagstat']['mapped']),int(sample.stats['fixedBamFlagstat']['totalReads'])))+'%</td>')
 	    except (KeyError, TypeError) as e:reportFile.write('<td><font color="red">NA%</font></td>')
-	    if sample.stats['averageTartgetCoverage'] != 'NA':reportFile.write('<td>'+str(sample.stats['averageTartgetCoverage'])+'%</td>')
+	    if 'averageTartgetCoverage' in sample.stats and sample.stats['averageTartgetCoverage'] != 'NA':reportFile.write('<td>'+str(sample.stats['averageTartgetCoverage'])+'%</td>')
 	    else: reportFile.write('<td><font color="red">NA%</font></td>')
 	    reportFile.write('<tr>')
 	reportFile.write('</table>')
@@ -1424,12 +1616,17 @@ class AnalysisPipe(object):
 	    reportFile.write('<tr>')
 	    reportFile.write('<td>'+str(filePairId)+'</td>')
 	    reportFile.write('<td>'+thousandString(str(readCount))+'</td>')
-	    reportFile.write('<td>'+samplesbyId[int(sampleId)].name+'</td>')
+	    try:               reportFile.write('<td>'+samplesbyId[int(sampleId)].name+'</td>')
+	    except KeyError:   reportFile.write('<td>'+'Unknown'                      +'</td>')
 	    reportFile.write('<td>'+fastq1+'</td>')
-	    if os.path.exists(samplesbyId[int(sampleId)].fastqcPath+'/'+str(filePairId)+'.r1.allTrimmed_fastqc.html'): reportFile.write('<td><a href="'+os.path.relpath(samplesbyId[int(sampleId)].fastqcPath+'/'+str(filePairId)+'.r1.allTrimmed_fastqc.html','/'.join(reportFile.name.split('/')[:-1]))+'">here</a></td>')
-	    else:reportFile.write('<td><font color="red">NA</font></td>')
-	    if os.path.exists(samplesbyId[int(sampleId)].fastqcPath+'/'+str(filePairId)+'.r2.allTrimmed_fastqc.html'): reportFile.write('<td><a href="'+os.path.relpath(samplesbyId[int(sampleId)].fastqcPath+'/'+str(filePairId)+'.r2.allTrimmed_fastqc.html','/'.join(reportFile.name.split('/')[:-1]))+'">here</a></td>')
-	    else:reportFile.write('<td><font color="red">NA</font></td>')
+	    try:
+		if os.path.exists(samplesbyId[int(sampleId)].fastqcPath+'/'+str(filePairId)+'.r1.allTrimmed_fastqc.html'): reportFile.write('<td><a href="'+os.path.relpath(samplesbyId[int(sampleId)].fastqcPath+'/'+str(filePairId)+'.r1.allTrimmed_fastqc.html','/'.join(reportFile.name.split('/')[:-1]))+'">here</a></td>')
+		else:reportFile.write('<td><font color="red">NA</font></td>')
+		if os.path.exists(samplesbyId[int(sampleId)].fastqcPath+'/'+str(filePairId)+'.r2.allTrimmed_fastqc.html'): reportFile.write('<td><a href="'+os.path.relpath(samplesbyId[int(sampleId)].fastqcPath+'/'+str(filePairId)+'.r2.allTrimmed_fastqc.html','/'.join(reportFile.name.split('/')[:-1]))+'">here</a></td>')
+		else:reportFile.write('<td><font color="red">NA</font></td>')
+	    except KeyError:
+		reportFile.write('<td><font color="red">NA</font></td>')
+		reportFile.write('<td><font color="red">NA</font></td>')
 	    reportFile.write('</tr>')
 	reportFile.write('</table>')
 
@@ -1442,6 +1639,7 @@ class AnalysisPipe(object):
 	reportFile.write('<th>Original Bases</th>')
 	reportFile.write('<th>% rubicon adapter</th>')
 	reportFile.write('<th>% malbac adapter</th>')
+	reportFile.write('<th>% ampliOne adapter</th>')
 	reportFile.write('<th>% illumina Adapters</th>')
 	reportFile.write('<th>% quality trimmed</th>')
 	reportFile.write('</tr>')
@@ -1454,6 +1652,8 @@ class AnalysisPipe(object):
 	    try: reportFile.write('<td>'+str(percentage(int(sample.stats['rubiconWgaTrimming']['sum']['trimmedBases']),int(sample.stats['rubiconWgaTrimming']['sum']['totalBases'])))+'%</td>')
 	    except (KeyError, TypeError) as e:reportFile.write('<td><font color="red">NA%</font></td>')
 	    try: reportFile.write('<td>'+str(percentage(int(sample.stats['malbacWgaTrimming']['sum']['trimmedBases']),int(sample.stats['rubiconWgaTrimming']['sum']['totalBases'])))+'%</td>')
+	    except (KeyError, TypeError) as e:reportFile.write('<td><font color="red">NA%</font></td>')
+	    try: reportFile.write('<td>'+str(percentage(int(sample.stats['ampliOneTrimming']['sum']['trimmedBases']),int(sample.stats['rubiconWgaTrimming']['sum']['totalBases'])))+'%</td>')
 	    except (KeyError, TypeError) as e:reportFile.write('<td><font color="red">NA%</font></td>')
 	    try: reportFile.write('<td>'+str(percentage(int(sample.stats['illuminaAndNexteraTrimming']['sum']['trimmedBases']),int(sample.stats['rubiconWgaTrimming']['sum']['totalBases'])))+'%</td>')
 	    except (KeyError, TypeError) as e:reportFile.write('<td><font color="red">NA%</font></td>')
@@ -1470,30 +1670,36 @@ class AnalysisPipe(object):
 	reportFile.write('<th colspan="2">Original Bases</th>')
 	reportFile.write('<th colspan="2">% rubicon adapter</th>')
 	reportFile.write('<th colspan="2">% malbac adapter</th>')
+	reportFile.write('<th colspan="2">% ampliOne adapter</th>')
 	reportFile.write('<th colspan="2">% illumina Adapters</th>')
 	reportFile.write('<th colspan="2">% quality trimmed</th>')
 	reportFile.write('</tr>')
 	for filePairId,readCount,fastq1,fastq2,sampleId in sorted(AnalysisPipe.database.getFastqs(), key=operator.itemgetter(0)):
-	    sample = samplesbyId[int(sampleId)]
-	    reportFile.write('<tr>')
-	    reportFile.write('<td>'+str(filePairId)+'</td>')
-	    reportFile.write('<td>'+sample.name+'</td>')
-	    for read in ['r1','r2']:
-		try: reportFile.write('<td>'+thousandString(str(int(sample.stats['rubiconWgaTrimming'][filePairId][read]['totalBases'])))+'</td>')
-		except (KeyError, TypeError) as e:reportFile.write('<td><font color="red">NA</font></td>')
-	    for read in ['r1','r2']:
-		try: reportFile.write('<td>'+str(percentage(int(sample.stats['rubiconWgaTrimming'][filePairId][read]['trimmedBases']),int(sample.stats['rubiconWgaTrimming'][filePairId][read]['totalBases'])))+'%</td>')
-		except (KeyError, TypeError) as e:reportFile.write('<td><font color="red">NA%</font></td>')
-	    for read in ['r1','r2']:
-		try: reportFile.write('<td>'+str(percentage(int(sample.stats['malbacWgaTrimming'][filePairId][read]['trimmedBases']),int(sample.stats['rubiconWgaTrimming'][filePairId][read]['totalBases'])))+'%</td>')
-		except (KeyError, TypeError) as e:reportFile.write('<td><font color="red">NA%</font></td>')
-	    for read in ['r1','r2']:
-		try: reportFile.write('<td>'+str(percentage(int(sample.stats['illuminaAndNexteraTrimming'][filePairId][read]['trimmedBases']),int(sample.stats['rubiconWgaTrimming'][filePairId][read]['totalBases'])))+'%</td>')
-		except (KeyError, TypeError) as e:reportFile.write('<td><font color="red">NA%</font></td>')
-	    for read in ['r1','r2']:
-		try: reportFile.write('<td>'+str(percentage(int(sample.stats['qualityTrimming'][filePairId][read]['trimmedBases']),int(sample.stats['rubiconWgaTrimming'][filePairId][read]['totalBases'])))+'%</td>')
-		except (KeyError, TypeError) as e:reportFile.write('<td><font color="red">NA%</font></td>')
-	    reportFile.write('<tr>')
+	    try:
+		sample = samplesbyId[int(sampleId)]
+		reportFile.write('<tr>')
+		reportFile.write('<td>'+str(filePairId)+'</td>')
+		reportFile.write('<td>'+sample.name+'</td>')
+		for read in ['r1','r2']:
+		    try: reportFile.write('<td>'+thousandString(str(int(sample.stats['rubiconWgaTrimming'][filePairId][read]['totalBases'])))+'</td>')
+		    except (KeyError, TypeError) as e:reportFile.write('<td><font color="red">NA</font></td>')
+		for read in ['r1','r2']:
+		    try: reportFile.write('<td>'+str(percentage(int(sample.stats['rubiconWgaTrimming'][filePairId][read]['trimmedBases']),int(sample.stats['rubiconWgaTrimming'][filePairId][read]['totalBases'])))+'%</td>')
+		    except (KeyError, TypeError) as e:reportFile.write('<td><font color="red">NA%</font></td>')
+		for read in ['r1','r2']:
+		    try: reportFile.write('<td>'+str(percentage(int(sample.stats['malbacWgaTrimming'][filePairId][read]['trimmedBases']),int(sample.stats['rubiconWgaTrimming'][filePairId][read]['totalBases'])))+'%</td>')
+		    except (KeyError, TypeError) as e:reportFile.write('<td><font color="red">NA%</font></td>')
+		for read in ['r1','r2']:
+		    try: reportFile.write('<td>'+str(percentage(int(sample.stats['ampliOneTrimming'][filePairId][read]['trimmedBases']),int(sample.stats['rubiconWgaTrimming'][filePairId][read]['totalBases'])))+'%</td>')
+		    except (KeyError, TypeError) as e:reportFile.write('<td><font color="red">NA%</font></td>')
+		for read in ['r1','r2']:
+		    try: reportFile.write('<td>'+str(percentage(int(sample.stats['illuminaAndNexteraTrimming'][filePairId][read]['trimmedBases']),int(sample.stats['rubiconWgaTrimming'][filePairId][read]['totalBases'])))+'%</td>')
+		    except (KeyError, TypeError) as e:reportFile.write('<td><font color="red">NA%</font></td>')
+		for read in ['r1','r2']:
+		    try: reportFile.write('<td>'+str(percentage(int(sample.stats['qualityTrimming'][filePairId][read]['trimmedBases']),int(sample.stats['rubiconWgaTrimming'][filePairId][read]['totalBases'])))+'%</td>')
+		    except (KeyError, TypeError) as e:reportFile.write('<td><font color="red">NA%</font></td>')
+		reportFile.write('<tr>')
+	    except KeyError: pass
 	reportFile.write('</table>')
 
 	reportFile.write('<h2>Read Orientations:</h2>')
@@ -1995,7 +2201,7 @@ class AnalysisPipe(object):
 		    incrementer2+=1
 		    incrementer3 = 0
 		else: incrementer3+=1
-	    axes.set_xlim([0,50])
+	    axes.set_xlim([1,50])
 	    incrementer+=1
 	handles, labels = axes.get_legend_handles_labels()
 	hl = sorted(zip(handles, labels), key=operator.itemgetter(1))
@@ -2887,8 +3093,8 @@ class AnalysisPipe(object):
 
     def variationCheck(self):
 	self.readVcfToMem()
-	#self.parseVcfToIdentify()
-	#self.parseVcfForADOrate()
+	self.parseVcfToIdentify()
+	self.parseVcfForADOrate()
 	self.parseVcfForBetwenSampleVariation()
 	for sample in AnalysisPipe.database.getSamples():
 	    print sample.name
@@ -3407,7 +3613,7 @@ class Sample(object):
 	    output += 'cd '+self.path+'\n'
 	    output += 'echo "-----"'+'\n'
 	    
-	    output += 'module load bioinfo-tools python/2.7 FastQC cutadapt/1.8.0 bowtie2 samtools'+'\n'
+	    output += 'module load bioinfo-tools python/2.7 FastQC cutadapt/1.8.0 bowtie2 samtools picard/1.114 BEDTools/2.16.2  GATK/3.1.1'+'\n'
 	    #output += 'workon py2.7\n\n'
 
 	    #
@@ -3538,7 +3744,7 @@ class Sample(object):
 	    output += 'cd '+self.path+'\n'
 	    output += 'echo'+'\n'
 	    
-	    output += 'module load bioinfo-tools python/2.7 FastQC cutadapt/1.8.0 bowtie2 samtools'+'\n'
+	    output += 'module load bioinfo-tools python/2.7 FastQC cutadapt/1.8.0 bowtie2 samtools picard/1.114 BEDTools/2.16.2  GATK/3.1.1'+'\n'
 
 	    #
 	    # Bowtie2 mapping
@@ -3613,6 +3819,7 @@ class Sample(object):
 	output += 'echo "$(date) Running on: $(hostname)"'+'\n'
 	output += 'cd '+self.path+'\n'
 	output += 'echo'+'\n'
+	output += 'module load bioinfo-tools python/2.7 FastQC cutadapt/1.8.0 bowtie2 samtools picard/1.114 BEDTools/2.16.2  GATK/3.1.1'+'\n'
 
 	#
 	# merge
@@ -3669,6 +3876,7 @@ class Sample(object):
         output += 'echo "$(date) Running on: $(hostname)"'+'\n'
         output += 'cd '+self.path+'\n'
         output += 'echo'+'\n'
+	output += 'module load bioinfo-tools python/2.7 FastQC cutadapt/1.8.0 bowtie2 samtools picard/1.114 BEDTools/2.16.2  GATK/3.1.1'+'\n'
 
         #
         # sort the bam file
@@ -3756,6 +3964,7 @@ class Sample(object):
         # define variebles and go to path
         #
         output += 'echo "$(date) Running on: $(hostname)"\n'
+	output += 'module load bioinfo-tools python/2.7 FastQC cutadapt/1.8.0 bowtie2 samtools picard/1.114 BEDTools/2.16.2  GATK/3.1.1'+'\n'
 
         #
         # Find targets for indel realignment
@@ -3805,6 +4014,7 @@ class Sample(object):
 	    output += '#SBATCH --mail-user='+sys.argv[5]+'\n'
 	except IndexError: pass
         output += 'echo "$(date) Running on: $(hostname)"\n'
+	output += 'module load bioinfo-tools python/2.7 FastQC cutadapt/1.8.0 bowtie2 samtools picard/1.114 BEDTools/2.16.2  GATK/3.1.1'+'\n'
 
         #
         # Realign reads around indels
@@ -3901,6 +4111,7 @@ class Sample(object):
 	    output += '#SBATCH --mail-user='+sys.argv[5]+'\n'
 	except IndexError: pass
         output += 'echo "$(date) Running on: $(hostname)"\n'
+	output += 'module load bioinfo-tools python/2.7 FastQC cutadapt/1.8.0 bowtie2 samtools picard/1.114 BEDTools/2.16.2  GATK/3.1.1'+'\n'
 
         output += 'echo "HC" '+'\n'
         
@@ -3969,6 +4180,7 @@ class Sample(object):
 	    output += '#SBATCH --mail-user='+sys.argv[5]+'\n'
 	except IndexError: pass
         output += 'echo "$(date) Running on: $(hostname)"\n'
+	output += 'module load bioinfo-tools python/2.7 FastQC cutadapt/1.8.0 bowtie2 samtools picard/1.114 BEDTools/2.16.2  GATK/3.1.1'+'\n'
 
         #
         # GATK callable Loci
@@ -4172,6 +4384,7 @@ class Sample(object):
 	stats['rubiconWgaTrimming'] = {}
 	stats['malbacWgaTrimming']  = {}
 	stats['illuminaAndNexteraTrimming']  = {}
+	stats['ampliOneTrimming']  = {}
 	stats['qualityTrimming']  = {}
 	stats['removeEmptyReads']  = {}
 	stats['bowtie2'] = {}
@@ -4180,12 +4393,36 @@ class Sample(object):
 	    stats['rubiconWgaTrimming'][filePairId] = {'r1':None,'r2':None}
 	    stats['malbacWgaTrimming'][filePairId]  = {'r1':None,'r2':None}
 	    stats['illuminaAndNexteraTrimming'][filePairId]  = {'r1':None,'r2':None}
+	    stats['ampliOneTrimming'][filePairId]  = {'r1':None,'r2':None}
 	    stats['qualityTrimming'][filePairId]    = {'r1':None,'r2':None}
 	    
 	    for read in ['r1','r2']:
 		stats['rubiconWgaTrimming'][filePairId][read]         = extractData(infile=self.logPath+'/rubiconWgaTrimming.'+str(filePairId)+'.'+read+'.log.txt',        pattern="Running wgaAdapterTrimmer.py\nProcessed a total of\t(?P<totalReads>\d+)\treads. \(.+\)\nProcessed a total of\t(?P<totalBases>\d+)\tbases \(.+\).\ntrimmed a total of\t(?P<trimmedBases>\d+)\tbases in the start of reads \(.+\).\nwgaAdapterTrimmer.py done exiting ...\n?")
 		stats['malbacWgaTrimming'][filePairId][read]          = extractData(infile=self.logPath+'/malbacWgaTrimming.'+str(filePairId)+'.'+read+'.log.txt',         pattern="(.+)?cutadapt .+\nCommand line parameters: -n 10 -g GTGAGTGATGGTTGAGGTAGTGTGGAG -a CTCCACACTACCTCAACCATCACTCAC .+\nMaximum error rate\: .+\%\n\s+No. of adapters\: 2\n\s+Processed reads\:\s+(?P<totalReads>\d+)\n\s+Processed bases\:\s+(?P<totalBases>\d+) bp \(.+ Mbp\)\n\s+Trimmed reads\:\s+(?P<trimmedReads>\d+) \(.+\%\)\n\s+Trimmed bases\:\s+(?P<trimmedBases>\d+) bp \(.+ Mbp\) \(.+\% of total\)\n\s+Too short reads\:\s+.+ \(.+\% of processed reads\)\n\s+Too long reads\:\s+.+ \(.+\% of processed reads\)\n\s+Total time\:\s+.+ s\n\s+Time per read\:\s+.+ ms")
 		stats['illuminaAndNexteraTrimming'][filePairId][read] = extractData(infile=self.logPath+'/illuminaAndNexteraTrimming.'+str(filePairId)+'.'+read+'.log.txt',pattern="(.+)?cutadapt .+\nCommand line parameters: -n .+\nMaximum error rate\: .+\%\n\s+No. of adapters\: 4\n\s+Processed reads\:\s+(?P<totalReads>\d+)\n\s+Processed bases\:\s+(?P<totalBases>\d+) bp \(.+ Mbp\)\n\s+Trimmed reads\:\s+(?P<trimmedReads>\d+) \(.+\%\)\n\s+Trimmed bases\:\s+(?P<trimmedBases>\d+) bp \(.+ Mbp\) \(.+\% of total\)\n\s+Too short reads\:\s+.+ \(.+\% of processed reads\)\n\s+Too long reads\:\s+.+ \(.+\% of processed reads\)\n\s+Total time\:\s+.+ s\n\s+Time per read\:\s+.+ ms")
+		stats['ampliOneTrimming'][filePairId][read]           = extractData(infile=self.logPath+'/ampli1WgaTrimming.'+str(filePairId)+'.'+read+'.log.txt',pattern="(.+)?cutadapt .+\nCommand line parameters: -n .+\nMaximum error rate\: .+\%\n\s+No. of adapters\: \d+\n\s+Processed reads\:\s+(?P<totalReads>\d+)\n\s+Processed bases\:\s+(?P<totalBases>\d+) bp \(.+ Mbp\)\n\s+Trimmed reads\:\s+(?P<trimmedReads>\d+) \(.+\%\)\n\s+Trimmed bases\:\s+(?P<trimmedBases>\d+) bp \(.+ Mbp\) \(.+\% of total\)\n\s+Too short reads\:\s+.+ \(.+\% of processed reads\)\n\s+Too long reads\:\s+.+ \(.+\% of processed reads\)\n\s+Total time\:\s+.+ s\n\s+Time per read\:\s+.+ ms")
+
+		if stats['ampliOneTrimming'][filePairId][read] == 'NoMatchFound':
+		    stats['ampliOneTrimming'][filePairId][read]      = extractData(infile=self.logPath+'/ampli1WgaTrimming.'+str(filePairId)+'.'+read+'.log.txt',         pattern="(.+)?cutadapt .+\nCommand line parameters: .+\nTrimming .+\nFinished in .+\n\n\=\=\= Summary \=\=\=\n\nTotal reads processed\:\s+(?P<totalReads>([\d\,]+))\nReads with adapters\:.+\nReads written \(passing filters\)\:.+\n\nTotal basepairs processed\:\s+(?P<totalBases>([\d\,]+)) bp\nTotal written \(filtered\)\:\s+(?P<writtenBases>([\d\,]+)) bp \(\d+(\.\d+)?\%\)\n")
+		    stats['ampliOneTrimming'][filePairId][read]['totalReads']   = stats['ampliOneTrimming'][filePairId][read]['totalReads'].replace(',','')
+		    stats['ampliOneTrimming'][filePairId][read]['writtenBases'] = stats['ampliOneTrimming'][filePairId][read]['writtenBases'].replace(',','')
+		    stats['ampliOneTrimming'][filePairId][read]['totalBases']   = stats['ampliOneTrimming'][filePairId][read]['totalBases'].replace(',','')
+		    stats['ampliOneTrimming'][filePairId][read]['trimmedBases'] = int(stats['ampliOneTrimming'][filePairId][read]['totalBases']) - int(stats['ampliOneTrimming'][filePairId][read]['writtenBases'])
+
+		if stats['malbacWgaTrimming'][filePairId][read] == 'NoMatchFound':
+		    stats['malbacWgaTrimming'][filePairId][read]      = extractData(infile=self.logPath+'/malbacWgaTrimming.'+str(filePairId)+'.'+read+'.log.txt',         pattern="(.+)?cutadapt .+\nCommand line parameters: .+\nTrimming .+\nFinished in .+\n\n\=\=\= Summary \=\=\=\n\nTotal reads processed\:\s+(?P<totalReads>([\d\,]+))\nReads with adapters\:.+\nReads written \(passing filters\)\:.+\n\nTotal basepairs processed\:\s+(?P<totalBases>([\d\,]+)) bp\nTotal written \(filtered\)\:\s+(?P<writtenBases>([\d\,]+)) bp \(\d+(\.\d+)?\%\)\n")
+		    stats['malbacWgaTrimming'][filePairId][read]['totalReads']   = stats['malbacWgaTrimming'][filePairId][read]['totalReads'].replace(',','')
+		    stats['malbacWgaTrimming'][filePairId][read]['writtenBases'] = stats['malbacWgaTrimming'][filePairId][read]['writtenBases'].replace(',','')
+		    stats['malbacWgaTrimming'][filePairId][read]['totalBases']   = stats['malbacWgaTrimming'][filePairId][read]['totalBases'].replace(',','')
+		    stats['malbacWgaTrimming'][filePairId][read]['trimmedBases'] = int(stats['malbacWgaTrimming'][filePairId][read]['totalBases']) - int(stats['malbacWgaTrimming'][filePairId][read]['writtenBases'])
+
+		if stats['illuminaAndNexteraTrimming'][filePairId][read] == 'NoMatchFound':
+		    stats['illuminaAndNexteraTrimming'][filePairId][read]      = extractData(infile=self.logPath+'/illuminaAndNexteraTrimming.'+str(filePairId)+'.'+read+'.log.txt',pattern="(.+)?cutadapt .+\nCommand line parameters: .+\nTrimming .+\nFinished in .+\n\n\=\=\= Summary \=\=\=\n\nTotal reads processed\:\s+(?P<totalReads>([\d\,]+))\nReads with adapters\:.+\nReads written \(passing filters\)\:.+\n\nTotal basepairs processed\:\s+(?P<totalBases>([\d\,]+)) bp\nTotal written \(filtered\)\:\s+(?P<writtenBases>([\d\,]+)) bp \(\d+(\.\d+)?\%\)\n")
+		    stats['illuminaAndNexteraTrimming'][filePairId][read]['totalReads']   = stats['illuminaAndNexteraTrimming'][filePairId][read]['totalReads'].replace(',','')
+		    stats['illuminaAndNexteraTrimming'][filePairId][read]['writtenBases'] = stats['illuminaAndNexteraTrimming'][filePairId][read]['writtenBases'].replace(',','')
+		    stats['illuminaAndNexteraTrimming'][filePairId][read]['totalBases']   = stats['illuminaAndNexteraTrimming'][filePairId][read]['totalBases'].replace(',','')
+		    stats['illuminaAndNexteraTrimming'][filePairId][read]['trimmedBases'] = int(stats['illuminaAndNexteraTrimming'][filePairId][read]['totalBases']) - int(stats['illuminaAndNexteraTrimming'][filePairId][read]['writtenBases'])
+
 		stats['qualityTrimming'][filePairId][read]            = extractData(infile=self.logPath+'/qualityTrimming.'+str(filePairId)+'.'+read+'.log.txt',           pattern='(?P<totalBasess>\d+)\tbases\n(?P<trimmedBases>\d+)\ttrimmed')
 
 	    stats['removeEmptyReads'][filePairId] = extractData(infile=self.logPath+'/removeEmptyReads.'+str(filePairId)+'.log.txt',pattern="""Running removeEmptyReads.py:\nHeader one is empty exiting.\n(?P<totalReads>\d+) read pairs processed.\n(?P<pairsOut>\d+) read pairs to outfiles .+.\n(?P<singlets>\d+) single reads to outfile .+.\nremoveEmptyReads Exiting.""")
@@ -4214,7 +4451,7 @@ class Sample(object):
 	    sys.stderr.write('#WARNING#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'#'+str(AnalysisPipe.masterPid)+'# No fastq files found for sample: '+self.name+' continuing with next sample.\n')
 	    self.stats = stats
 	    return
-	for program in ['illuminaAndNexteraTrimming','malbacWgaTrimming','qualityTrimming','rubiconWgaTrimming']:
+	for program in ['illuminaAndNexteraTrimming','malbacWgaTrimming','qualityTrimming','rubiconWgaTrimming','ampliOneTrimming']:
 	    try:
     		sums = {variable:0 for variable in stats[program][self.getFastqs().next()[0]]['r1'].keys()}
 		for filePairId,readCount,fastq1,fastq2,sampleId in self.getFastqs():
@@ -4548,9 +4785,6 @@ if __name__ == "__main__": main()
 
 # Should add
 # program checks
-# variation check
-  # fatcell identification
-  # dropout
 
 # Possible picard tols to utilize
 # BamIndexStats
