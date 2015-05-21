@@ -26,7 +26,7 @@ def main():
 def trimRead(read,maxDist,TOTALBASES,TRIMMEDBASES):
     import sys
     header, sequence, qual = read
-    assert len(sequence) == len(qual), '\n\nError: sequence and qual has different lengths.\n\n'
+    assert len(sequence) == len(qual), '\n\nError: sequence and qual has different lengths.\n'+header+'\n'+sequence+'\n'+qual+'\n\n'
     dist = levenshtein(sequence[:len(ADAPTERSEQUENCE)], ADAPTERSEQUENCE)
     TOTALBASES += len(sequence)
     if float(dist) <= maxDist:
