@@ -2665,7 +2665,7 @@ class AnalysisPipe(object):
 				elif identifyNoColor[variation.perSampleInfo[sample.name]['GT']] == 'Donor':  tmpHeatmapLists[sample.name] = 3
 				elif identifyNoColor[variation.perSampleInfo[sample.name]['GT']] == 'mix':    tmpHeatmapLists[sample.name] = 1
 			    except KeyError:
-				test+=sample.name+'='+'\033[31m''other('+variation.perSampleInfo[sample.name]['GT']+')\033[0m\t'
+				test+=sample.name+'='+'\033[31m'+'other('+variation.perSampleInfo[sample.name]['GT']+')\033[0m\t'
 				identifcationPercentages[sample.name]['other']
 				tmpHeatmapLists[sample.name] = 4
 				#test+=sample.name+'='+'otherGT('+variation.perSampleInfo[sample.name]['GT']+')\t'
@@ -3702,7 +3702,7 @@ class Sample(object):
 	    #
 	    # Final output and write script to file
 	    #
-            output += '\n'+AnalysisPipe.programPath+' '+AnalysisPipe.path+' report\n'
+            #output += '\n'+AnalysisPipe.programPath+' '+AnalysisPipe.path+' report\n'
 	    output += 'echo'+'\n'
 	    output += 'wait'+'\n'
 	    output += 'echo "$(date) AllDone"'+'\n'
@@ -3777,7 +3777,7 @@ class Sample(object):
 	    #
 	    # Final output and write script to file
 	    #
-	    output += '\n'+AnalysisPipe.programPath+' '+AnalysisPipe.path+' report\n'
+	    #output += '\n'+AnalysisPipe.programPath+' '+AnalysisPipe.path+' report\n'
 	    output += 'wait'+'\n'
 	    output += 'echo "$(date) AllDone"'+'\n'
 	    output += 'echo "$(date) AllDone" >&2'+'\n'
@@ -3922,7 +3922,7 @@ class Sample(object):
         #
         # Final output and write script to file
         #
-        output += '\n'+AnalysisPipe.programPath+' '+AnalysisPipe.path+' report\n'
+        #output += '\n'+AnalysisPipe.programPath+' '+AnalysisPipe.path+' report\n'
         output += 'wait'+'\n'
         output += 'echo "$(date) AllDone"'+'\n'
         output += 'echo "$(date) AllDone" >&2'+'\n'
@@ -4074,7 +4074,7 @@ class Sample(object):
         #
         # Final output and write script to file
         #
-        output += '\n'+AnalysisPipe.programPath+' '+AnalysisPipe.path+' report\n'
+        #output += '\n'+AnalysisPipe.programPath+' '+AnalysisPipe.path+' report\n'
         output += 'echo "Done. $(date) Running on: $(hostname)"\n'
         output += 'wait\n'
         output += 'echo "$(date) AllDone"\n'
@@ -4405,24 +4405,33 @@ class Sample(object):
 
 		if stats['ampliOneTrimming'][filePairId][read] == 'NoMatchFound':
 		    stats['ampliOneTrimming'][filePairId][read]      = extractData(infile=self.logPath+'/ampli1WgaTrimming.'+str(filePairId)+'.'+read+'.log.txt',         pattern="(.+)?cutadapt .+\nCommand line parameters: .+\nTrimming .+\nFinished in .+\n\n\=\=\= Summary \=\=\=\n\nTotal reads processed\:\s+(?P<totalReads>([\d\,]+))\nReads with adapters\:.+\nReads written \(passing filters\)\:.+\n\nTotal basepairs processed\:\s+(?P<totalBases>([\d\,]+)) bp\nTotal written \(filtered\)\:\s+(?P<writtenBases>([\d\,]+)) bp \(\d+(\.\d+)?\%\)\n")
-		    stats['ampliOneTrimming'][filePairId][read]['totalReads']   = stats['ampliOneTrimming'][filePairId][read]['totalReads'].replace(',','')
-		    stats['ampliOneTrimming'][filePairId][read]['writtenBases'] = stats['ampliOneTrimming'][filePairId][read]['writtenBases'].replace(',','')
-		    stats['ampliOneTrimming'][filePairId][read]['totalBases']   = stats['ampliOneTrimming'][filePairId][read]['totalBases'].replace(',','')
-		    stats['ampliOneTrimming'][filePairId][read]['trimmedBases'] = int(stats['ampliOneTrimming'][filePairId][read]['totalBases']) - int(stats['ampliOneTrimming'][filePairId][read]['writtenBases'])
+		    try:
+			stats['ampliOneTrimming'][filePairId][read]['totalReads']   = stats['ampliOneTrimming'][filePairId][read]['totalReads'].replace(',','')
+			stats['ampliOneTrimming'][filePairId][read]['writtenBases'] = stats['ampliOneTrimming'][filePairId][read]['writtenBases'].replace(',','')
+			stats['ampliOneTrimming'][filePairId][read]['totalBases']   = stats['ampliOneTrimming'][filePairId][read]['totalBases'].replace(',','')
+			stats['ampliOneTrimming'][filePairId][read]['trimmedBases'] = int(stats['ampliOneTrimming'][filePairId][read]['totalBases']) - int(stats['ampliOneTrimming'][filePairId][read]['writtenBases'])
+			#print 'match!!!!',stats['ampliOneTrimming'][filePairId][read],filePairId,read,self.id,self.logPath+'/ampli1WgaTrimming.'+str(filePairId)+'.'+read+'.log.txt'
+		    except TypeError: pass#print 'PLATS1!!!!',stats['ampliOneTrimming'][filePairId][read],filePairId,read,self.id,self.logPath+'/ampli1WgaTrimming.'+str(filePairId)+'.'+read+'.log.txt'
 
 		if stats['malbacWgaTrimming'][filePairId][read] == 'NoMatchFound':
 		    stats['malbacWgaTrimming'][filePairId][read]      = extractData(infile=self.logPath+'/malbacWgaTrimming.'+str(filePairId)+'.'+read+'.log.txt',         pattern="(.+)?cutadapt .+\nCommand line parameters: .+\nTrimming .+\nFinished in .+\n\n\=\=\= Summary \=\=\=\n\nTotal reads processed\:\s+(?P<totalReads>([\d\,]+))\nReads with adapters\:.+\nReads written \(passing filters\)\:.+\n\nTotal basepairs processed\:\s+(?P<totalBases>([\d\,]+)) bp\nTotal written \(filtered\)\:\s+(?P<writtenBases>([\d\,]+)) bp \(\d+(\.\d+)?\%\)\n")
-		    stats['malbacWgaTrimming'][filePairId][read]['totalReads']   = stats['malbacWgaTrimming'][filePairId][read]['totalReads'].replace(',','')
-		    stats['malbacWgaTrimming'][filePairId][read]['writtenBases'] = stats['malbacWgaTrimming'][filePairId][read]['writtenBases'].replace(',','')
-		    stats['malbacWgaTrimming'][filePairId][read]['totalBases']   = stats['malbacWgaTrimming'][filePairId][read]['totalBases'].replace(',','')
-		    stats['malbacWgaTrimming'][filePairId][read]['trimmedBases'] = int(stats['malbacWgaTrimming'][filePairId][read]['totalBases']) - int(stats['malbacWgaTrimming'][filePairId][read]['writtenBases'])
+		    try:
+			stats['malbacWgaTrimming'][filePairId][read]['totalReads']   = stats['malbacWgaTrimming'][filePairId][read]['totalReads'].replace(',','')
+			stats['malbacWgaTrimming'][filePairId][read]['writtenBases'] = stats['malbacWgaTrimming'][filePairId][read]['writtenBases'].replace(',','')
+			stats['malbacWgaTrimming'][filePairId][read]['totalBases']   = stats['malbacWgaTrimming'][filePairId][read]['totalBases'].replace(',','')
+			stats['malbacWgaTrimming'][filePairId][read]['trimmedBases'] = int(stats['malbacWgaTrimming'][filePairId][read]['totalBases']) - int(stats['malbacWgaTrimming'][filePairId][read]['writtenBases'])
+			#print 'match!!!!',stats['malbacWgaTrimming'][filePairId][read],filePairId,read,self.id
+		    except TypeError: pass#print 'PLATS2!!!!',stats['malbacWgaTrimming'][filePairId][read],filePairId,read,self.id
 
 		if stats['illuminaAndNexteraTrimming'][filePairId][read] == 'NoMatchFound':
 		    stats['illuminaAndNexteraTrimming'][filePairId][read]      = extractData(infile=self.logPath+'/illuminaAndNexteraTrimming.'+str(filePairId)+'.'+read+'.log.txt',pattern="(.+)?cutadapt .+\nCommand line parameters: .+\nTrimming .+\nFinished in .+\n\n\=\=\= Summary \=\=\=\n\nTotal reads processed\:\s+(?P<totalReads>([\d\,]+))\nReads with adapters\:.+\nReads written \(passing filters\)\:.+\n\nTotal basepairs processed\:\s+(?P<totalBases>([\d\,]+)) bp\nTotal written \(filtered\)\:\s+(?P<writtenBases>([\d\,]+)) bp \(\d+(\.\d+)?\%\)\n")
-		    stats['illuminaAndNexteraTrimming'][filePairId][read]['totalReads']   = stats['illuminaAndNexteraTrimming'][filePairId][read]['totalReads'].replace(',','')
-		    stats['illuminaAndNexteraTrimming'][filePairId][read]['writtenBases'] = stats['illuminaAndNexteraTrimming'][filePairId][read]['writtenBases'].replace(',','')
-		    stats['illuminaAndNexteraTrimming'][filePairId][read]['totalBases']   = stats['illuminaAndNexteraTrimming'][filePairId][read]['totalBases'].replace(',','')
-		    stats['illuminaAndNexteraTrimming'][filePairId][read]['trimmedBases'] = int(stats['illuminaAndNexteraTrimming'][filePairId][read]['totalBases']) - int(stats['illuminaAndNexteraTrimming'][filePairId][read]['writtenBases'])
+		    try:
+			stats['illuminaAndNexteraTrimming'][filePairId][read]['totalReads']   = stats['illuminaAndNexteraTrimming'][filePairId][read]['totalReads'].replace(',','')
+			stats['illuminaAndNexteraTrimming'][filePairId][read]['writtenBases'] = stats['illuminaAndNexteraTrimming'][filePairId][read]['writtenBases'].replace(',','')
+			stats['illuminaAndNexteraTrimming'][filePairId][read]['totalBases']   = stats['illuminaAndNexteraTrimming'][filePairId][read]['totalBases'].replace(',','')
+			stats['illuminaAndNexteraTrimming'][filePairId][read]['trimmedBases'] = int(stats['illuminaAndNexteraTrimming'][filePairId][read]['totalBases']) - int(stats['illuminaAndNexteraTrimming'][filePairId][read]['writtenBases'])
+			#print 'match!!!!',stats['illuminaAndNexteraTrimming'][filePairId][read],filePairId,read,self.id
+		    except TypeError: pass#print 'PLATS3!!!!',stats['illuminaAndNexteraTrimming'][filePairId][read],filePairId,read,self.id
 
 		stats['qualityTrimming'][filePairId][read]            = extractData(infile=self.logPath+'/qualityTrimming.'+str(filePairId)+'.'+read+'.log.txt',           pattern='(?P<totalBasess>\d+)\tbases\n(?P<trimmedBases>\d+)\ttrimmed')
 
