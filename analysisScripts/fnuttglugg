@@ -483,6 +483,7 @@ def parallelMakeRDOverChromPlots(sample): #this function need to call some other
 		    maxY = max([maxY,max(rdOverRef_y)])
 		    yscalemax = max([30,max([myround(maxY),2])])
 		    yscalemax = max([30,np.percentile(moreThanZero, 75)*2])
+		    if AnalysisPipe.settings.RDoverchromYscaleMax != 0: yscalemax = AnalysisPipe.settings.RDoverchromYscaleMax
 		    axes[tmpCounter].set_ylim( 0, yscalemax);
 		    if AnalysisPipe.settings.mode == 'wgs':   axes[tmpCounter].set_xlim( min(rdOverRef_x), lengthOfChromByName[lastChromosome])#max(rdOverRef_x) )
 		    if AnalysisPipe.settings.mode == 'exome': axes[tmpCounter].set_xlim( min(rdOverRef_x), max(rdOverRef_x) )
@@ -2343,7 +2344,7 @@ class AnalysisPipe(object):
 	output = '#! /bin/bash -l'+'\n'
 	output += '#SBATCH -A '+project+'\n'
 	output += '#SBATCH -n 16 -p node'+'\n'
-	output += '#SBATCH -t 72:00:00'+'\n'
+	output += '#SBATCH -t 240:00:00'+'\n'
 	output += '#SBATCH -J graphAndRep.'+self.path.split('/')[-1]+'\n'
 	output += '#SBATCH -e '+self.path+'/stderr.graphAndRep.txt'+'\n'
 	output += '#SBATCH -o '+self.path+'/stdout.graphAndRep.txt'+'\n'
@@ -2371,7 +2372,7 @@ class AnalysisPipe(object):
 	output = '#! /bin/bash -l'+'\n'
 	output += '#SBATCH -A '+project+'\n'
 	output += '#SBATCH -n 16 -p node'+'\n'
-	output += '#SBATCH -t 72:00:00'+'\n'
+	output += '#SBATCH -t 240:00:00'+'\n'
 	output += '#SBATCH -J genotype.'+self.path.split('/')[-1]+'\n'
 	output += '#SBATCH -e '+self.path+'/stderr.genotype.txt'+'\n'
 	output += '#SBATCH -o '+self.path+'/stdout.genotype.txt'+'\n'
@@ -2407,7 +2408,7 @@ class AnalysisPipe(object):
 	output = '#! /bin/bash -l'+'\n'
 	output += '#SBATCH -A '+project+'\n'
 	output += '#SBATCH -n 16 -p node'+'\n'
-	output += '#SBATCH -t 72:00:00'+'\n'
+	output += '#SBATCH -t 240:00:00'+'\n'
 	output += '#SBATCH -J vqsrIndel.'+self.path.split('/')[-1]+'\n'
 	output += '#SBATCH -e '+self.path+'/stderr.vqsrIndel.txt'+'\n'
 	output += '#SBATCH -o '+self.path+'/stdout.vqsrIndel.txt'+'\n'
@@ -2459,7 +2460,7 @@ class AnalysisPipe(object):
 	output = '#! /bin/bash -l'+'\n'
 	output += '#SBATCH -A '+project+'\n'
 	output += '#SBATCH -n 16 -p node'+'\n'
-	output += '#SBATCH -t 72:00:00'+'\n'
+	output += '#SBATCH -t 240:00:00'+'\n'
 	output += '#SBATCH -J vqsrSnps.'+self.path.split('/')[-1]+'\n'
 	output += '#SBATCH -e '+self.path+'/stderr.vqsrSnps.txt'+'\n'
 	output += '#SBATCH -o '+self.path+'/stdout.vqsrSnps.txt'+'\n'
@@ -2544,7 +2545,9 @@ class AnalysisPipe(object):
 	lastChomosomeRead = None
 	with open(infilename) as infile:
 	    for line in infile:
-		#if sum([len(self.variations[chrom]) for chrom in self.variations]) >= 1000000: break
+		#if sum([len(self.variations[chrom]) for chrom in self.variations]) >= 1e4:
+		#    AnalysisPipe.logfile.write('#WARNING#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# Warning running on a subset of variants debbugging purpose.\n')
+		#    break
 
                 if line[0] == "#": #THIS LINE IS HEADER
                     if line[1] == 'C': #THIS LINE IS HEADER WITH SAMPLE INFO
@@ -2738,7 +2741,7 @@ class AnalysisPipe(object):
 	for sample in refSamplesFirst: sample.onDiskVariantsList.close()
 	for sample in refSamplesFirst: sample.onDiskVariantsSummary.close()
 	for sample in refSamplesFirst: sample.onDiskclassification.close()
-	sys.stdout.write('Found '+thousandString(str(informativeVariationCount))+' informative variant out of '+thousandString(str(totalVariationCount))+' parsed variants.\n')
+	sys.stdout.write('Identification found '+thousandString(str(informativeVariationCount))+' informative variant out of '+thousandString(str(totalVariationCount))+' parsed variants.\n')
 	coloredTableOut.write('Found '+thousandString(str(informativeVariationCount))+' informative variant out of '+thousandString(str(totalVariationCount))+' parsed variants.\n')
 	coloredTableOut.close()
 	self.makeIdentificationHeatmap(donId,patId,heatmapLists,refSamplesFirst)
@@ -2891,7 +2894,7 @@ class AnalysisPipe(object):
 	fakesample.classification = 'fakeSample'
 
 	from matplotlib.gridspec import GridSpec
-	fig = plt.figure(figsize=((len(refSamplesFirst)+1)*3, 4), dpi=300)
+	fig = plt.figure(figsize=(min((len(refSamplesFirst)+1)*3,32760/300), 4), dpi=300)
 	the_grid = GridSpec(1,(len(refSamplesFirst)+1))
 	sampleNumber = 0
 	for sample in refSamplesFirst+[fakesample]:
@@ -3062,10 +3065,10 @@ class AnalysisPipe(object):
 		sampleIs = 'Unknown'
 		sample.correctPercentage = percentage(identifcationPercentages[sample.name]['correct'],identifcationPercentages[sample.name]['totalVariationCount'])
 		sample.adoPercentage = percentage(identifcationPercentages[sample.name]['dropout'],  identifcationPercentages[sample.name]['totalVariationCount'])
-		print sample.name
-		print sample.name,'-correct->',identifcationPercentages[sample.name]['correct']
-		print sample.name,'-dropout->',identifcationPercentages[sample.name]['dropout']
-		print sample.name,'---total->',identifcationPercentages[sample.name]['totalVariationCount']
+		#print sample.name
+		#print sample.name,'-correct->',identifcationPercentages[sample.name]['correct']
+		#print sample.name,'-dropout->',identifcationPercentages[sample.name]['dropout']
+		#print sample.name,'---total->',identifcationPercentages[sample.name]['totalVariationCount']
 
 		coloredTableOut.write(sample.name+'\t')
 	    coloredTableOut.write('\n\t\t\t\t')
@@ -3086,7 +3089,7 @@ class AnalysisPipe(object):
 		sample.onDiskVariantsSummary.write('total='+str(identifcationPercentages[sample.name]['totalVariationCount'])+'\n')
 	    coloredTableOut.write('\n')
     
-	    sys.stdout.write('Found '+thousandString(str(informativeVariationCount))+' informative variant out of '+thousandString(str(totalVariationCount))+' parsed variants.\n')
+	    sys.stdout.write('ADOcheck: Found '+thousandString(str(informativeVariationCount))+' informative variant out of '+thousandString(str(totalVariationCount))+' parsed variants.\n')
 	    coloredTableOut.write('Found '+thousandString(str(informativeVariationCount))+' informative variant out of '+thousandString(str(totalVariationCount))+' parsed variants.\n')
 	    coloredTableOut.close()
 	for sample in refSamplesFirst: sample.onDiskVariantsList.close()
@@ -3597,7 +3600,7 @@ class Sample(object):
 	    output += '#! /bin/bash -l'+'\n'
 	    output += '#SBATCH -A '+project+'\n'
 	    output += '#SBATCH -n 2 -p core'+'\n'
-	    output += '#SBATCH -t 72:00:00'+'\n'
+	    output += '#SBATCH -t 240:00:00'+'\n'
 	    output += '#SBATCH -J trim.'+self.name+'.'+str(filePairId)+'\n'
 	    output += '#SBATCH -e '+self.logPath+'/stderr.trimming.'+self.name+'.'+str(filePairId)+'.txt'+'\n'
 	    output += '#SBATCH -o '+self.logPath+'/stdout.trimming.'+self.name+'.'+str(filePairId)+'.txt'+'\n'
@@ -3728,7 +3731,7 @@ class Sample(object):
 	    output = '#! /bin/bash -l'+'\n'
 	    output += '#SBATCH -A '+project+'\n'
 	    output += '#SBATCH -n 16 -p node'+'\n'
-	    output += '#SBATCH -t 72:00:00'+'\n'
+	    output += '#SBATCH -t 240:00:00'+'\n'
 	    output += '#SBATCH -J map.'+self.name+'.'+str(filePairId)+'\n'
 	    output += '#SBATCH -e '+self.logPath+'/stderr.mapping.'+self.name+'.'+str(filePairId)+'.txt'+'\n'
 	    output += '#SBATCH -o '+self.logPath+'/stdout.mapping.'+self.name+'.'+str(filePairId)+'.txt'+'\n'
@@ -3804,7 +3807,7 @@ class Sample(object):
 	output = '#! /bin/bash -l'+'\n'
 	output += '#SBATCH -A '+project+'\n'
 	output += '#SBATCH -n 1 -p core'+'\n'
-	output += '#SBATCH -t 5:00:00'+'\n'
+	output += '#SBATCH -t 240:00:00'+'\n'
 	output += '#SBATCH -J merge.'+self.name+'\n'
 	output += '#SBATCH -e '+self.logPath+'/stderr.merge.'+self.name+'.txt'+'\n'
 	output += '#SBATCH -o '+self.logPath+'/stdout.merge.'+self.name+'.txt'+'\n'
@@ -3861,7 +3864,7 @@ class Sample(object):
 	output = '#! /bin/bash -l'+'\n'
 	output += '#SBATCH -A '+project+'\n'
 	output += '#SBATCH -n 1 -p core'+'\n'
-	output += '#SBATCH -t 72:00:00'+'\n'
+	output += '#SBATCH -t 240:00:00'+'\n'
 	output += '#SBATCH -J fnf.'+self.name+'\n'
 	output += '#SBATCH -e '+self.logPath+'/stderr.filterAndFix.'+self.name+'.txt'+'\n'
 	output += '#SBATCH -o '+self.logPath+'/stdout.filterAndFix.'+self.name+'.txt'+'\n'
@@ -3951,7 +3954,7 @@ class Sample(object):
 	output = '#! /bin/bash -l'+'\n'
 	output += '#SBATCH -A '+project+'\n'
 	output += '#SBATCH -n 16 -p node'+'\n'
-	output += '#SBATCH -t 72:00:00'+'\n'
+	output += '#SBATCH -t 240:00:00'+'\n'
 	output += '#SBATCH -J realTC.'+self.name+'\n'
 	output += '#SBATCH -e '+self.logPath+'/stderr.realTC.'+self.name+'.txt'+'\n'
 	output += '#SBATCH -o '+self.logPath+'/stdout.realTC.'+self.name+'.txt'+'\n'
@@ -4005,7 +4008,7 @@ class Sample(object):
 	output = '#! /bin/bash -l'+'\n'
 	output += '#SBATCH -A '+project+'\n'
 	output += '#SBATCH -n 1 -p core'+'\n'
-	output += '#SBATCH -t 72:00:00'+'\n'
+	output += '#SBATCH -t 240:00:00'+'\n'
 	output += '#SBATCH -J reAlign.'+self.name+'\n'
 	output += '#SBATCH -e '+self.logPath+'/stderr.reAlign.'+self.name+'.txt'+'\n'
 	output += '#SBATCH -o '+self.logPath+'/stdout.reAlign.'+self.name+'.txt'+'\n'
@@ -4102,7 +4105,7 @@ class Sample(object):
 	output = '#! /bin/bash -l'+'\n'
 	output += '#SBATCH -A '+project+'\n'
 	output += '#SBATCH -n 16 -p node'+'\n'
-	output += '#SBATCH -t 72:00:00'+'\n'
+	output += '#SBATCH -t 240:00:00'+'\n'
 	output += '#SBATCH -J hapCal.'+self.name+'\n'
 	output += '#SBATCH -e '+self.logPath+'/stderr.haplotypeCalling.'+self.name+'.txt'+'\n'
 	output += '#SBATCH -o '+self.logPath+'/stdout.haplotypeCalling.'+self.name+'.txt'+'\n'
@@ -4171,7 +4174,7 @@ class Sample(object):
 	output = '#! /bin/bash -l'+'\n'
 	output += '#SBATCH -A '+project+'\n'
 	output += '#SBATCH -n 1 -p core'+'\n'
-	output += '#SBATCH -t 72:00:00'+'\n'
+	output += '#SBATCH -t 240:00:00'+'\n'
 	output += '#SBATCH -J qcSteps.'+self.name+'\n'
 	output += '#SBATCH -e '+self.logPath+'/stderr.qcSteps.'+self.name+'.txt'+'\n'
 	output += '#SBATCH -o '+self.logPath+'/stdout.qcSteps.'+self.name+'.txt'+'\n'
@@ -4665,7 +4668,8 @@ class Settings(object,):
 	    'referenceSampleDPcutoff':20,
 	    'referenceSampleGQcutoff':30,
 	    'sampleADOestDPcutoff':20,
-	    'sampleADOestGQcutoff':30
+	    'sampleADOestGQcutoff':30,
+	    'RDoverchromYscaleMax':0
 	}
 	self.explenations = {
 	    'debug':'Flag for running the scripts in multiprocessing or as single process run [True/False] (default=False), Not functional',
@@ -4679,7 +4683,8 @@ class Settings(object,):
 	    'referenceSampleDPcutoff':'read depth cutoff for variation filtering during identification of informative variants to use when estimating ADO (defaul=20)',
 	    'referenceSampleGQcutoff':'genotype quality cutoff for variation filtering during identification of informative variants to use when estimating ADO (defaul=30)',
 	    'sampleADOestDPcutoff':'read depth cutoff for variation in each sample filtering during ADO estimation (defaul=20)',
-	    'sampleADOestGQcutoff':'genotype quality cutoff for variation in each sample filtering during ADO estimation (defaul=30)'
+	    'sampleADOestGQcutoff':'genotype quality cutoff for variation in each sample filtering during ADO estimation (defaul=30)',
+	    'RDoverchromYscaleMax':'the max value for the y scale of the RD over chrom graphs, 0 means automatic for each sample and chrom'
 	    }
 	self.isDefault = {}
 	self.setTime = {}
@@ -4696,6 +4701,7 @@ class Settings(object,):
 	self.referenceSampleGQcutoff = None
 	self.sampleADOestDPcutoff = None
 	self.sampleADOestGQcutoff = None
+	self.RDoverchromYscaleMax = None
 
 	self.setDefaults()
 
@@ -4708,6 +4714,8 @@ class Settings(object,):
 
     def loadFromDb(self,):
 	
+	import time
+	
 	#
 	# Get the connection
 	#
@@ -4716,7 +4724,13 @@ class Settings(object,):
 	#
 	# Select data
 	#
-	data = AnalysisPipe.database.c.execute('SELECT variableName,defaultValue,value,setTime FROM settings').fetchall()
+	gotData = False
+	while not gotData:
+	    try:
+		data = AnalysisPipe.database.c.execute('SELECT variableName,defaultValue,value,setTime FROM settings').fetchall()
+		gotData = True
+	    except sqlite3.OperationalError:
+		time.sleep(1)
 	
 	#
 	# Parse data and add to object __dict__
