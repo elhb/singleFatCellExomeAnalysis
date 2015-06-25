@@ -3843,11 +3843,15 @@ class Sample(object):
 	#
 	# merge
 	#
-	inputFiles = ' INPUT='+' INPUT='.join([self.dataPath+'/'+str(filePairId)+'.bam' for filePairId,readCount,fastq1,fastq2,sampleId in self.getFastqs()])
-	output += 'java -Xmx5g -jar '+AnalysisPipe.picardLocation+'/MergeSamFiles.jar '+inputFiles+' OUTPUT='+self.dataPath+'/'+self.name+'.merged.bam '
-	output += '1>&2  2>  '+self.logPath+'/stderr.merging.'+self.name+'.txt \n'
-	output += 'echo -e "mapping Done. $(date) Running on: $(hostname)" 1>&2'+'\n'
-	output += 'rm -v '+' '.join([self.dataPath+'/'+str(filePairId)+'.bam' for filePairId,readCount,fastq1,fastq2,sampleId in self.getFastqs()])+'\n'
+	if len(list(self.getFastqs())) > 1:
+	    inputFiles = ' INPUT='+' INPUT='.join([self.dataPath+'/'+str(filePairId)+'.bam' for filePairId,readCount,fastq1,fastq2,sampleId in self.getFastqs()])
+	    output += 'java -Xmx5g -jar '+AnalysisPipe.picardLocation+'/MergeSamFiles.jar '+inputFiles+' OUTPUT='+self.dataPath+'/'+self.name+'.merged.bam '
+	    output += '1>&2  2>  '+self.logPath+'/stderr.merging.'+self.name+'.txt \n'
+	    output += 'echo -e "mapping Done. $(date) Running on: $(hostname)" 1>&2'+'\n'
+	    output += 'rm -v '+' '.join([self.dataPath+'/'+str(filePairId)+'.bam' for filePairId,readCount,fastq1,fastq2,sampleId in self.getFastqs()])+'\n'
+	elif len(list(self.getFastqs())) == 1:
+	    output += 'mv -v '+' '.join([self.dataPath+'/'+str(filePairId)+'.bam' for filePairId,readCount,fastq1,fastq2,sampleId in [list(self.getFastqs())[0]]])+' '+self.dataPath+'/'+self.name+'.merged.bam\n'
+	else: print 'ERROR: no fastqfiles for sample '+self.name
 
 	#
 	# Final output and write script to file
