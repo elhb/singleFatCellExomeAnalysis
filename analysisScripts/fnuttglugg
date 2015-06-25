@@ -3775,22 +3775,22 @@ class Sample(object):
 	    output += '-2 '+self.dataPath+'/'+str(filePairId)+'.r2.allTrimmed.fq.gz '
 #	    output += '-U '+self.dataPath+'/'+str(filePairId)+'.singletts.fq.gz '
 	    output += '-x '+AnalysisPipe.bowtie2Reference+' '
-	    output += '> '+self.tempPath+'/'+str(filePairId)+'.sam '
-	    output += '2> '+self.logPath+'/stderr.bowtie2.'+str(filePairId)+'.txt \n'
-	    output += 'echo -e "mapping Done. $(date) Running on: $(hostname)" 1>&2'+'\n'
-	    output += 'rm -v '+self.dataPath+'/'+str(filePairId)+'.r1.allTrimmed.fq.gz'+'\n'
-	    output += 'rm -v '+self.dataPath+'/'+str(filePairId)+'.r2.allTrimmed.fq.gz'+'\n'
-	    output += 'rm -v '+self.dataPath+'/'+str(filePairId)+'.singletts.fq.gz'+'\n'
-
+	    #output += '> '+self.tempPath+'/'+str(filePairId)+'.sam '
+	    output += '2> '+self.logPath+'/stderr.bowtie2.'+str(filePairId)+'.txt |'
 	    #
 	    # convert to bam file
 	    #
 	    output += 'java -Xmx5g -jar '+AnalysisPipe.picardLocation+'/SamFormatConverter.jar MAX_RECORDS_IN_RAM=2500000 '
-	    output += 'INPUT='+ self.tempPath+'/'+str(filePairId)+'.sam '
+	    output += 'INPUT='+ '/dev/stdin '#self.tempPath+'/'+str(filePairId)+'.sam '
 	    output += 'OUTPUT='+self.dataPath+'/'+str(filePairId)+'.bam '
 	    output += '1>&2  2> '+self.logPath+'/stderr.'+str(filePairId)+'.sam2bam.'+self.name+'.txt \n'
 	    output += 'echo -e "sam2bam Done. $(date) Running on: $(hostname)" 1>&2'+'\n'
 	    output += 'rm -v '+ self.dataPath+'/'+str(filePairId)+'.sam\n'
+
+	    output += 'echo -e "mapping Done. $(date) Running on: $(hostname)" 1>&2'+'\n'
+	    output += 'rm -v '+self.dataPath+'/'+str(filePairId)+'.r1.allTrimmed.fq.gz'+'\n'
+	    output += 'rm -v '+self.dataPath+'/'+str(filePairId)+'.r2.allTrimmed.fq.gz'+'\n'
+	    output += 'rm -v '+self.dataPath+'/'+str(filePairId)+'.singletts.fq.gz'+'\n'
 
 	    #
 	    # Final output and write script to file
