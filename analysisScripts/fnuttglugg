@@ -3619,34 +3619,49 @@ class Sample(object):
 	    
 	    output += 'module load bioinfo-tools python/2.7 FastQC cutadapt/1.8.0 bowtie2 samtools picard/1.114 BEDTools/2.16.2  GATK/3.1.1'+'\n'
 	    #output += 'workon py2.7\n\n'
+	    
+	    r1_in = fastq1
+	    r2_in = fastq2
 
 	    #
 	    # WGA adapter trimming
 	    #
-	    output += ''+AnalysisPipe.scriptPath+'/wgaAdapterTrimmer.py -i '+fastq1+' > '+self.tempPath+'/'+str(filePairId)+'.r1.wgaTrimmed.fq 2> '+self.logPath+'/rubiconWgaTrimming.'+str(filePairId)+'.r1.log.txt &\n'
-	    output += ''+AnalysisPipe.scriptPath+'/wgaAdapterTrimmer.py -i '+fastq2+' > '+self.tempPath+'/'+str(filePairId)+'.r2.wgaTrimmed.fq 2> '+self.logPath+'/rubiconWgaTrimming.'+str(filePairId)+'.r2.log.txt &\n'
-	    output += 'wait\n'
+	    if not AnalysisPipe.settings.skiprubicon:
+		output += ''+AnalysisPipe.scriptPath+'/wgaAdapterTrimmer.py -i '+r1_in+' > '+self.tempPath+'/'+str(filePairId)+'.r1.wgaTrimmed.fq 2> '+self.logPath+'/rubiconWgaTrimming.'+str(filePairId)+'.r1.log.txt &\n'
+		output += ''+AnalysisPipe.scriptPath+'/wgaAdapterTrimmer.py -i '+r2_in+' > '+self.tempPath+'/'+str(filePairId)+'.r2.wgaTrimmed.fq 2> '+self.logPath+'/rubiconWgaTrimming.'+str(filePairId)+'.r2.log.txt &\n'
+		output += 'wait\n'
+		r1_in = self.tempPath+'/'+str(filePairId)+'.r1.wgaTrimmed.fq'
+		r2_in = self.tempPath+'/'+str(filePairId)+'.r2.wgaTrimmed.fq'
 	    
-	    output += '\n'
-	    output += 'cutadapt -n 10 -g GTGAGTGATGGTTGAGGTAGTGTGGAG -a CTCCACACTACCTCAACCATCACTCAC '+self.tempPath+'/'+str(filePairId)+'.r1.wgaTrimmed.fq > '+self.tempPath+'/'+str(filePairId)+'.r1.wgaTrimmed2.fq  2> '+self.logPath+'/malbacWgaTrimming.'+str(filePairId)+'.r1.log.txt &\n'
-	    output += 'cutadapt -n 10 -g GTGAGTGATGGTTGAGGTAGTGTGGAG -a CTCCACACTACCTCAACCATCACTCAC '+self.tempPath+'/'+str(filePairId)+'.r2.wgaTrimmed.fq > '+self.tempPath+'/'+str(filePairId)+'.r2.wgaTrimmed2.fq  2> '+self.logPath+'/malbacWgaTrimming.'+str(filePairId)+'.r2.log.txt &\n'
-	    output += 'wait\n'
-	    output += '\n'
-	    output += 'rm -v '+self.tempPath+'/'+str(filePairId)+'.r1.wgaTrimmed.fq '+self.tempPath+'/'+str(filePairId)+'.r2.wgaTrimmed.fq\n'
+	    if not AnalysisPipe.settings.skipmalbac:
+		output += '\n'
+		output += 'cutadapt -n 10 -g GTGAGTGATGGTTGAGGTAGTGTGGAG -a CTCCACACTACCTCAACCATCACTCAC '+r1_in+' > '+self.tempPath+'/'+str(filePairId)+'.r1.wgaTrimmed2.fq  2> '+self.logPath+'/malbacWgaTrimming.'+str(filePairId)+'.r1.log.txt &\n'
+		output += 'cutadapt -n 10 -g GTGAGTGATGGTTGAGGTAGTGTGGAG -a CTCCACACTACCTCAACCATCACTCAC '+r2_in+' > '+self.tempPath+'/'+str(filePairId)+'.r2.wgaTrimmed2.fq  2> '+self.logPath+'/malbacWgaTrimming.'+str(filePairId)+'.r2.log.txt &\n'
+		output += 'wait\n'
+		output += '\n'
+		r1_in = self.tempPath+'/'+str(filePairId)+'.r1.wgaTrimmed2.fq'
+		r2_in = self.tempPath+'/'+str(filePairId)+'.r2.wgaTrimmed2.fq'
+		if not AnalysisPipe.settings.skiprubicon:output += 'rm -v '+self.tempPath+'/'+str(filePairId)+'.r1.wgaTrimmed.fq '+self.tempPath+'/'+str(filePairId)+'.r2.wgaTrimmed.fq\n'
 
-	    output += '\n'
-	    output += 'cutadapt -n 10 -g AGTGGGATTCCTGCTGTCAGT '+self.tempPath+'/'+str(filePairId)+'.r1.wgaTrimmed2.fq > '+self.tempPath+'/'+str(filePairId)+'.r1.wgaTrimmed3.fq  2> '+self.logPath+'/ampli1WgaTrimming.'+str(filePairId)+'.r1.log.txt &\n'
-	    output += 'cutadapt -n 10 -g AGTGGGATTCCTGCTGTCAGT '+self.tempPath+'/'+str(filePairId)+'.r2.wgaTrimmed2.fq > '+self.tempPath+'/'+str(filePairId)+'.r2.wgaTrimmed3.fq  2> '+self.logPath+'/ampli1WgaTrimming.'+str(filePairId)+'.r2.log.txt &\n'
-	    output += 'wait\n'
-	    output += '\n'
-	    output += 'rm -v '+self.tempPath+'/'+str(filePairId)+'.r1.wgaTrimmed2.fq '+self.tempPath+'/'+str(filePairId)+'.r2.wgaTrimmed2.fq\n'
+	    if not AnalysisPipe.settings.skipampli1:
+		output += '\n'
+		output += 'cutadapt -n 10 -g AGTGGGATTCCTGCTGTCAGT '+r1_in+' > '+self.tempPath+'/'+str(filePairId)+'.r1.wgaTrimmed3.fq  2> '+self.logPath+'/ampli1WgaTrimming.'+str(filePairId)+'.r1.log.txt &\n'
+		output += 'cutadapt -n 10 -g AGTGGGATTCCTGCTGTCAGT '+r2_in+' > '+self.tempPath+'/'+str(filePairId)+'.r2.wgaTrimmed3.fq  2> '+self.logPath+'/ampli1WgaTrimming.'+str(filePairId)+'.r2.log.txt &\n'
+		r1_in = self.tempPath+'/'+str(filePairId)+'.r1.wgaTrimmed3.fq'
+		r2_in = self.tempPath+'/'+str(filePairId)+'.r2.wgaTrimmed3.fq'
+		output += 'wait\n'
+		output += '\n'
+		if not AnalysisPipe.settings.skiprubicon and AnalysisPipe.settings.skipmalbac:
+		    output += 'rm -v '+self.tempPath+'/'+str(filePairId)+'.r1.wgaTrimmed.fq '+self.tempPath+'/'+str(filePairId)+'.r2.wgaTrimmed.fq\n'
+		if not AnalysisPipe.settings.skipmalbac:
+		    output += 'rm -v '+self.tempPath+'/'+str(filePairId)+'.r1.wgaTrimmed2.fq '+self.tempPath+'/'+str(filePairId)+'.r2.wgaTrimmed2.fq\n'
 	    
 	    #
 	    # illumina  adapter trimming
 	    #
 	    adaptersToTrim = '-a CTGTCTCTTATACACATCTGACGCTGCCGACGA -a CTGTCTCTTATACACATCTCCGAGCCCACGAGAC -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC -a AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT'
-	    output += 'cutadapt -n 3 '+adaptersToTrim+' '+self.tempPath+'/'+str(filePairId)+'.r1.wgaTrimmed3.fq > '+self.tempPath+'/'+str(filePairId)+'.r1.wgaAndilluminaTrimmed.fq 2> '+self.logPath+'/illuminaAndNexteraTrimming.'+str(filePairId)+'.r1.log.txt &\n'
-	    output += 'cutadapt -n 3 '+adaptersToTrim+' '+self.tempPath+'/'+str(filePairId)+'.r2.wgaTrimmed3.fq > '+self.tempPath+'/'+str(filePairId)+'.r2.wgaAndilluminaTrimmed.fq 2> '+self.logPath+'/illuminaAndNexteraTrimming.'+str(filePairId)+'.r2.log.txt &\n'
+	    output += 'cutadapt -n 3 '+adaptersToTrim+' '+r1_in+' > '+self.tempPath+'/'+str(filePairId)+'.r1.wgaAndilluminaTrimmed.fq 2> '+self.logPath+'/illuminaAndNexteraTrimming.'+str(filePairId)+'.r1.log.txt &\n'
+	    output += 'cutadapt -n 3 '+adaptersToTrim+' '+r2_in+' > '+self.tempPath+'/'+str(filePairId)+'.r2.wgaAndilluminaTrimmed.fq 2> '+self.logPath+'/illuminaAndNexteraTrimming.'+str(filePairId)+'.r2.log.txt &\n'
 	    output += 'wait\n'
 
 	    #
@@ -4669,7 +4684,10 @@ class Settings(object,):
 	    'referenceSampleGQcutoff':30,
 	    'sampleADOestDPcutoff':20,
 	    'sampleADOestGQcutoff':30,
-	    'RDoverchromYscaleMax':0
+	    'RDoverchromYscaleMax':0,
+	    'skiprubicon':0,
+	    'skipmalbac':0,
+	    'skipampli1':0
 	}
 	self.explenations = {
 	    'debug':'Flag for running the scripts in multiprocessing or as single process run [True/False] (default=False), Not functional',
@@ -4684,7 +4702,11 @@ class Settings(object,):
 	    'referenceSampleGQcutoff':'genotype quality cutoff for variation filtering during identification of informative variants to use when estimating ADO (defaul=30)',
 	    'sampleADOestDPcutoff':'read depth cutoff for variation in each sample filtering during ADO estimation (defaul=20)',
 	    'sampleADOestGQcutoff':'genotype quality cutoff for variation in each sample filtering during ADO estimation (defaul=30)',
-	    'RDoverchromYscaleMax':'the max value for the y scale of the RD over chrom graphs, 0 means automatic for each sample and chrom'
+	    'RDoverchromYscaleMax':'the max value for the y scale of the RD over chrom graphs, 0 means automatic for each sample and chrom',
+	    'skiprubicon':'flag for skipping rubicon wga adapter trimming (default 0/False)',
+	    'skipmalbac':'flag for skipping malbac wga adapter trimming (default 0/False)',
+	    'skipampli1':'flag for skipping ampliOne wga adapter trimming (default 0/False)'
+
 	    }
 	self.isDefault = {}
 	self.setTime = {}
@@ -4702,6 +4724,9 @@ class Settings(object,):
 	self.sampleADOestDPcutoff = None
 	self.sampleADOestGQcutoff = None
 	self.RDoverchromYscaleMax = None
+	self.skiprubicon = None
+	self.skipmalbac = None
+	self.skipampli1 = None
 
 	self.setDefaults()
 
