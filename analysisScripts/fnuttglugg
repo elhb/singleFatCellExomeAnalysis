@@ -1362,6 +1362,8 @@ class AnalysisPipe(object):
 		    AnalysisPipe.logfile.write('#WARNING#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'#'+str(AnalysisPipe.masterPid)+'# No fastq files found for sample: '+sample.name+' continuing with next sample.\n')
 		    continue
 
+		jobid = None
+
 		dependency = []
 		for filePairId,readCount,fastq1,fastq2,sampleId in sample.getFastqs():
 
@@ -1376,7 +1378,6 @@ class AnalysisPipe(object):
 			dependency.append(jobid)
 			AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'#'+str(AnalysisPipe.masterPid)+'# Submitted mapping of fastq '+str(filePairId)+' for '+sample.name+' with job id '+str(jobid)+' \n')
 
-		jobid = None
 		
 		if not submissionArray or submissionArray[2]:
 		    fileName = sample.scriptPath+'/mergeMapped.'+sample.name+'.sh'
@@ -2545,7 +2546,7 @@ class AnalysisPipe(object):
 	lastChomosomeRead = None
 	with open(infilename) as infile:
 	    for line in infile:
-		#if sum([len(self.variations[chrom]) for chrom in self.variations]) >= 1e4:
+		#if sum([len(self.variations[chrom]) for chrom in self.variations]) >= 1e5:
 		#    AnalysisPipe.logfile.write('#WARNING#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# Warning running on a subset of variants debbugging purpose.\n')
 		#    break
 
@@ -3132,7 +3133,7 @@ class AnalysisPipe(object):
 	totalVariationCount = 0
 	informativeVariationCount = 0
 	sampleNameWarning = False
-	print '\t'.join([sample.name for sample in refSamplesFirst])
+	print 'chrom\tpos\t'+'\t'.join([sample.name for sample in refSamplesFirst])
 
 	AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# Parsing variation per chromosome.\n')
 	for chrom in sorted_nicely(self.variations.keys()):#,variations in sorted(self.variations.iteritems(), key=operator.itemgetter(0)):
@@ -3145,7 +3146,7 @@ class AnalysisPipe(object):
 			AnalysisPipe.logfile.write(msg)
 			sys.stderr.write(msg)
 			refSamplesFirst = [sample for sample in refSamplesFirst if sample.name in variation.perSampleInfo.keys()]
-			print '\t'.join([sample.name for sample in refSamplesFirst])
+			print 'chrom\tpos\t'+'\t'.join([sample.name for sample in refSamplesFirst])
 
 		totalVariationCount += 1
 
@@ -3157,9 +3158,11 @@ class AnalysisPipe(object):
 		allHaveData = bool(not allTheSame['./.'])
 		allTheSame = bool( len(allTheSame.keys()) <= 2)
 
-		if NotIndbSNP and not allTheSame and allHaveData:
+		if NotIndbSNP and not allTheSame:# and allHaveData:
 		    test=''
 		    pfSamples = 0
+		    bases = [variation.refBase]+list(variation.altBases)
+		    outputline = variation.chrom+'\t'+variation.pos+'\t'
 		    for sample in refSamplesFirst:
 			sampleDP = None
 			sampleQual = None
@@ -3170,12 +3173,20 @@ class AnalysisPipe(object):
 
 			if sampleDP and sampleQual:
 			    pfSamples+=1
+			    try:
+				outputline += '/'.join([bases[int(tmp)] for tmp in variation.perSampleInfo[sample.name]['GT'].split('/')])+'\t'
+			    except IndexError:
+				outputline += variation.perSampleInfo[sample.name]['GT']+'\t'
+			    except ValueError:
+				outputline += variation.perSampleInfo[sample.name]['GT']+'\t'
 			else:
+			    outputline += 'NoPass'+'\t'
 			    test+=sample.name+'='+'\033[90m'+'LowDPorGQ'+'\033[0m'+'\t'
-		    
-		    if pfSamples == len(refSamplesFirst):
+
+		    if pfSamples >= 2:#== len(refSamplesFirst):
 			informativeVariationCount += 1
-			print '\t'.join([variation.perSampleInfo[sample.name]['GT'] for sample in refSamplesFirst])
+#			for sample in refSamplesFirst:
+			print outputline
 
 	sys.stdout.write('Found '+thousandString(str(informativeVariationCount))+' informative variant out of '+thousandString(str(totalVariationCount))+' parsed variants.\n')
 	AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# All done.\n')
@@ -3212,6 +3223,7 @@ class VcfEntry(object):
 	import time
 	import sys
 
+	self.isIndel = None
 	self.vcfLine = line
 	line = self.vcfLine.rstrip().split('\t')
 	self.perSampleInfo = {sampleName:{} for sampleName in sampleNames}
@@ -3225,7 +3237,7 @@ class VcfEntry(object):
 		    AnalysisPipe.nonDbSNPVarCount+=1;
 		    self .id = 'novel#'+str(AnalysisPipe.nonDbSNPVarCount)
 	    elif i == 3: self.refBase = line[i]
-	    elif i == 4: self.altBases = line[i].split('/')
+	    elif i == 4: self.altBases = line[i].split(',')
 	    elif i == 5: self.varQual = line[i]
 	    elif i == 6: self.passFilter = line[i]
 	    elif i == 7: self.info = line[i]
@@ -3254,12 +3266,13 @@ class VcfEntry(object):
 			AnalysisPipe.logfile.write(msg)
 			sys.stderr.write(msg)
 
-	if len(self.refBase) != len(self.altBases):
-	    self.type = 'INDEL'
-	    self.isIndel = True
-	else:
-	    self.type = 'SNV'
-	    self.isIndel = False
+	for altBase in list(self.altBases):
+	    if len(self.refBase) != len(altBase):
+		self.type = 'INDEL'
+		self.isIndel = True
+	    elif not self.isIndel:
+		self.type = 'SNV'
+		self.isIndel = False
 
 class Database(object):
 
