@@ -2354,6 +2354,7 @@ class AnalysisPipe(object):
 	    output += '#SBATCH --mail-user='+sys.argv[5]+'\n'
 	except IndexError: pass
         output += 'echo "$(date) Running on: $(hostname)"\n'
+	output += 'module load bioinfo-tools python/2.7 pysam  FastQC cutadapt/1.8.0 bowtie2 samtools picard/1.114 BEDTools/2.16.2  GATK/3.1.1'+'\n'
         output += 'workon py2.7\n'
         output += AnalysisPipe.programPath+' '+AnalysisPipe.path+' makeGraphics\n'
 	output += AnalysisPipe.programPath+' '+AnalysisPipe.path+' report\n'
@@ -2546,7 +2547,7 @@ class AnalysisPipe(object):
 	lastChomosomeRead = None
 	with open(infilename) as infile:
 	    for line in infile:
-		#if sum([len(self.variations[chrom]) for chrom in self.variations]) >= 1e5:
+		#if sum([len(self.variations[chrom]) for chrom in self.variations]) >= 1e4:
 		#    AnalysisPipe.logfile.write('#WARNING#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# Warning running on a subset of variants debbugging purpose.\n')
 		#    break
 
@@ -3098,12 +3099,144 @@ class AnalysisPipe(object):
 
     def variationCheck(self):
 	self.readVcfToMem()
+	self.pairwiseVariantConcoordance()
+	return
 	self.parseVcfToIdentify()
 	self.parseVcfForADOrate()
 	self.parseVcfForBetwenSampleVariation()
 	for sample in AnalysisPipe.database.getSamples():
 	    print sample.name
 	    sample.getSNPchunkyness()
+
+    def pairwiseVariantConcoordance(self, ):
+	import itertools
+	import sys
+	import operator
+	import time
+	samplesbyName = {}
+	samplesNamesNoPD = []
+	samplesbyId = {}
+	refSamples = []
+	refSamplesFirst = []
+	samples = []
+	for sample in AnalysisPipe.database.getSamples():
+	    if sample.name[-1]== "1":
+		samplesbyId[sample.id]=sample
+		samplesbyName[sample.name]=sample
+		samples.append(sample)
+		if sample.refType:
+		    refSamplesFirst.append(sample)
+		    refSamples.append(sample)
+		if sample.refType == 'Patient': patId = sample.name
+		if sample.refType == 'Donor': donId = sample.name
+		if not sample.refType: samplesNamesNoPD.append(sample.name)
+	for sampleName in sorted_nicely(samplesNamesNoPD):
+	    sample = samplesbyName[sampleName]
+	    if sample not in refSamplesFirst: refSamplesFirst.append(sample)
+	combos = list(itertools.combinations(samples,2))
+	comboResults = {combo:{'commonVars':0,'agree':0} for combo in combos}
+	print "#TEST#"
+	subsets = {}
+	for i in range(len(samples)):
+	    for combo in itertools.combinations(samples,i+1):
+		#print [sample.name for sample in combo]
+		subsets[combo] = {'totalCount':0}
+	print len(subsets)
+	print "#TEST#"
+	
+	mainReferenceSample = 'no sample name here'
+	if len(refSamples) == 1:
+	    mainReferenceSample = refSamples[0].name
+	elif len(refSamples) > 1:
+		mainReferenceSample = raw_input('cannot find which sample to use as reference in ADO rate estimation etc\nfollowing reference samples are around:\n'+'\n'.join([sample.name for sample in refSamples])+'\nplease give a Sample name to use as reference: ')
+	elif len(refSamples) == 0:
+		mainReferenceSample = raw_input('cannot find any sample to use as reference in ADO rate estimation etc\nfollowing samples are around:\n'+'\n'.join(sorted_nicely(samplesbyName.keys()))+'\nplease give a Sample name to use as reference: ')
+
+	try: mainReferenceSample = samplesbyName[mainReferenceSample]
+	except KeyError:
+	    msg = '#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# sample name ' +mainReferenceSample+ ' is not valid exiting.\n'
+	    sys.stderr.write(msg)
+	    AnalysisPipe.logfile.write(msg)
+	    sys.exit()
+	AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# using sample ' +mainReferenceSample.name+ ' as reference sample for variant concoordance check.\n')
+	#referenceSamples = [mainReferenceSample]
+	#if patId and donId:
+	#    referenceSamples.append(samplesbyName[donId])
+	
+	totalVariationCount = 0
+	informativeVariationCount = 0
+	pairwiseBase = 0
+	#sampleNameWarning = False
+	#print 'chrom\tpos\t'+'\t'.join([sample.name for sample in refSamplesFirst])
+
+	AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# Parsing variation per chromosome.\n')
+	for chrom in sorted_nicely(self.variations.keys()):#,variations in sorted(self.variations.iteritems(), key=operator.itemgetter(0)):
+	    AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# now at '+str(chrom)+'.\n')
+	    for variation in self.variations[ chrom ]:
+		#if set(variation.perSampleInfo.keys()) != set(refSamplesFirst):
+		#    if not sampleNameWarning:
+		#	sampleNameWarning = True
+		#	msg = '#WARNING#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'#'+str(AnalysisPipe.masterPid)+'# The sample names in the vcf does not match the ones in the database, using vcf sample names...\n'
+		#	AnalysisPipe.logfile.write(msg)
+		#	sys.stderr.write(msg)
+		#	refSamplesFirst = [sample for sample in refSamplesFirst if sample.name in variation.perSampleInfo.keys()]
+		#	#print 'chrom\tpos\t'+'\t'.join([sample.name for sample in refSamplesFirst])
+
+		totalVariationCount += 1
+
+		# variation filters
+		NotIndbSNP = bool( variation.id[0:2] != 'rs' )
+
+		bases = [variation.refBase]+list(variation.altBases)
+		outputline = variation.chrom+'\t'+variation.pos+'\t'
+		pfSamples = []
+		refDP   = bool(variation.perSampleInfo[mainReferenceSample.name]['DP'] >= 10)#int(AnalysisPipe.settings.sampleIdentificationDPcutoff))
+		refQual = bool(variation.perSampleInfo[mainReferenceSample.name]['GQ'] >= 30)#int(AnalysisPipe.settings.sampleIdentificationGQcutoff))
+		if refDP and refQual:
+		    for sample in refSamplesFirst:
+			sampleDP = None
+			sampleQual = None
+    
+			# per sample filters
+			sampleDP   = bool(variation.perSampleInfo[sample.name]['DP'] >= 10)#int(AnalysisPipe.settings.sampleIdentificationDPcutoff))
+			sampleQual = bool(variation.perSampleInfo[sample.name]['GQ'] >= 30)#int(AnalysisPipe.settings.sampleIdentificationGQcutoff))
+			sampleSameGTasRef = bool(variation.perSampleInfo[sample.name]['GT']==variation.perSampleInfo[mainReferenceSample.name]['GT'])
+			if sampleDP and sampleQual and sampleSameGTasRef: pfSamples.append(sample)
+		    if pfSamples:
+			subsets[tuple(pfSamples)]['totalCount']+=1
+			informativeVariationCount+=1
+		
+		pfCombos = 0
+		for combo in combos:
+		    sample1, sample2 = combo
+		    
+		    samplesDP = None
+		    samplesQual = None
+
+		    # per sample filters
+		    samplesDP   = bool(variation.perSampleInfo[sample1.name]['DP'] >= 10) and bool(variation.perSampleInfo[sample2.name]['DP'] >= 10)#int(AnalysisPipe.settings.sampleIdentificationDPcutoff))
+		    samplesQual = bool(variation.perSampleInfo[sample1.name]['GQ'] >= 30) and bool(variation.perSampleInfo[sample2.name]['GQ'] >= 30)#int(AnalysisPipe.settings.sampleIdentificationGQcutoff))
+
+		    if samplesDP and samplesQual:
+			pfCombos+=1
+			comboResults[combo]['commonVars']+=1
+
+			if variation.perSampleInfo[sample1.name]['GT'] == variation.perSampleInfo[sample2.name]['GT']:
+			    comboResults[combo]['agree']+=1
+		if pfCombos: pairwiseBase +=1
+
+	print 'varCount\tSubset'
+	for combo in subsets:
+	    if subsets[combo]['totalCount']:print str(subsets[combo]['totalCount'])+'\t'+','.join([sample.name for sample in combo])
+	print 'total variants with PF calls',informativeVariationCount
+	print 'total variants parsed',totalVariationCount
+	print 'sample1\tsample2\tcommonPFVars\tagree\t%agree'
+	for combo in combos:
+	    sample1, sample2 = combo
+	    print sample1.name+'\t'+sample2.name+'\t'+str(comboResults[combo]['commonVars'])+'\t'+str(comboResults[combo]['agree'])+'\t'+str(percentage(comboResults[combo]['agree'],comboResults[combo]['commonVars']))+'%'
+	print 'based on '+str(pairwiseBase)+' variants'
+
+	AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# pairwise check done.\n')
 
     def parseVcfForBetwenSampleVariation(self):
 
@@ -3317,6 +3450,9 @@ class Database(object):
 	self.c.execute('''CREATE TABLE samples (sampleId,sampleName,refType,PRIMARY KEY (sampleId))''')
 	
 	self.commitAndClose()
+	
+	import os
+	os.chmod(self.path, 0664)
 
     def addToRunsTable(self, startTime, command, commandLine, finishedSuccessfully, masterPid):
 	
