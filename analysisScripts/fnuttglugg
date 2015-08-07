@@ -1810,7 +1810,7 @@ class AnalysisPipe(object):
 	    reportFile.write('<tr>')
 	    reportFile.write('<td>'+str(sample.id)+'</td>')
 	    reportFile.write('<td>'+sample.name+'</td>')
-	    if sample.stats['refsample'] != 'NA':reportFile.write('<td>'+str(sample.stats['refsample'])+'</td>')
+	    if 'refsample' in sample.stats and sample.stats['refsample'] != 'NA':reportFile.write('<td>'+str(sample.stats['refsample'])+'</td>')
 	    else: reportFile.write('<td><font color="red">NA%</font></td>')
 	    if sample.stats['totalAdoVar'] != 'NA':reportFile.write('<td>'+str(sample.stats['totalAdoVar'])+'</td>')
 	    else: reportFile.write('<td><font color="red">NA%</font></td>')
@@ -3769,7 +3769,7 @@ class Sample(object):
 	    output += 'echo "-----"'+'\n'
 	    
 	    output += 'module load bioinfo-tools pysam/0.8.3-py27 FastQC cutadapt/1.8.0 bowtie2 samtools picard/1.114 BEDTools/2.16.2  GATK/3.1.1'+'\n'
-	    output += 'module load python/2.7'+'\n'
+	    #output += 'module load python/2.7'+'\n'
 
 	    #output += 'workon py2.7\n\n'
 	    
