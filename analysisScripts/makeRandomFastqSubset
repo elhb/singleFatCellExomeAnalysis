@@ -1,0 +1,141 @@
+#! /bin/env python
+
+import sys
+
+def main():
+
+    import os
+    import sys
+    import random
+    import gzip
+    MASTER = os.getpid()
+
+    try:    
+        r1 = open(sys.argv[1])
+        r2 = open(sys.argv[2])
+        reads2output = int(sys.argv[3])
+        r1out = open(sys.argv[4],'w')
+        r2out = open(sys.argv[5],'w')
+    except IndexError:
+        sys.stderr.write('USAGE: makeRandomFastqSubset <r1> <r2> <subsetSize> <r1out> <r2out>\n')
+        sys.exit()
+    
+    if r1.name.split('.')[-1] in ['gz','gzip']: r1 = gzip.open(r1.name)
+    if r2.name.split('.')[-1] in ['gz','gzip']: r2 = gzip.open(r2.name)
+    if r1out.name.split('.')[-1] in ['gz','gzip']: r1out = gzip.open(r1out.name,'w')
+    if r2out.name.split('.')[-1] in ['gz','gzip']: r2out = gzip.open(r2out.name,'w')
+    
+    sys.stderr.write('#LOGMSG: counting readpairs ...\n')
+    totalReads = bufcount(r1.name)/4.0
+    if reads2output > totalReads: sys.stderr.write('ERROR: reads to output cannot be larger than total number of reads in file.\nThere are '+str(totalReads)+' readpairs in the file:'+r1.name+'\n');sys.exit()
+    sys.stderr.write('#LOGMSG: There are '+str(totalReads)+' readpairs in the file:'+r1.name+'\n')
+    
+    sys.stderr.write('#LOGMSG: Choosing a random subset of '+str(reads2output)+' readpairs\n')
+    readNumbers2out = {}
+    while len(readNumbers2out) < reads2output: readNumbers2out[random.randint(1,totalReads)] = True
+    
+    sys.stderr.write('#LOGMSG: Parsing infiles ...\n')
+    go = True
+    readFromFile = 0
+    written = 0
+    
+    progress = Progress(reads2output)
+    with progress:
+        while go:
+    
+            r1l1 = r1.readline()
+            r1l2 = r1.readline()
+            r1l3 = r1.readline()
+            r1l4 = r1.readline()
+    
+            r2l1 = r2.readline()
+            r2l2 = r2.readline()
+            r2l3 = r2.readline()
+            r2l4 = r2.readline()
+    
+            if r1l1 == "":
+                go = False;
+                assert readFromFile == totalReads
+                break
+
+            if reads2output == written: go = False;break; 
+
+            readFromFile += 1
+
+            if readFromFile in readNumbers2out:
+                r1out.write(r1l1+r1l2+r1l3+r1l4)
+                r2out.write(r2l1+r2l2+r2l3+r2l4)
+                written += 1
+                progress.update()
+
+    r1out.close()
+    r2out.close()
+    r1.close()
+    r2.close()
+
+    sys.stderr.write('#LOGMSG: A random subset of '+str(reads2output)+' readpairs were written to '+r1out.name+' and corresponding read2 file, now exiting.\n')
+
+    return
+
+def bufcount(filename):
+	""" returns the number of lines in a file
+	"""
+	import gzip
+	if filename.split('.')[-1] in ['gz','gzip']: f = gzip.open(filename)
+	else: f = open(filename)
+	lines = 0
+	buf_size = 1024 * 1024
+	read_f = f.read # loop optimization
+	
+	buf = read_f(buf_size)
+	while buf:
+		lines += buf.count('\n')
+		buf = read_f(buf_size)
+		f.close
+	return lines
+
+class Progress():
+
+	def __init__(self,total, verb='full', logfile=sys.stderr, unit='reads' ,mem=False, printint=0):
+		import time
+		self.total = total
+		self.current = 0
+		self.type = verb
+		self.logfile = logfile
+		self.ltime = time.time()
+		self.lcurrent = self.current
+		self.lpercentage = 0
+		if verb == 'full': self.printint = 5
+		elif verb == 'minimal':self.printint = 5
+		self.unit = unit
+		self.mem = mem
+		if printint: self.printint = printint
+
+	def __enter__(self):
+		if self.type == 'minimal': self.logfile.write('0%                 50%                 100%\n')
+		#                                              ....................................................................................
+
+	def update(self):
+		import time
+		self.current += 1
+		self.percentage = int(round(100*float(self.current)/self.total))
+		if self.percentage % self.printint == 0 and self.percentage != self.lpercentage:
+			self.stf=int(round((self.total-self.current)/((self.current-self.lcurrent)/(time.time()-self.ltime))))
+			if self.type == 'full': self.logfile.write(
+				'#Progress => '+str(self.percentage)+'%, '+
+				str( round((self.current-self.lcurrent)/(time.time()-self.ltime),2) )+' '+self.unit+'/second, '+
+				time.strftime("%A, %d %b %Y %H:%M:%S",time.localtime())+
+				', left: '+str(self.stf/60/60)+'h '+str(self.stf/60%60)+'min '+str(self.stf%60)+'s')
+			if self.mem:
+				import resource
+				self.logfile.write(', using '+str((resource.getrusage(resource.RUSAGE_SELF).ru_maxrss+resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss)/1024)+' ('+str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss/1024)+') MB.\n')
+			else:	self.logfile.write('\n')
+			if self.type == 'minimal': self.logfile.write('..')
+			self.ltime = time.time()
+			self.lcurrent = self.current
+			self.lpercentage = self.percentage
+
+	def __exit__(self, *args):
+		self.logfile.write('\n')
+
+if __name__ == "__main__": main()
