@@ -32,8 +32,10 @@ def main():
     
     if reads2output >= totalReads/2:
 	inverse = True
-	readNumbers2out = totalReads - reads2output
-    
+	reads2output = totalReads - reads2output
+    else:
+	inverse = False
+
     sys.stderr.write('#LOGMSG: Choosing a random subset of '+str(reads2output)+' readpairs')
     if inverse: sys.stderr.write(' to not print to file.\n')
     else:       sys.stderr.write(' to print to file.\n')
