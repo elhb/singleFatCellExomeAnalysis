@@ -30,7 +30,13 @@ def main():
     if reads2output > totalReads: sys.stderr.write('ERROR: reads to output cannot be larger than total number of reads in file.\nThere are '+str(totalReads)+' readpairs in the file:'+r1.name+'\n');sys.exit()
     sys.stderr.write('#LOGMSG: There are '+str(totalReads)+' readpairs in the file:'+r1.name+'\n')
     
-    sys.stderr.write('#LOGMSG: Choosing a random subset of '+str(reads2output)+' readpairs\n')
+    if reads2output >= totalReads/2:
+	inverse = True
+	readNumbers2out = totalReads - reads2output
+    
+    sys.stderr.write('#LOGMSG: Choosing a random subset of '+str(reads2output)+' readpairs')
+    if inverse: sys.stderr.write(' to not print to file.\n')
+    else:       sys.stderr.write(' to print to file.\n')
     readNumbers2out = {}
     while len(readNumbers2out) < reads2output: readNumbers2out[random.randint(1,totalReads)] = True
     
@@ -62,11 +68,18 @@ def main():
 
             readFromFile += 1
 
-            if readFromFile in readNumbers2out:
-                r1out.write(r1l1+r1l2+r1l3+r1l4)
-                r2out.write(r2l1+r2l2+r2l3+r2l4)
-                written += 1
-                progress.update()
+            if inverse:
+		if readFromFile not in readNumbers2out:
+		    r1out.write(r1l1+r1l2+r1l3+r1l4)
+		    r2out.write(r2l1+r2l2+r2l3+r2l4)
+		    written += 1
+		    progress.update()
+	    else:
+		if readFromFile in readNumbers2out:
+		    r1out.write(r1l1+r1l2+r1l3+r1l4)
+		    r2out.write(r2l1+r2l2+r2l3+r2l4)
+		    written += 1
+		    progress.update()
 
     r1out.close()
     r2out.close()
