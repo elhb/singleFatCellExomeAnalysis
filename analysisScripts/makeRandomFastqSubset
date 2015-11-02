@@ -96,17 +96,24 @@ def bufcount(filename):
 	""" returns the number of lines in a file
 	"""
 	import gzip
-	if filename.split('.')[-1] in ['gz','gzip']: f = gzip.open(filename)
+	import os
+	import zlib
+	fileSize = os.path.getsize(filename)
+	p = Progress(fileSize,unit='bytes')
+	if filename.split('.')[-1] in ['gz','gzip']:
+	    f = gzip.open(filename)
+	    f.tell = f.fileobj.tell
 	else: f = open(filename)
 	lines = 0
-	buf_size = 1024 * 1024
+	buf_size = 1024 * 1024*10
 	read_f = f.read # loop optimization
-	
 	buf = read_f(buf_size)
 	while buf:
 		lines += buf.count('\n')
 		buf = read_f(buf_size)
+		p.update(setCurrent=f.tell())
 		f.close
+	print fileSize, f.tell()
 	return lines
 
 class Progress():
@@ -130,9 +137,10 @@ class Progress():
 		if self.type == 'minimal': self.logfile.write('0%                 50%                 100%\n')
 		#                                              ....................................................................................
 
-	def update(self):
+	def update(self,setCurrent=False):
 		import time
-		self.current += 1
+		if setCurrent:self.current = setCurrent
+		else: self.current += 1
 		self.percentage = int(round(100*float(self.current)/self.total))
 		if self.percentage % self.printint == 0 and self.percentage != self.lpercentage:
 			self.stf=int(round((self.total-self.current)/((self.current-self.lcurrent)/(time.time()-self.ltime))))
