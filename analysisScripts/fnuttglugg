@@ -18,6 +18,7 @@ fnuttglugg <analysisPath> copyReport <destination>
 fnuttglugg <analysisPath> variationCheck
 fnuttglugg <analysisPath> changeSetting variableName=value [listsettings]
 """
+import sys
 
 def main():
     
@@ -1152,6 +1153,47 @@ def sorted_nicely( l ): # funtion "stolen from the internet"
     convert = lambda text: int(text) if text.isdigit() else text 
     alphanum_key = lambda key: [ convert(c) for c in re.split('([0-9]+)', key) ] 
     return sorted(l, key = alphanum_key)
+
+def uipac(bases, back='uipac'): #U	Uracil NOT SUPPORTED!!!
+	if back == 'uipac':
+		if 'N' in bases: return 'N'
+		uniqbases={}
+		for i in bases:
+			uniqbases[i]=True
+		bases = uniqbases.keys()
+		if 'U' in bases: sys.stderr.write('WARNING in function "uipac(bases)": Uracil NOT SUPPORTED!')
+		if len(bases)==1:
+			if 'A' in bases: return 'A' #A	Adenine
+			if 'C' in bases: return 'C' #C	Cytosine
+			if 'G' in bases: return 'G' #G	Guanine
+			if 'T' in bases: return 'T' #T	Thymine
+			#U	Uracil NOT SUPPORTED!!!
+		if len(bases)==2:
+			if 'A' in bases and 'G' in bases: return 'R' #R	Purine (A or G)
+			if 'C' in bases and 'T' in bases: return 'Y' #Y	Pyrimidine (C, T, or U)
+			if 'A' in bases and 'C' in bases: return 'M' #M	C or A
+			if 'T' in bases and 'G' in bases: return 'K' #K	T, U, or G
+			if 'A' in bases and 'T' in bases: return 'W' #W	T, U, or A
+			if 'C' in bases and 'G' in bases: return 'S' #S	C or G
+		if len(bases)==3:
+			if 'C' in bases and 'T' in bases and 'G' in bases: return 'B' #B	C, T, U, or G (not A)
+			if 'A' in bases and 'T' in bases and 'G' in bases: return 'D' #D	A, T, U, or G (not C)
+			if 'A' in bases and 'T' in bases and 'C' in bases: return 'H' #H	A, T, U, or C (not G)
+			if 'A' in bases and 'C' in bases and 'G' in bases: return 'V' #V	A, C, or G (not T, not U)
+		if len(bases)==4:
+			return 'N' #N	Any base (A, C, G, T, or U)
+	elif back == 'bases':
+		if   bases == 'R': return ['A','G'] 
+		elif bases == 'Y': return ['C','T']
+		elif bases == 'M': return ['A','C']
+		elif bases == 'K': return ['G','T']
+		elif bases == 'W': return ['A','T']
+		elif bases == 'S': return ['C','G']
+		elif bases == 'B': return ['C','T','G']
+		elif bases == 'D': return ['A','T','G']
+		elif bases == 'V': return ['A','C','G']
+		elif bases == 'H': return ['A','C','T']
+		elif bases == 'N': return ['A','G','T','C']
 
 class AnalysisPipe(object):
 
@@ -2528,7 +2570,7 @@ class AnalysisPipe(object):
         with open(self.path+'/vqsrSnps.sh','w') as outfile: outfile.write(output)
 	return
 
-    def readVcfToMem(self,):
+    def readVcfToMem(self,q1,subsetSize,totExpVars):
 	
 	import os
 	import sys
@@ -2538,6 +2580,7 @@ class AnalysisPipe(object):
 	AnalysisPipe.nonDbSNPVarCount = 0
 
 	self.vcfLineCount = 0
+	toQcounter = 0
 	if os.path.exists(self.path+'/indels.recalibrated.vcf'): infilename = self.path+'/indels.recalibrated.vcf'
 	elif os.path.exists(self.path+'/recalibrated_snps_raw_indels.vcf'): infilename = self.path+'/recalibrated_snps_raw_indels.vcf'
 	else:
@@ -2545,13 +2588,24 @@ class AnalysisPipe(object):
 	    AnalysisPipe.logfile.write(msg)
 	    sys.stderr.write(msg)
 	    sys.exit()
-	AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'#'+str(AnalysisPipe.masterPid)+'# Loading vcf to memory.\n')
+	AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'#'+str(AnalysisPipe.masterPid)+'# Loading vcf to memory, my id is '+str(os.getpid())+'.\n')
 	lastChomosomeRead = None
+	
+	progress = Progress(subsetSize, verb='full', logfile=AnalysisPipe.logfile, unit='variants read from disk' ,mem=False)
+	if not subsetSize:
+	    totalLineNum = bufcount(infilename)
+	    AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# '+str(totalLineNum)+' lines found in vcf file.\n')
+	    progress = Progress(totalLineNum, verb='full', logfile=AnalysisPipe.logfile, unit='variants read from disk' ,mem=False, printint=1)
+	    totExpVars.set(totalLineNum)
+	else:
+	    totExpVars.set(subsetSize)
+
 	with open(infilename) as infile:
 	    for line in infile:
-		#if sum([len(self.variations[chrom]) for chrom in self.variations]) >= 1e4:
-		#    AnalysisPipe.logfile.write('#WARNING#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# Warning running on a subset of variants debbugging purpose.\n')
-		#    break
+		if not subsetSize: progress.update()
+		if subsetSize and (sum([len(self.variations[chrom]) for chrom in self.variations]) >= subsetSize or toQcounter >= subsetSize):
+		    AnalysisPipe.logfile.write('#WARNING#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# Warning running on a subset of variants debbugging purpose.\n')
+		    break
 
                 if line[0] == "#": #THIS LINE IS HEADER
                     if line[1] == 'C': #THIS LINE IS HEADER WITH SAMPLE INFO
@@ -2563,21 +2617,29 @@ class AnalysisPipe(object):
 
 		variation = VcfEntry(line,sampleNames)
 
-		if variation.passFilter == 'PASS' and not variation.isIndel:
-		    try:             self.variations[variation.chrom].append(variation)
-		    except KeyError: self.variations[variation.chrom] = [variation]
+		if variation.passFilter == 'PASS' and not variation.isIndel and variation.varQual >= 30:
+		    #try:             self.variations[variation.chrom].append(variation)
+		    #except KeyError: self.variations[variation.chrom] = [variation]
+		    if subsetSize: progress.update()
+		    toQcounter+=1
+		    while q1.qsize() > 30e3: time.sleep(1)
+		    q1.put(variation)
 		    if variation.chrom != lastChomosomeRead: AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'#'+str(AnalysisPipe.masterPid)+'# started loading variations from '+str(variation.chrom)+'.\n')
 		    lastChomosomeRead = variation.chrom
+	q1.put('END')
 	AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'#'+str(AnalysisPipe.masterPid)+'# vcf file loaded.\n')
 
-    def parseVcfToIdentify(self):
+    def parseVcfToIdentify(self,q3,q4,patId,donId,totExpVars):
 
 	import sys
 	import operator
 	import time
+	import os
+	
+	AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'#'+str(AnalysisPipe.masterPid)+'# parsing Vcf For identification, my id is '+str(os.getpid())+'.\n')
 
-	patId = None
-	donId = None
+	#patId = None
+	#donId = None
 	samplesbyName = {}
 	samplesNamesNoPD = []
 	samplesbyId = {}
@@ -2596,14 +2658,19 @@ class AnalysisPipe(object):
 	for sampleName in sorted_nicely(samplesNamesNoPD):
 	    sample = samplesbyName[sampleName]
 	    if sample not in refSamplesFirst: refSamplesFirst.append(sample)
-	if not patId: patId = raw_input('cannot find the Patient sample please give a Sample name to use as Patient: ')
-	if not donId: donId = raw_input('cannot find the Donor sample please give a Sample name to use as Donor: ')
+	#if not patId or donId: sys.stdout.write('List of sample names:'+'\n'.join([sample.name for sample in samples])+'\n')
+	#if not patId: patId = raw_input('cannot find the Patient sample please give a Sample name to use as Patient: ')
+	#if not donId: donId = raw_input('cannot find the Donor sample please give a Sample name to use as Donor: ')
 	coloredTableOut = open(self.path+'/SNPidentificationTable.colored.txt','w')
 
-	print 'pat='+patId, 'don='+donId
+	print 'pat='+str(patId), 'don='+str(donId)
 	
 	if not patId or not donId:
 	    AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# Patient and/or Donor id missing, skipping the identification of cell origin.\n')
+	    while True:
+		variation = q3.get()
+		q4.put(variation)
+		if variation == 'END': q4.put('END');break
 	    return
 
 	identifcationPercentages = {}
@@ -2619,10 +2686,16 @@ class AnalysisPipe(object):
 	for sample in refSamplesFirst: sample.onDiskVariantsSummary = open(sample.dataPath+'/identificationVariantsSummary.txt','w')
 	for sample in refSamplesFirst: sample.onDiskclassification = open(sample.dataPath+'/sampleClassification.txt','w')
 
-	AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# Parsing variation per chromosome.\n')
-	for chrom in sorted_nicely(self.variations.keys()):#,variations in sorted(self.variations.iteritems(), key=operator.itemgetter(0)):
-	    AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# now at '+str(chrom)+'.\n')
-	    for variation in self.variations[ chrom ]:
+	progress = Progress(totExpVars.get(), verb='full', logfile=AnalysisPipe.logfile, unit='variants Usedforidentification' ,mem=False, printint=1)
+	while True:
+		variation = q3.get()
+		q4.put(variation)
+		if variation == 'END': q4.put('END');break
+		chrom = variation.chrom
+	#AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# Parsing variation per chromosome.\n')
+	#for chrom in sorted_nicely(self.variations.keys()):#,variations in sorted(self.variations.iteritems(), key=operator.itemgetter(0)):
+	#    AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# now at '+str(chrom)+'.\n')
+	#    for variation in self.variations[ chrom ]:
 
 		totalVariationCount += 1
 
@@ -2688,6 +2761,8 @@ class AnalysisPipe(object):
 			heatmapLists['SNP_ID'].append(variation.id)
 			for sample in refSamplesFirst:
 			    heatmapLists[sample.name].append(tmpHeatmapLists[sample.name])
+		q3.task_done()
+		progress.update()
 	#coloredTableOut.write('\t\t\t')
 	#for sample in refSamplesFirst:
 	#    coloredTableOut.write(sampleName+'|'+
@@ -2952,14 +3027,14 @@ class AnalysisPipe(object):
 
 	plt.close()    
 
-    def parseVcfForADOrate(self):
+    def parseVcfForADOrate(self,q4,patId,donId,mainReferenceSample,referenceSamples,subsetSize,totExpVars):
 
 	import sys
 	import operator
 	import time
+	import os
+	AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'#'+str(AnalysisPipe.masterPid)+'# parsing Vcf For ADO rate, my id is '+str(os.getpid())+'.\n')
 
-	patId = None
-	donId = None
 	samplesbyName = {}
 	samplesNamesNoPD = []
 	samplesbyId = {}
@@ -2973,60 +3048,52 @@ class AnalysisPipe(object):
 	    if sample.refType:
 		refSamplesFirst.append(sample)
 		refSamples.append(sample)
-	    if sample.refType == 'Patient': patId = sample.name
-	    if sample.refType == 'Donor': donId = sample.name
 	    if not sample.refType: samplesNamesNoPD.append(sample.name)
 
 	for sampleName in sorted_nicely(samplesNamesNoPD):
 	    sample = samplesbyName[sampleName]
 	    if sample not in refSamplesFirst: refSamplesFirst.append(sample)
 
-	mainReferenceSample = 'no sample name here'
-	if len(refSamples) == 1:
-	    mainReferenceSample = refSamples[0].name
-	elif len(refSamples) > 1:
-	    if patId:
-		AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# using patient sample ' +patId+ ' as reference sample for ADO rate estimation etc.\n')
-		mainReferenceSample = patId
-	    else: mainReferenceSample = raw_input('cannot find which sample to use as reference in ADO rate estimation etc\nfollowing reference samples are around:\n'+'\n'.join([sample.name for sample in refSamples])+'\nplease give a Sample name to use as reference: ')
-	elif len(refSamples) == 0: mainReferenceSample = raw_input('cannot find any sample to use as reference in ADO rate estimation etc\nfollowing samples are around:\n'+'\n'.join(sorted_nicely(samplesbyName.keys()))+'\nplease give a Sample name to use as reference: ')
+	#self.variations = {}
+	#while True:
+	#	variation = q4.get()
+	#	if variation == 'END': break
+	#	chrom = variation.chrom
+	#	try:             self.variations[variation.chrom].append(variation)
+	#	except KeyError: self.variations[variation.chrom] = [variation]
 
-	try: mainReferenceSample = samplesbyName[mainReferenceSample]
-	except KeyError:
-	    msg = '#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# sample name ' +mainReferenceSample+ ' is not valid exiting.\n'
-	    sys.stderr.write(msg)
-	    AnalysisPipe.logfile.write(msg)
-	    sys.exit()
-
-	referenceSamples = [mainReferenceSample]
-	if patId and donId:
-	    referenceSamples.append(samplesbyName[donId])
-	for mainReferenceSample in referenceSamples:
+	for mainReferenceSample in [mainReferenceSample]:#referenceSamples:
 	    for sample in refSamplesFirst:
 		sample.onDiskVariantsList = open(sample.dataPath+'/adoVariantsList.ref='+mainReferenceSample.name+'.tsv','w')
 		sample.onDiskVariantsSummary = open(sample.dataPath+'/adoVariantsSummary.ref='+mainReferenceSample.name+'.txt','w')
 	    coloredTableOut = open(self.path+'/adoRate.colored.ref='+mainReferenceSample.name+'.txt','w')
 	    AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# using sample ' +mainReferenceSample.name+ ' as reference sample for ADO rate estimation etc.\n')
-    
-    
+
 	    identifcationPercentages = {}
 	    for sample in samples: identifcationPercentages[sample.name] = {'totalVariationCount':0,'correct':0,'dropout':0,'other':0}
-    
+
 	    totalVariationCount = 0
 	    informativeVariationCount = 0
-    
-	    AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# Parsing variation per chromosome.\n')
-	    for chrom in sorted_nicely(self.variations.keys()):#,variations in sorted(self.variations.iteritems(), key=operator.itemgetter(0)):
-		AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# now at '+str(chrom)+'.\n')
-		for variation in self.variations[ chrom ]:
-    
+
+	    tempnum = 0
+	    while not tempnum: tempnum = totExpVars.get(); time.sleep(1)
+	    progress = Progress(tempnum, verb='full', logfile=AnalysisPipe.logfile, unit='variants processed' ,mem=False, printint=1)
+	    while True:
+		    variation = q4.get()
+		    if variation == 'END': break
+		    chrom = variation.chrom
+#	    AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# Parsing variation per chromosome.\n')
+#	    for chrom in sorted_nicely(self.variations.keys()):#,variations in sorted(self.variations.iteritems(), key=operator.itemgetter(0)):
+#		AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# now at '+str(chrom)+'.\n')
+#		for variation in self.variations[ chrom ]:
+
 		    totalVariationCount += 1
-    
+
 		    # patient and donor filters
 		    refDP = bool(variation.perSampleInfo[mainReferenceSample.name]['DP'] >= int(AnalysisPipe.settings.referenceSampleDPcutoff))
 		    refQual = bool(variation.perSampleInfo[mainReferenceSample.name]['GQ'] >= int(AnalysisPipe.settings.referenceSampleGQcutoff))
 		    refHom = bool(variation.perSampleInfo[mainReferenceSample.name]['GT'].split('/').count(variation.perSampleInfo[mainReferenceSample.name]['GT'].split('/')[0])==2)
-    
+
 		    if refDP and not refHom and refQual:
 			informativeVariationCount += 1
 			identify = {variation.perSampleInfo[mainReferenceSample.name]['GT']:'\033[34m'+'correct'+'\033[0m',
@@ -3062,6 +3129,8 @@ class AnalysisPipe(object):
 
 			    else: test+=sample.name+'='+'\033[90m'+'LowDPorGQ'+'\033[0m'+'\t'
 			if pfSamples >= 3: coloredTableOut.write( str(variation.chrom)+'\t'+str(variation.pos)+'\t'+str(variation.id)+'\t'+variation.perSampleInfo[mainReferenceSample.name]['GT']+'\t'+test+'\n')
+		    q4.task_done()
+		    progress.update()
     
 	    coloredTableOut.write('\nSAMPLESUMS:')
 	    coloredTableOut.write('\n\t\t\t\t')
@@ -3100,81 +3169,176 @@ class AnalysisPipe(object):
 	AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# All done.\n')
 
     def variationCheck(self):
-	self.readVcfToMem()
-	self.pairwiseVariantConcoordance()
-	return
-	self.parseVcfToIdentify()
-	self.parseVcfForADOrate()
-	self.parseVcfForBetwenSampleVariation()
-	for sample in AnalysisPipe.database.getSamples():
-	    print sample.name
-	    sample.getSNPchunkyness()
+	
+	####### GETTING SAMPLE INFOS START
+	import sys
+	import operator
+	import time
 
-    def pairwiseVariantConcoordance(self, ):
+	patId = None
+	donId = None
+	samplesbyName = {}
+	samplesNamesNoPD = []
+	samplesbyId = {}
+	refSamplesFirst = []
+	samples = []
+        refSamples = []
+	mainReferenceSample = 'no sample name here'
+
+	for sample in AnalysisPipe.database.getSamples():
+	    samplesbyId[sample.id]=sample
+	    samplesbyName[sample.name]=sample
+	    samples.append(sample)
+	    if sample.refType:
+                refSamplesFirst.append(sample)
+		refSamples.append(sample)
+	    if sample.refType == 'Patient': patId = sample.name
+	    if sample.refType == 'Donor': donId = sample.name
+	    if not sample.refType: samplesNamesNoPD.append(sample.name)
+	#for sampleId, sample in sorted(samplesbyId.iteritems(), key=operator.itemgetter(0)):
+	#    if sample not in refSamplesFirst: refSamplesFirst.append(sample)
+	for sampleName in sorted_nicely(samplesNamesNoPD):
+	    sample = samplesbyName[sampleName]
+	    if sample not in refSamplesFirst: refSamplesFirst.append(sample)
+
+        if not patId or donId: sys.stdout.write('List of all sample names:\n'+'\n'.join([sample.name for sample in samples])+'\n')
+	while patId == None:
+	    if not patId: patId = raw_input('Cannot find the Patient sample please give a Sample name to use as Patient: ')
+	    if patId not in samplesbyName:
+                if patId == 'SKIP': patId = None; break
+                msg = '#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# sample name ' +patId+ ' is not valid. Write SKIP as id to skip any analysis step using this id.\n'
+                sys.stderr.write(msg)
+                AnalysisPipe.logfile.write(msg)
+                patId = None
+        while donId == None:
+            if not donId: donId = raw_input('Cannot find the Donor sample please give a Sample name to use as Donor: ')
+            if donId not in samplesbyName:
+                if donId == 'SKIP': donId = None; break
+                msg = '#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# sample name ' +donId+ ' is not valid. Write SKIP as id to skip any analysis step using this id.\n'
+                sys.stderr.write(msg)
+                AnalysisPipe.logfile.write(msg)
+                donId = None
+
+        while mainReferenceSample == 'no sample name here':
+            if len(refSamples) == 1:
+                mainReferenceSample = refSamples[0].name
+            elif len(refSamples) > 1:
+                if patId:
+                    AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# using patient sample ' +patId+ ' as reference sample for ADO rate estimation etc.\n')
+                    mainReferenceSample = patId
+                else: mainReferenceSample = raw_input('cannot find which sample to use as reference in ADO rate estimation etc\nfollowing reference samples are around:\n'+'\n'.join([sample.name for sample in refSamples])+'\nplease give a Sample name to use as reference: ')
+            elif len(refSamples) == 0: mainReferenceSample = raw_input('cannot find any sample to use as reference in ADO rate estimation etc\nfollowing samples are around:\n'+'\n'.join(sorted_nicely(samplesbyName.keys()))+'\nplease give a Sample name to use as reference: ')
+            try: mainReferenceSample = samplesbyName[mainReferenceSample]
+            except KeyError:
+                msg = '#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# sample name ' +mainReferenceSample+ ' is not valid, try again...\n'
+                sys.stderr.write(msg)
+                AnalysisPipe.logfile.write(msg)
+                mainReferenceSample = 'no sample name here'
+
+	referenceSamples = [mainReferenceSample]
+	if patId and donId:
+	    referenceSamples.append(samplesbyName[donId])
+	####### GETTING SAMPLE INFOS END
+	
+	import multiprocessing
+	man = multiprocessing.Manager()
+	AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'#'+str(AnalysisPipe.masterPid)+'# Manager for shared queues started, my id is '+str(man.__dict__['_process'].pid)+'.\n')
+	q1 = man.Queue()
+	q2 = man.Queue()
+	q3 = man.Queue()
+	q4 = man.Queue()
+	
+	subsetSize = None
+	totExpVars = man.Value(int,0)
+	reader = multiprocessing.Process(target=self.readVcfToMem,args=(q1,subsetSize,totExpVars,))
+	reader.start()
+	
+	parser1 = multiprocessing.Process(target=self.parseVcfForBetwenSampleVariation,args=(q1,q2,totExpVars,))
+	parser2 = multiprocessing.Process(target=self.pairwiseVariantConcoordance,args=(q2,q3,samples,mainReferenceSample,refSamplesFirst,totExpVars,))
+	parser3 = multiprocessing.Process(target=self.parseVcfToIdentify,args=(q3,q4,patId,donId,totExpVars,))
+	parser4 = multiprocessing.Process(target=self.parseVcfForADOrate,args=(q4,patId,donId,mainReferenceSample,referenceSamples,subsetSize,totExpVars,))
+	parser1.start()
+	parser2.start()
+	parser3.start()
+	parser4.start()
+	
+	reader.join()
+	parser1.join()
+	parser2.join()
+	parser3.join()
+	parser4.join()
+	
+	for sample in AnalysisPipe.database.getSamples():
+	    #print sample.name
+	    sample.getSNPchunkyness()
+	return
+
+    def pairwiseVariantConcoordance(self,q2,q3,samples,mainReferenceSample,refSamplesFirst,totExpVars ):
+
 	import itertools
 	import sys
 	import operator
 	import time
-	samplesbyName = {}
-	samplesNamesNoPD = []
-	samplesbyId = {}
-	refSamples = []
-	refSamplesFirst = []
-	samples = []
-	for sample in AnalysisPipe.database.getSamples():
-	    if sample.name[-1]== "1":
-		samplesbyId[sample.id]=sample
-		samplesbyName[sample.name]=sample
-		samples.append(sample)
-		if sample.refType:
-		    refSamplesFirst.append(sample)
-		    refSamples.append(sample)
-		if sample.refType == 'Patient': patId = sample.name
-		if sample.refType == 'Donor': donId = sample.name
-		if not sample.refType: samplesNamesNoPD.append(sample.name)
-	for sampleName in sorted_nicely(samplesNamesNoPD):
-	    sample = samplesbyName[sampleName]
-	    if sample not in refSamplesFirst: refSamplesFirst.append(sample)
+	import os 
+	
+	AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'#'+str(AnalysisPipe.masterPid)+'# parsing Vcf For pairwiseVariantConcoordance, my id is '+str(os.getpid())+'.\n')
+
+	#samplesbyName = {}
+	#samplesNamesNoPD = []
+	#samplesbyId = {}
+	#refSamples = []
+	#refSamplesFirst = []
+	#samples = []
+	#for sample in AnalysisPipe.database.getSamples():
+	#    if sample.name[-1]== "1":
+	#	samplesbyId[sample.id]=sample
+	#	samplesbyName[sample.name]=sample
+	#	samples.append(sample)
+	#	if sample.refType:
+	#	    refSamplesFirst.append(sample)
+	#	    refSamples.append(sample)
+	#	if sample.refType == 'Patient': patId = sample.name
+	#	if sample.refType == 'Donor': donId = sample.name
+	#	if not sample.refType: samplesNamesNoPD.append(sample.name)
+	#for sampleName in sorted_nicely(samplesNamesNoPD):
+	#    sample = samplesbyName[sampleName]
+	#    if sample not in refSamplesFirst: refSamplesFirst.append(sample)
+
+	if len(refSamplesFirst) > 20:
+	    while True:
+		variation = q2.get()
+		q3.put(variation)
+		if variation == 'END': q3.put('END');break
+	    return
+
 	combos = list(itertools.combinations(samples,2))
 	comboResults = {combo:{'commonVars':0,'agree':0} for combo in combos}
-	print "#TEST#"
+	#print "#TEST#"
 	subsets = {}
 	for i in range(len(samples)):
 	    for combo in itertools.combinations(samples,i+1):
 		#print [sample.name for sample in combo]
 		subsets[combo] = {'totalCount':0}
-	print len(subsets)
-	print "#TEST#"
-	
-	mainReferenceSample = 'no sample name here'
-	if len(refSamples) == 1:
-	    mainReferenceSample = refSamples[0].name
-	elif len(refSamples) > 1:
-		mainReferenceSample = raw_input('cannot find which sample to use as reference in ADO rate estimation etc\nfollowing reference samples are around:\n'+'\n'.join([sample.name for sample in refSamples])+'\nplease give a Sample name to use as reference: ')
-	elif len(refSamples) == 0:
-		mainReferenceSample = raw_input('cannot find any sample to use as reference in ADO rate estimation etc\nfollowing samples are around:\n'+'\n'.join(sorted_nicely(samplesbyName.keys()))+'\nplease give a Sample name to use as reference: ')
-
-	try: mainReferenceSample = samplesbyName[mainReferenceSample]
-	except KeyError:
-	    msg = '#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# sample name ' +mainReferenceSample+ ' is not valid exiting.\n'
-	    sys.stderr.write(msg)
-	    AnalysisPipe.logfile.write(msg)
-	    sys.exit()
-	AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# using sample ' +mainReferenceSample.name+ ' as reference sample for variant concoordance check.\n')
-	#referenceSamples = [mainReferenceSample]
-	#if patId and donId:
-	#    referenceSamples.append(samplesbyName[donId])
-	
+	#print len(subsets)
+	#print "#TEST#"
+		
+	outfile = open(AnalysisPipe.path+'/pairwiseVariantConcoordance.txt','w')
 	totalVariationCount = 0
 	informativeVariationCount = 0
 	pairwiseBase = 0
 	#sampleNameWarning = False
 	#print 'chrom\tpos\t'+'\t'.join([sample.name for sample in refSamplesFirst])
 
-	AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# Parsing variation per chromosome.\n')
-	for chrom in sorted_nicely(self.variations.keys()):#,variations in sorted(self.variations.iteritems(), key=operator.itemgetter(0)):
-	    AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# now at '+str(chrom)+'.\n')
-	    for variation in self.variations[ chrom ]:
+	progress = Progress(totExpVars.get(), verb='full', logfile=AnalysisPipe.logfile, unit='variants pwcChecked' ,mem=False, printint=1)
+	while True:
+		variation = q2.get()
+		q3.put(variation)
+		if variation == 'END': q3.put('END');break
+		chrom = variation.chrom
+	#AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# Parsing variation per chromosome.\n')
+	#for chrom in sorted_nicely(self.variations.keys()):#,variations in sorted(self.variations.iteritems(), key=operator.itemgetter(0)):
+	#    AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# now at '+str(chrom)+'.\n')
+	#    for variation in self.variations[ chrom ]:
 		#if set(variation.perSampleInfo.keys()) != set(refSamplesFirst):
 		#    if not sampleNameWarning:
 		#	sampleNameWarning = True
@@ -3205,8 +3369,15 @@ class AnalysisPipe(object):
 			sampleSameGTasRef = bool(variation.perSampleInfo[sample.name]['GT']==variation.perSampleInfo[mainReferenceSample.name]['GT'])
 			if sampleDP and sampleQual and sampleSameGTasRef: pfSamples.append(sample)
 		    if pfSamples:
-			subsets[tuple(pfSamples)]['totalCount']+=1
-			informativeVariationCount+=1
+			pfSamples.sort()
+			try:
+			    subsets[tuple(pfSamples)]['totalCount']+=1
+			    informativeVariationCount+=1
+			except KeyError:
+			    print 'KEY ERROR HERE:',' '.join([sample.name for sample in tuple(pfSamples)])
+			    print 'Available keys:'
+			    for subset in subsets: print ' '.join([sample.name for sample in subset])
+			    sys.exit()
 		
 		pfCombos = 0
 		for combo in combos:
@@ -3226,28 +3397,32 @@ class AnalysisPipe(object):
 			if variation.perSampleInfo[sample1.name]['GT'] == variation.perSampleInfo[sample2.name]['GT']:
 			    comboResults[combo]['agree']+=1
 		if pfCombos: pairwiseBase +=1
+		q2.task_done()
+		progress.update()
 
-	print 'varCount\tSubset'
+	outfile.write( 'varCount\tSubset\n')
 	for combo in subsets:
-	    if subsets[combo]['totalCount']:print str(subsets[combo]['totalCount'])+'\t'+','.join([sample.name for sample in combo])
-	print 'total variants with PF calls',informativeVariationCount
-	print 'total variants parsed',totalVariationCount
-	print 'sample1\tsample2\tcommonPFVars\tagree\t%agree'
+	    if subsets[combo]['totalCount']:
+		outfile.write( str(subsets[combo]['totalCount'])+'\t'+','.join([sample.name for sample in combo])+'\n')
+	outfile.write( 'total variants with PF calls '+str(informativeVariationCount) +'\n')
+	outfile.write( 'total variants parsed '+str(totalVariationCount)+'\n')
+	outfile.write( 'sample1\tsample2\tcommonPFVars\tagree\t%agree'+'\n')
 	for combo in combos:
 	    sample1, sample2 = combo
-	    print sample1.name+'\t'+sample2.name+'\t'+str(comboResults[combo]['commonVars'])+'\t'+str(comboResults[combo]['agree'])+'\t'+str(percentage(comboResults[combo]['agree'],comboResults[combo]['commonVars']))+'%'
-	print 'based on '+str(pairwiseBase)+' variants'
+	    outfile.write( sample1.name+'\t'+sample2.name+'\t'+str(comboResults[combo]['commonVars'])+'\t'+str(comboResults[combo]['agree'])+'\t'+str(percentage(comboResults[combo]['agree'],comboResults[combo]['commonVars']))+'%'+'\n')
+	outfile.write( 'based on '+str(pairwiseBase)+' variants\n')
 
 	AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# pairwise check done.\n')
 
-    def parseVcfForBetwenSampleVariation(self):
+    def parseVcfForBetwenSampleVariation(self,q1,q2,totExpVars):
 
 	import sys
 	import operator
 	import time
+	import os
 
-	patId = None
-	donId = None
+	AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'#'+str(AnalysisPipe.masterPid)+'# parsing Vcf For Betwen Sample Variation, my id is '+str(os.getpid())+'.\n')
+
 	samplesbyName = {}
 	samplesNamesNoPD = []
 	samplesbyId = {}
@@ -3258,8 +3433,6 @@ class AnalysisPipe(object):
 	    samplesbyName[sample.name]=sample
 	    samples.append(sample)
 	    if sample.refType: refSamplesFirst.append(sample)
-	    if sample.refType == 'Patient': patId = sample.name
-	    if sample.refType == 'Donor': donId = sample.name
 	    if not sample.refType: samplesNamesNoPD.append(sample.name)
 	for sampleName in sorted_nicely(samplesNamesNoPD):
 	    sample = samplesbyName[sampleName]
@@ -3268,12 +3441,30 @@ class AnalysisPipe(object):
 	totalVariationCount = 0
 	informativeVariationCount = 0
 	sampleNameWarning = False
-	print 'chrom\tpos\t'+'\t'.join([sample.name for sample in refSamplesFirst])
+	variationTable = open(AnalysisPipe.path+'/variationTable.tsv','w')
+	variationTable.write( 'chrom\tpos\t'+'\t'.join([sample.name for sample in refSamplesFirst])+'\n')
 
+	nexusFile = open(AnalysisPipe.path+'/nexusFile.nex','w')
+	cleanNexusFile = open(AnalysisPipe.path+'/cleanNexusFile.nex','w')
+	nexusStr={'reference':''}
+	cleanNexusStr={'reference':''}
+	for sample in refSamplesFirst:
+	    nexusStr[sample]=''
+	    cleanNexusStr[sample]=''
+	
 	AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# Parsing variation per chromosome.\n')
-	for chrom in sorted_nicely(self.variations.keys()):#,variations in sorted(self.variations.iteritems(), key=operator.itemgetter(0)):
-	    AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# now at '+str(chrom)+'.\n')
-	    for variation in self.variations[ chrom ]:
+
+	tmpNumber = 0
+	while not tmpNumber: tmpNumber = totExpVars.get();time.sleep(1)
+	progress = Progress(tmpNumber, verb='full', logfile=AnalysisPipe.logfile, unit='variants betweenvarChecked' ,mem=False, printint=1)
+	while True:
+		variation = q1.get()
+		q2.put(variation)
+		if variation == 'END': q2.put('END');break
+		chrom = variation.chrom
+#	for chrom in sorted_nicely(self.variations.keys()):#,variations in sorted(self.variations.iteritems(), key=operator.itemgetter(0)):
+#	    AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# now at '+str(chrom)+'.\n')
+#	    for variation in self.variations[ chrom ]:
 		if set(variation.perSampleInfo.keys()) != set(refSamplesFirst):
 		    if not sampleNameWarning:
 			sampleNameWarning = True
@@ -3281,7 +3472,7 @@ class AnalysisPipe(object):
 			AnalysisPipe.logfile.write(msg)
 			sys.stderr.write(msg)
 			refSamplesFirst = [sample for sample in refSamplesFirst if sample.name in variation.perSampleInfo.keys()]
-			print 'chrom\tpos\t'+'\t'.join([sample.name for sample in refSamplesFirst])
+			variationTable.write( 'chrom\tpos\t'+'\t'.join([sample.name for sample in refSamplesFirst])+'\n')
 
 		totalVariationCount += 1
 
@@ -3296,6 +3487,8 @@ class AnalysisPipe(object):
 		if NotIndbSNP and not allTheSame:# and allHaveData:
 		    test=''
 		    pfSamples = 0
+		    pfGts = {}
+		    tmpNexusStr = {}
 		    bases = [variation.refBase]+list(variation.altBases)
 		    outputline = variation.chrom+'\t'+variation.pos+'\t'
 		    for sample in refSamplesFirst:
@@ -3303,27 +3496,49 @@ class AnalysisPipe(object):
 			sampleQual = None
 
 			# per sample filters
-			sampleDP   = bool(variation.perSampleInfo[sample.name]['DP'] >= 10)#int(AnalysisPipe.settings.sampleIdentificationDPcutoff))
+			sampleDP   = bool(variation.perSampleInfo[sample.name]['DP'] >= 30)#int(AnalysisPipe.settings.sampleIdentificationDPcutoff))
 			sampleQual = bool(variation.perSampleInfo[sample.name]['GQ'] >= 30)#int(AnalysisPipe.settings.sampleIdentificationGQcutoff))
 
 			if sampleDP and sampleQual:
 			    pfSamples+=1
+			    pfGts['/'.join([bases[int(tmp)] for tmp in variation.perSampleInfo[sample.name]['GT'].split('/')])] = True
 			    try:
 				outputline += '/'.join([bases[int(tmp)] for tmp in variation.perSampleInfo[sample.name]['GT'].split('/')])+'\t'
+				tmpNexusStr[sample]=uipac(''.join([bases[int(tmp)] for tmp in variation.perSampleInfo[sample.name]['GT'].split('/')]))
 			    except IndexError:
 				outputline += variation.perSampleInfo[sample.name]['GT']+'\t'
+				tmpNexusStr[sample]=uipac(variation.perSampleInfo[sample.name]['GT'].replace('/',''))
 			    except ValueError:
 				outputline += variation.perSampleInfo[sample.name]['GT']+'\t'
+				tmpNexusStr[sample]=uipac(variation.perSampleInfo[sample.name]['GT'].replace('/',''))
 			else:
-			    outputline += 'NoPass'+'\t'
+			    outputline += '?'+'\t'#'NoPass'+'\t'
+			    tmpNexusStr[sample]='?'
 			    test+=sample.name+'='+'\033[90m'+'LowDPorGQ'+'\033[0m'+'\t'
 
-		    if pfSamples >= 2:#== len(refSamplesFirst):
+		    tmpNexusStr['reference']=variation.refBase
+		    if pfSamples >= 2 and len(pfGts) >= 2:
 			informativeVariationCount += 1
-#			for sample in refSamplesFirst:
-			print outputline
+			variationTable.write( outputline+'\n')
+			for samp,char in tmpNexusStr.iteritems(): nexusStr[samp] += char
+			if '?' not in tmpNexusStr.values():
+			    for samp,char in tmpNexusStr.iteritems(): cleanNexusStr[samp] += char
+		q1.task_done()
+		progress.update()
 
-	sys.stdout.write('Found '+thousandString(str(informativeVariationCount))+' informative variant out of '+thousandString(str(totalVariationCount))+' parsed variants.\n')
+	nexusFile.write('#NEXUS\nBegin data;\nDimensions ntax='+str(len(refSamplesFirst)+1)+' nchar='+str(len(nexusStr[sample]))+';\nFormat datatype=dna missing=? gap=-;\nMatrix\n')
+	nexusFile.write( 'reference'+'\t'+nexusStr['reference']+'\n')
+	for sample in refSamplesFirst:
+	    nexusFile.write( sample.name+'\t'+nexusStr[sample]+'\n')
+	nexusFile.write(';\nEnd;')
+
+	cleanNexusFile.write('#NEXUS\nBegin data;\nDimensions ntax='+str(len(refSamplesFirst)+1)+' nchar='+str(len(cleanNexusStr[sample]))+';\nFormat datatype=dna missing=? gap=-;\nMatrix\n')
+	cleanNexusFile.write( 'reference'+'\t'+cleanNexusStr['reference']+'\n')
+	for sample in refSamplesFirst:
+	    cleanNexusFile.write( sample.name+'\t'+cleanNexusStr[sample]+'\n')
+	cleanNexusFile.write(';\nEnd;')
+
+	sys.stdout.write('Betwen sample variation found '+thousandString(str(informativeVariationCount))+' informative variant out of '+thousandString(str(totalVariationCount))+' parsed variants.\n')
 	AnalysisPipe.logfile.write('#LOGMSG#'+time.strftime("%Y-%m-%d:%H:%M:%S",time.localtime())+'# All done.\n')
 
     def changeSetting(self,):
@@ -4994,6 +5209,50 @@ class Settings(object,):
         AnalysisPipe.database.commitAndClose()
         
         return 0
+
+class Progress():
+
+	def __init__(self,total, verb='full', logfile=sys.stderr, unit='reads' ,mem=False, printint=0):
+		import time
+		self.total = total
+		self.current = 0
+		self.type = verb
+		self.logfile = logfile
+		self.ltime = time.time()
+		self.lcurrent = self.current
+		self.lpercentage = 0
+		if verb == 'full': self.printint = 5
+		elif verb == 'minimal':self.printint = 5
+		self.unit = unit
+		self.mem = mem
+		if printint: self.printint = printint
+
+	def __enter__(self):
+		if self.type == 'minimal': self.logfile.write('0%                 50%                 100%\n')
+		#                                              ....................................................................................
+
+	def update(self):
+		import time
+		self.current += 1
+		self.percentage = int(round(100*float(self.current)/self.total))
+		if self.percentage % self.printint == 0 and self.percentage != self.lpercentage:
+			self.stf=int(round((self.total-self.current)/((self.current-self.lcurrent)/(time.time()-self.ltime))))
+			if self.type == 'full': self.logfile.write(
+				'#Progress => '+str(self.percentage)+'%, '+
+				str( round((self.current-self.lcurrent)/(time.time()-self.ltime),2) )+' '+self.unit+'/second, '+
+				time.strftime("%A, %d %b %Y %H:%M:%S",time.localtime())+
+				', left: '+str(self.stf/60/60)+'h '+str(self.stf/60%60)+'min '+str(self.stf%60)+'s')
+			if self.mem:
+				import resource
+				self.logfile.write(', using '+str((resource.getrusage(resource.RUSAGE_SELF).ru_maxrss+resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss)/1024)+' ('+str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss/1024)+') MB.\n')
+			else:	self.logfile.write('\n')
+			if self.type == 'minimal': self.logfile.write('..')
+			self.ltime = time.time()
+			self.lcurrent = self.current
+			self.lpercentage = self.percentage
+
+	def __exit__(self, *args):
+		self.logfile.write('\n')
 
 if __name__ == "__main__": main()
 
