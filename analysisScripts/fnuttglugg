@@ -5234,7 +5234,8 @@ class Progress():
 	def update(self):
 		import time
 		self.current += 1
-		self.percentage = int(round(100*float(self.current)/self.total))
+		try: self.percentage = int(round(100*float(self.current)/self.total))
+		except ZeroDivisionError: self.percentage = 0
 		if self.percentage % self.printint == 0 and self.percentage != self.lpercentage:
 			self.stf=int(round((self.total-self.current)/((self.current-self.lcurrent)/(time.time()-self.ltime))))
 			if self.type == 'full': self.logfile.write(
